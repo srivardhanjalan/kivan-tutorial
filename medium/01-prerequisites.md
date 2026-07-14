@@ -4,6 +4,8 @@
 
 ---
 
+![Zero to Shipped 01 — one script, everything ready](../mocks/mocks-hero-01.png)
+
 This is step 01 of **Zero to Shipped**, a series where we build a real social product — iPhone, iPad, Android, and a live AWS backend — one deployable step at a time. New here? **[Start with the introduction](#)** *(link to post 00)* for what we're building and why the architecture is worth stealing. The code lives at **[github.com/srivardhanjalan/kivan-tutorial](https://github.com/srivardhanjalan/kivan-tutorial)**; this post is the `01-prerequisites/` folder.
 
 By the end of this post your machine can build and deploy everything in the series, and you'll know exactly which accounts you need (and what they cost: about **$5–10/month** while deployed, and `terraform destroy` stops all charges).
