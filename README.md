@@ -1,46 +1,53 @@
-# Kivan — Build a Production Social-Wishlist App, Step by Step
+# Kivan — Build a Production Social-Wishlist App
 
-Kivan is a social wishlist app: create wishlists, add wishes by browsing real
-stores in-app, follow friends, plan events around wishlists, and get notified
-in-app and by email. This repository teaches you to build and deploy it —
-frontend (Expo/React Native), backend (FastAPI on AWS App Runner), and
-infrastructure (Terraform) — in **16 self-contained steps**.
+**One codebase. iPhone, iPad, Android, and web.** Kivan is a real product, not
+a toy example: create wishlists for life's moments, add wishes by browsing
+real stores inside the app (prices scraped in any currency), follow friends,
+plan events around wishlists with RSVPs and email invites, and get notified
+in-app and by email — all on live AWS infrastructure you deploy yourself.
 
-## How this repository works
+![Kivan end-user experience mocks](mocks/mocks.png)
 
-- **One folder per step** (`step-01` … `step-16`), each a **complete, runnable,
-  deployable snapshot** of the app at that stage. You never need another folder
-  to run a step.
-- **One commit per step**, in order — the git history *is* the curriculum.
-  `git diff` between adjacent steps shows exactly what a feature costs.
-- **`final/`** (last commit) is the complete application.
-- **Zero bloat**: every step contains exactly the code that stage needs —
-  nothing unused, nothing speculative.
+*Every screen above is rendered from the app's real design tokens — the
+liquid-glass chrome, adaptive tile rails that reshape from iPhone to iPad,
+device-aware masonry, and the floating glass tab bar. Interactive version:
+open [`mocks/index.html`](mocks/index.html) in a browser.*
 
-### The jigsaw principle
+**What you'll have built by the end:**
+
+- A polished **Expo / React Native** app (iOS + iPad + Android + web) with a
+  token-driven design system and adaptive layouts
+- A **FastAPI** backend on **AWS App Runner** with JWKS-verified Clerk auth,
+  just-in-time user provisioning, and DynamoDB single-table-per-feature design
+- **Terraform** for the entire stack — ECR, App Runner, DynamoDB, S3 with a
+  backend-owned photo lifecycle, SQS → Lambda notifications, Mailgun email,
+  CloudWatch alarms, budgets
+- An **admin dashboard**, deep-link sharing, and CI/CD references
+
+## Why this tutorial is different: the jigsaw principle
 
 The app is split into a domain-agnostic **platform** (shell & design system,
 auth, profiles, media, social, notifications, sharing, admin, operations) and
 swappable **domain modules** 🧩 (collections, storefronts, browser acquisition,
 events). The modules plug into the platform like jigsaw pieces — `final/MODULES.md`
 documents each piece's contract so you can replace *wishlists + wish stores*
-with *notes*, *trips + destinations*, or any collection-shaped domain of your own.
+with *notes*, *trips + destinations*, or any collection-shaped domain of your
+own. You're not just building Kivan; you're building a platform you can reuse.
 
-## What you're building
+**How the repository works:**
 
-Pixel-accurate mocks of the end experience, rendered with the app's exact
-design tokens and chrome — the liquid-glass header, edge-aligned titles and
-actions, adaptive tile rails, masonry, event cards, and the floating glass
-tab bar. (Interactive version: open [`mocks/index.html`](mocks/index.html)
-in a browser.)
-
-![Kivan end-user experience mocks](mocks/mocks.png)
+- **One folder per step** (`step-01` … `step-16`), each a **complete, runnable,
+  deployable snapshot**. You never need another folder to run a step.
+- **One commit per step**, in order — the git history *is* the curriculum, and
+  `git diff` between adjacent steps shows exactly what a feature costs.
+- **`final/`** (last commit) is the complete application.
+- **Zero bloat**: every step contains exactly the code that stage needs.
 
 ## The steps
 
 | Step | You build | You can then |
 |---|---|---|
-| 01 | Prerequisites — run `./setup.sh` (installs everything missing, skips what's present) | verify your machine is ready |
+| 01 | Prerequisites — run `./setup.sh` | verify your machine is ready |
 | 02 | App shell & design system — config (name, scheme, theme, tabs), liquid-glass chrome, shared components | run a fully themed app standalone |
 | 03 | Backend & infra core — FastAPI skeleton, Terraform (ECR, App Runner, monitoring base), the amd64 deploy loop | see the app talk to your live AWS backend |
 | 04 | Auth & onboarding — Clerk sign-in/up (email, Google, Apple), JWKS verification, just-in-time user provisioning, roles foundation, first-run tutorial | create real accounts end-to-end |
@@ -60,44 +67,42 @@ in a browser.)
 
 ## Prerequisites
 
-**The fast path — one script does it all:**
+### 1. Run the setup script (5–20 minutes, mostly unattended)
 
 ```bash
 ./setup.sh
 ```
 
-It installs everything that's missing (including Homebrew itself), skips
-everything already present, and is safe to re-run. It ends with a short list
-of the few things a script can't do for you — installing Xcode from the App
-Store, `aws configure`, and creating the accounts below.
+Idempotent and safe to re-run: it installs **only what's missing** and skips
+the rest — including Homebrew itself if you've never installed it. It covers:
 
-The tables that follow are the manual reference for what the script covers.
-
-### Machine & tooling (required)
-
-| What | How to resolve |
+| Installs / verifies | Notes |
 |---|---|
-| **macOS with Xcode + iOS Simulator** | Install Xcode from the App Store → open it once → `xcode-select --install` → Xcode ▸ Settings ▸ Components: install an iOS simulator runtime |
-| **Node.js 20+** | `brew install node` (or `nvm install 20`) |
-| **Python 3.11 or 3.12** | `brew install python@3.12` — *3.13+/3.14 will not install the pinned pydantic; use 3.12 for the backend venv* |
-| **Terraform** | `brew tap hashicorp/tap && brew install hashicorp/tap/terraform` |
-| **Docker + Colima with Rosetta** | `brew install colima docker docker-buildx` → `softwareupdate --install-rosetta --agree-to-license` → `colima start rosetta --vm-type vz --vz-rosetta --arch aarch64 --cpu 4 --memory 6`. **Apple Silicon warning:** App Runner images must be built through Rosetta with the *docker* driver (`docker buildx build --builder colima-rosetta …`) — QEMU emulation and docker-container builders produce images that pass locally but fail on App Runner with `CREATE_FAILED` and no logs. Step 03 walks through this. |
-| **AWS CLI** | `brew install awscli` → `aws configure` with an access key |
-| **Android Studio** *(optional)* | Only if you want the Android emulator; every step also runs on iOS + web |
+| Homebrew | via the official installer if absent |
+| Xcode command line tools | triggers the macOS dialog if needed |
+| Node.js 20+ | Metro/Expo runtime |
+| Python 3.12 | **not 3.13+** — the pinned pydantic won't build there |
+| Terraform | via the HashiCorp tap |
+| AWS CLI | and verifies your credentials work |
+| Docker + Colima + buildx + watchman | container tooling & file watcher |
+| Rosetta 2 + the `colima rosetta` profile | **Apple Silicon:** App Runner images must build through Rosetta with the *docker* driver — QEMU and docker-container builders corrupt layers (builds pass locally, `CREATE_FAILED` on AWS). The script configures this correctly; step 03 explains it. |
 
-### Accounts & keys
+It finishes by printing exactly what's still yours to do — which is the list below.
 
-| What | Needed from step | How to resolve |
-|---|---|---|
-| **AWS account** | 03 | [aws.amazon.com](https://aws.amazon.com) → create account → IAM ▸ Users ▸ create user with `AdministratorAccess` (tutorial scope) → create access key → `aws configure`. Expect roughly **$5–10/month** while deployed (App Runner is the main cost); step 16 adds budgets and alarms, and `terraform destroy` stops all charges. |
-| **Clerk** (auth) | 04 | [dashboard.clerk.com](https://dashboard.clerk.com) → Create application → enable **Email** and **Google** sign-in → API Keys: copy the **Publishable key** (frontend `.env.local`) and **Secret key** (`infra/terraform.tfvars`) |
-| **Apple Sign-In** *(optional)* | 04 | Requires a paid Apple Developer Program membership; configure the App ID + key per step 04's README. Skippable — email/Google auth works without it. |
-| **Firecrawl** (scraping) | 09 | [firecrawl.dev](https://firecrawl.dev) → sign up → copy the API key (`fc-…`) into `infra/terraform.tfvars` |
-| **Mailgun** *(optional, email)* | 12 | [mailgun.com](https://mailgun.com) → sign up → copy the sandbox domain + API key into `infra/terraform.tfvars`. **Sandbox domains only deliver to "authorized recipients"** you add in the dashboard — fine for testing. For real delivery: Sending ▸ Domains ▸ add a domain you own and publish its SPF/DKIM DNS records. Leave the keys empty to disable email entirely — everything else still works. |
+### 2. Things a script can't do for you
+
+| # | What | When | How (exact steps) |
+|---|---|---|---|
+| 1 | **Xcode + iOS simulator** | step 02 | App Store → install Xcode → open once → Settings ▸ Components → install an iOS simulator runtime |
+| 2 | **AWS account + credentials** | step 03 | [aws.amazon.com](https://aws.amazon.com) → create account → IAM ▸ Users ▸ create user → attach `AdministratorAccess` (fine for a tutorial account) → Security credentials ▸ create access key → run `aws configure`. **Cost:** ≈ $5–10/month while deployed (App Runner dominates); step 16 adds budgets + alarms, and `terraform destroy` stops all charges. |
+| 3 | **Clerk application** (auth) | step 04 | [dashboard.clerk.com](https://dashboard.clerk.com) → Create application → toggle **Email** and **Google** on → API Keys: **Publishable key** → `frontend/.env.local`, **Secret key** → `infra/terraform.tfvars` |
+| 4 | **Firecrawl API key** (scraping) | step 09 | [firecrawl.dev](https://firecrawl.dev) → sign up → copy the `fc-…` key → `infra/terraform.tfvars` |
+| 5 | **Mailgun** *(optional — email)* | step 12 | [mailgun.com](https://mailgun.com) → sign up → Sending ▸ Overview: copy the **sandbox domain** and **API key** → `infra/terraform.tfvars` → Sending ▸ Authorized Recipients: add your own address. Sandbox only delivers to authorized recipients; for real delivery add a domain you own and publish its SPF/DKIM records. Leave keys empty to skip email — everything else works. |
+| 6 | **Apple Sign-In** *(optional)* | step 04 | Needs the paid Apple Developer Program; step 04's README covers the App ID + key. Skip it — email/Google auth is complete without it. |
 
 ### Secrets hygiene
 
-Secrets live in two gitignored files, never in code:
+Secrets live in exactly two gitignored files, never in code:
 `frontend/.env.local` (Clerk publishable key, API URL) and
 `infra/terraform.tfvars` (Clerk secret, Firecrawl, Mailgun). Each step's README
 shows the exact entries it needs.
@@ -105,7 +110,7 @@ shows the exact entries it needs.
 ## Working through the steps
 
 ```bash
-cd step-01   # read its README, run check-setup.sh
+cd step-01   # read its README, run ./setup.sh from the repo root
 cd step-02   # each step: README first, then build & run
 …
 ```
