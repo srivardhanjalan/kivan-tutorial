@@ -11,6 +11,8 @@ and embedded in the root README and the Medium posts.
 | `android.html` | `mocks-android.png` | Android frames (system chrome) |
 | `hero.html` | `mocks-hero.png` | series cover, 1500×750 (Medium 2:1) |
 | `hero-01.html` | `mocks-hero-01.png` | post 01 cover (terminal) |
+| `hero-02.html` | `mocks-hero-02.png` | post 02 cover (real step-02 screenshots) |
+| — | `shot-02-home.png`, `shot-02-discover.png` | real simulator screenshots of the step-02 shell |
 
 Re-render after editing a page (adjust `--window-size` to the page):
 
