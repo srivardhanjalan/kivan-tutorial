@@ -1,6 +1,6 @@
-# Beyond the Todo App: Build a Real Social Product on iPhone, iPad, Android, and Live AWS (Part 1)
+# Stop Building Todo Apps
 
-*A 16-part series where every step is a complete, deployable app — and what you finish with is a platform you can reuse for your next three ideas.*
+*Build and ship a real social product — iPhone, iPad, Android, and a live AWS backend — one deployable step at a time. (Part 1 of 16)*
 
 ---
 
