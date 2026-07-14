@@ -6,7 +6,7 @@
 
 ![Zero to Shipped 01 — one script, everything ready](../mocks/mocks-hero-01.png)
 
-This is step 01 of **Zero to Shipped**, a series where we build a real social product — iPhone, iPad, Android, and a live AWS backend — one deployable step at a time. New here? **[Start with the introduction](#)** *(link to post 00)* for what we're building and why the architecture is worth stealing. The code lives at **[github.com/srivardhanjalan/kivan-tutorial](https://github.com/srivardhanjalan/kivan-tutorial)**; this post is the `01-prerequisites/` folder.
+This is step 01 of **Zero to Shipped**, a series where we build a real social product — iPhone, iPad, Android, and a live AWS backend — one deployable step at a time. New here? **[Start with the introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)** for what we're building and why the architecture is worth stealing. The code lives at **[github.com/srivardhanjalan/kivan-tutorial](https://github.com/srivardhanjalan/kivan-tutorial)**; this post is the `01-prerequisites/` folder.
 
 By the end of this post your machine can build and deploy everything in the series, and you'll know exactly which accounts you need (and what they cost: about **$5–10/month** while deployed, and `terraform destroy` stops all charges).
 
@@ -60,7 +60,7 @@ In **step 02**, we build the app shell and design system — the config files th
 
 **Zero to Shipped — the series**
 
-- **00 · [Introduction](#)** *(link to post 00)*
+- **00 · [Introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**
 - **01 · Prerequisites: one script to set up everything** *(this post)*
 - **02 · App shell & design system** *(coming soon)*
 
