@@ -1,0 +1,30 @@
+# Dependencies & build output
+node_modules/
+.expo/
+ios/Pods/
+ios/build/
+android/build/
+android/.gradle/
+__pycache__/
+*.pyc
+.venv*/
+dist/
+
+# Secrets — never committed
+.env
+.env.local
+*.tfvars
+!terraform.tfvars.example
+
+# Terraform state
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Build artifacts
+notification_processor.zip
+
+# OS / editor
+.DS_Store
+*.swp
