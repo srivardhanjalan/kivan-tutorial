@@ -4,6 +4,8 @@
 
 ---
 
+![Zero to Shipped — build something real](../mocks/mocks-hero.png)
+
 ![Kivan on iPhone](../mocks/mocks-iphone.png)
 
 *Every screen above is rendered from the app's real design tokens — the translucent header wash, adaptive tile rails, device-aware masonry, and the floating glass tab bar.*
