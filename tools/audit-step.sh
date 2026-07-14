@@ -5,10 +5,10 @@
 #
 # Run after EVERY change round, to a fixed point (until it passes with no
 # findings) — deleting dead code orphans other code transitively.
-set -uo pipefail
+set -euo pipefail
 STEP=${1:?usage: tools/audit-step.sh <step-folder>}
 DIR="$(cd "$(dirname "$0")/.." && pwd)/$STEP/frontend"
-cd "$DIR"
+cd "$DIR" || { echo "no such step folder: $DIR"; exit 1; }
 
 echo "── 1. TypeScript ──"
 npx tsc --noEmit || exit 1
