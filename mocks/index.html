@@ -41,9 +41,9 @@
 
   /* ————— Header: full-width liquid-glass slab (FloatingHeader) ————— */
   .slab{position:absolute;top:0;left:0;right:0;z-index:10;
-    backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);      /* BlurView intensity 40 */
-    background:rgba(255,255,255,.05);                                  /* wash 0.05 */
-    border-bottom:.5px solid rgba(0,0,0,.08)}                          /* hairline */
+    /* FloatingHeader wash: translucent background gradient, no blur, no
+       hairline — content stays visible under the title, just lighter */
+    background:linear-gradient(rgba(253,255,255,.92), rgba(253,255,255,.8) 50%, rgba(253,255,255,0))}
   .hrow{margin-top:44px;height:var(--pill-h);display:flex;align-items:center;
     justify-content:space-between;padding:0 var(--content-x)}
   .htitle{font-size:30px;font-weight:700;letter-spacing:-.5px;color:var(--dark)} /* Typography.largeTitle */
@@ -88,6 +88,10 @@
   .tile .mt{font-size:13px;color:var(--text2);margin:2px 2px 0;display:flex;align-items:center;gap:6px}
   .love{position:absolute;top:10px;right:10px;background:rgba(255,255,255,.85);
     border-radius:999px;font-size:11.5px;font-weight:700;padding:4px 9px;color:var(--dark)}
+  .cnt{position:absolute;bottom:10px;left:10px;background:rgba(255,255,255,.85);
+    border-radius:999px;font-size:11.5px;font-weight:700;padding:4px 9px;color:var(--dark)}
+  .grp{position:absolute;top:10px;left:10px;width:26px;height:26px;border-radius:13px;
+    background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;font-size:12px}
   .dot{width:16px;height:16px;border-radius:8px;display:inline-flex;align-items:center;
     justify-content:center;color:#fff;font-size:9px;font-weight:700}
 
@@ -167,7 +171,8 @@
   <h1>Kivan — end-user experience</h1>
   <p>These mocks mirror the implementation exactly: every color, size, and offset comes from the app's
   design tokens (Colors, Typography, Spacing, BorderRadius, the life-event pastels). Chrome behavior shown:
-  the full-width liquid-glass header (content blurs and dims as it scrolls beneath), the 30/700 page title and
+  the translucent header wash (scrolled content stays visible beneath the title, just lighter — no blur,
+  no edge), the 30/700 page title and
   back-chevron glyph on the 12&nbsp;px content edge, right-side actions whose pressed fill ends on the same edge,
   and the two floating glass tab-bar pills (34&nbsp;px icons, active = primary tint + soft fill).</p>
 </div>
@@ -235,20 +240,20 @@
         <div class="plus"><svg class="ic24" viewBox="0 0 24 24" fill="none" stroke="#FF385C" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></div>
       <div class="rail">
         <div class="rcol">
-          <div class="tile"><div class="art" style="background:var(--peach)">🎂<span class="love">♥ 12</span></div>
-            <div class="nm">Diya's Birthday</div><div class="mt">12 wishes</div></div>
-          <div class="tile"><div class="art" style="background:var(--mint)">🏡</div>
-            <div class="nm">Housewarming</div><div class="mt">7 wishes</div></div>
+          <div class="tile"><div class="art" style="background:var(--peach)">🎂<span class="love">♥ 12</span><span class="cnt">12 wishes</span></div>
+            <div class="nm">Diya's Birthday</div></div>
+          <div class="tile"><div class="art" style="background:var(--mint)">🏡<span class="cnt">7 wishes</span></div>
+            <div class="nm">Housewarming</div></div>
         </div>
         <div class="rcol">
-          <div class="tile"><div class="art" style="background:var(--butter)">🎁</div>
-            <div class="nm">Saved for Later</div><div class="mt">4 wishes</div></div>
-          <div class="tile"><div class="art" style="background:var(--lavender)">💍</div>
-            <div class="nm">Wedding Registry</div><div class="mt">23 wishes</div></div>
+          <div class="tile"><div class="art" style="background:var(--butter)">🎁<span class="cnt">4 wishes</span></div>
+            <div class="nm">Saved for Later</div></div>
+          <div class="tile"><div class="art" style="background:var(--lavender)">💍<span class="grp">👥</span><span class="cnt">23 wishes</span></div>
+            <div class="nm">Wedding Registry</div></div>
         </div>
         <div class="rcol">
-          <div class="tile"><div class="art" style="background:var(--sky)">🎓</div>
-            <div class="nm">Grad Gifts</div><div class="mt">2 wishes</div></div>
+          <div class="tile"><div class="art" style="background:var(--sky)">🎓<span class="cnt">2 wishes</span></div>
+            <div class="nm">Grad Gifts</div></div>
         </div>
       </div>
 
@@ -303,19 +308,19 @@
       <div class="sec" style="margin-top:26px"><div><span class="t">Popular wishlists</span></div></div>
       <div class="rail">
         <div class="rcol">
-          <div class="tile"><div class="art" style="background:var(--sky)">🎓<span class="love">♥ 41</span></div>
+          <div class="tile"><div class="art" style="background:var(--sky)">🎓<span class="love">♥ 41</span><span class="cnt">9 wishes</span></div>
             <div class="nm">Grad Gift Ideas</div><div class="mt"><span class="dot" style="background:#7CA9E8">R</span>Rahul Mehta</div></div>
-          <div class="tile"><div class="art" style="background:var(--blush)">👶<span class="love">♥ 28</span></div>
+          <div class="tile"><div class="art" style="background:var(--blush)">👶<span class="love">♥ 28</span><span class="cnt">14 wishes</span></div>
             <div class="nm">Baby Shower</div><div class="mt"><span class="dot" style="background:#E8927C">A</span>Ananya Sharma</div></div>
         </div>
         <div class="rcol">
-          <div class="tile"><div class="art" style="background:var(--butter)">🕯️</div>
+          <div class="tile"><div class="art" style="background:var(--butter)">🕯️<span class="cnt">11 wishes</span></div>
             <div class="nm">Cozy Home Finds</div><div class="mt"><span class="dot" style="background:#D8A24E">S</span>Sam Lee</div></div>
-          <div class="tile"><div class="art" style="background:var(--lavender)">🎄</div>
+          <div class="tile"><div class="art" style="background:var(--lavender)">🎄<span class="cnt">18 wishes</span></div>
             <div class="nm">Holiday Picks</div><div class="mt"><span class="dot" style="background:#9D8FE0">P</span>Priya K.</div></div>
         </div>
         <div class="rcol">
-          <div class="tile"><div class="art" style="background:var(--peach)">🌷</div>
+          <div class="tile"><div class="art" style="background:var(--peach)">🌷<span class="cnt">6 wishes</span></div>
             <div class="nm">Spring Finds</div><div class="mt"><span class="dot" style="background:#72B98A">J</span>Jordan Diaz</div></div>
         </div>
       </div>
@@ -525,16 +530,16 @@
       <div class="sec"><div><span class="t">My Wishlists</span><span class="meta">5</span></div>
         <div class="plus"><svg class="ic24" viewBox="0 0 24 24" fill="none" stroke="#FF385C" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></div>
       <div class="grid">
-        <div class="tile"><div class="art" style="background:var(--peach)">🎂<span class="love">♥ 12</span></div>
-          <div class="nm">Diya's Birthday</div><div class="mt">12 wishes</div></div>
-        <div class="tile"><div class="art" style="background:var(--mint)">🏡</div>
-          <div class="nm">Housewarming</div><div class="mt">7 wishes</div></div>
-        <div class="tile"><div class="art" style="background:var(--butter)">🎁</div>
-          <div class="nm">Saved for Later</div><div class="mt">4 wishes</div></div>
-        <div class="tile"><div class="art" style="background:var(--lavender)">💍</div>
-          <div class="nm">Wedding Registry</div><div class="mt">23 wishes</div></div>
-        <div class="tile"><div class="art" style="background:var(--sky)">🎓</div>
-          <div class="nm">Grad Gifts</div><div class="mt">2 wishes</div></div>
+        <div class="tile"><div class="art" style="background:var(--peach)">🎂<span class="love">♥ 12</span><span class="cnt">12 wishes</span></div>
+          <div class="nm">Diya's Birthday</div></div>
+        <div class="tile"><div class="art" style="background:var(--mint)">🏡<span class="cnt">7 wishes</span></div>
+          <div class="nm">Housewarming</div></div>
+        <div class="tile"><div class="art" style="background:var(--butter)">🎁<span class="cnt">4 wishes</span></div>
+          <div class="nm">Saved for Later</div></div>
+        <div class="tile"><div class="art" style="background:var(--lavender)">💍<span class="grp">👥</span><span class="cnt">23 wishes</span></div>
+          <div class="nm">Wedding Registry</div></div>
+        <div class="tile"><div class="art" style="background:var(--sky)">🎓<span class="cnt">2 wishes</span></div>
+          <div class="nm">Grad Gifts</div></div>
       </div>
     </div>
     <div class="fade" style="height:60px"></div>
@@ -545,6 +550,12 @@
   <div class="col" style="width:100%"><div class="lbl">iPad — Wishlist Detail (masonry widens to 4 columns)</div>
   <div class="pad"><div class="scroll">
     <div class="content">
+      <div style="height:190px;border-radius:24px;background:var(--peach);display:flex;align-items:center;justify-content:center;font-size:72px;position:relative;margin-bottom:16px">🎂
+        <span class="love" style="top:12px;right:12px">♥ 12</span></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px">
+        <span class="dot" style="background:#E8927C;width:22px;height:22px;border-radius:11px;font-size:11px">A</span>
+        <span style="font-size:13.5px;color:var(--text2)">Ananya Sharma · 12 wishes · $1,240 total</span>
+      </div>
       <div class="masonry">
         <div class="mcol">
           <div class="wcard" style="border-style:dashed;border-width:1.5px;border-color:rgba(0,0,0,.14)">
