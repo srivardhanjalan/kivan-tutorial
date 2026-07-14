@@ -25,8 +25,8 @@ Expo installs Expo Go on the simulator automatically on first run.
 frontend/
   App.tsx                      providers + navigation container — nothing else
   src/config/
-    app.ts                     name, deep-link scheme, and branding (the
-                               logo + the mark the loading spinner animates)
+    app.ts                     branding (the loader's animated mark); name
+                               and scheme join when code first consumes them
     tabs.ts                    the tab bar as data: key, title, icons
   src/constants/
     Colors.ts                  palette (primary #FF385C, text tiers, pressed fill)
@@ -66,11 +66,11 @@ frontend/
 
 Rename the product without touching a component:
 
-- `src/config/app.ts` → change `name`, `scheme`, and point
-  `branding.logo` / `branding.spinnerLogo` at your own mark — every spinner
-  and logo spot follows
+- `app.json` → change `name` and `scheme` (the only identity source until
+  code consumes them)
+- `src/config/app.ts` → point `branding.spinnerLogo` at your own mark — the
+  animated loader rebrands itself
 - `src/config/tabs.ts` → retitle/re-icon the tabs (try `Notes`, `Trips`…)
-- `app.json` → keep `name`/`scheme` in sync for the native shell
 
 Reload — it's your app now.
 

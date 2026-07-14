@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { View, StyleSheet, Platform, TouchableOpacity } from 'react-native';
 import { BlurView } from 'expo-blur';
 import Colors from '../constants/Colors';
+import BorderRadius from '../constants/BorderRadius';
+import Shadows from '../constants/Shadows';
 import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 import { Tabs, SearchTab, TabConfig, TabKey } from '../config/tabs';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
@@ -128,16 +130,12 @@ const styles = StyleSheet.create({
     width: 76,
   },
   pillBlur: {
-    borderRadius: 100,
+    borderRadius: BorderRadius.full,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.12,
-    shadowRadius: 25,
-    elevation: 8,
+    ...Shadows.chrome,
   },
   androidPill: {
-    backgroundColor: 'rgba(255, 255, 255, 0.94)',
+    backgroundColor: Colors.glassFallback,
   },
   pillContent: {
     flexDirection: 'row',
@@ -149,7 +147,7 @@ const styles = StyleSheet.create({
   tabButton: {
     flex: 1,
     height: Spacing.chromePillInnerHeight,
-    borderRadius: Spacing.chromePillInnerHeight / 2,
+    borderRadius: BorderRadius.full,
   },
   tabButtonActive: {
     backgroundColor: Colors.pressedFill,

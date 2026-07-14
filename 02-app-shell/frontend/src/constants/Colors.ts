@@ -11,6 +11,12 @@ export default {
   white: '#fff',
   /** Default screen background */
   background: '#FDFFFF',
+  /** background as an RGB triplet — for alpha washes derived from it */
+  backgroundRgb: '253, 255, 255',
+  /** The dark toast/overlay surface */
+  toastSurface: 'rgba(28, 28, 30, 0.96)',
+  /** Near-opaque white stand-in for glass pills where BlurView is unavailable (Android) */
+  glassFallback: 'rgba(255, 255, 255, 0.94)',
   /** Primary body text (near-black) */
   textPrimary: '#1D1D1F',
   /** Secondary text */

@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../constants/Colors';
+import BorderRadius from '../constants/BorderRadius';
 import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 
 interface HeaderIconButtonProps {
@@ -24,7 +25,7 @@ const styles = StyleSheet.create({
   button: {
     width: Spacing.chromeTouchTarget,
     height: Spacing.chromeTouchTarget,
-    borderRadius: Spacing.chromeTouchTarget / 2,
+    borderRadius: BorderRadius.full,
   },
   pressed: {
     backgroundColor: Colors.pressedFill,

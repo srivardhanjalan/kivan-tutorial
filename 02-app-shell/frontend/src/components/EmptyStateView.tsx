@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../constants/Colors';
+import BorderRadius from '../constants/BorderRadius';
 import { CommonScreenStyles } from '../constants/ScreenStyles';
 
 interface EmptyStateViewProps {
@@ -30,7 +31,7 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 112,
     height: 112,
-    borderRadius: 56,
+    borderRadius: BorderRadius.full,
     backgroundColor: Colors.lightGrey + '55',
     marginBottom: 28,
   },

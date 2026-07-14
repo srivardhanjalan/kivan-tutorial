@@ -7,6 +7,7 @@ import {
   Easing,
 } from 'react-native';
 import Colors from '../constants/Colors';
+import BorderRadius from '../constants/BorderRadius';
 import { CommonScreenStyles } from '../constants/ScreenStyles';
 import AppConfig from '../config/app';
 
@@ -89,7 +90,7 @@ const KivanLoader: React.FC<KivanLoaderProps> = ({ size = 80 }) => {
 
 const styles = StyleSheet.create({
   glassContainer: {
-    borderRadius: 100,
+    borderRadius: BorderRadius.full,
     backgroundColor: Colors.white,
   },
   logo: {

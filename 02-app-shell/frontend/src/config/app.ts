@@ -1,20 +1,13 @@
 /**
- * App identity — the single place that names this product.
- *
- * Swapping the domain (Notes, Trips, ...) starts here: change the name and
- * scheme, then replace the feature modules per MODULES.md. Keep `scheme` in
- * sync with app.json ("scheme") — deep links (`{scheme}://wishlist/...`) and
- * the share modals derive from this value.
+ * App identity as data — the jigsaw's swap point. Entries join when code
+ * first consumes them, never in advance: the native name/scheme live only
+ * in app.json until a screen or deep link reads them here (they arrive
+ * with auth and sharing in later steps).
  */
 const AppConfig = {
-  name: 'Kivan',
-  /** Deep-link URL scheme (matches app.json `scheme`) */
-  scheme: 'kivan',
   branding: {
-    /** Brand mark used wherever the product shows its face */
-    logo: require('../../assets/kivan.png'),
-    /** The mark the animated loader spins — defaults to the logo; point it
-        at a different asset to restyle every spinner at once */
+    /** The mark the animated loader spins — point it at your own asset to
+        restyle every spinner at once */
     spinnerLogo: require('../../assets/kivan.png'),
   },
 } as const;

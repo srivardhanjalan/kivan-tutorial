@@ -2,14 +2,15 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Colors from '../constants/Colors';
 import { Spacing } from '../constants/ScreenStyles';
 import Typography, { ChromeMaxFontSizeMultiplier } from '../constants/Typography';
 
-// Colors.background (#FDFFFF) at descending opacities. Never fully opaque —
-// scrolled content stays visible under the title, just lighter (the Apple
-// large-title treatment). Alpha-of-background, not 'transparent', which
-// fades through black on iOS.
-const wash = (alpha: number) => `rgba(253, 255, 255, ${alpha})`;
+// Colors.background at descending opacities. Never fully opaque — scrolled
+// content stays visible under the title, just lighter (the Apple large-title
+// treatment). Alpha-of-background, not 'transparent', which fades through
+// black on iOS.
+const wash = (alpha: number) => `rgba(${Colors.backgroundRgb}, ${alpha})`;
 
 interface FloatingHeaderProps {
   title?: string;
