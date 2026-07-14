@@ -1,17 +1,31 @@
 # Kivan — Build a Production Social-Wishlist App
 
-**One codebase. iPhone, iPad, Android, and web.** Kivan is a real product, not
-a toy example: create wishlists for life's moments, add wishes by browsing
-real stores inside the app (prices scraped in any currency), follow friends,
-plan events around wishlists with RSVPs and email invites, and get notified
-in-app and by email — all on live AWS infrastructure you deploy yourself.
+**One codebase. iPhone, iPad, Android, and web — in any country.** Kivan is a
+real product, not a toy example: create wishlists for life's moments, add
+wishes by browsing real stores inside the app (the store directory adapts to
+your country, and prices are scraped in whatever currency each store sells —
+₹, $, £, €, AED and more), follow friends, plan events around wishlists with
+RSVPs and email invites, and get notified in-app and by email — all on live
+AWS infrastructure you deploy yourself.
 
-![Kivan end-user experience mocks](mocks/mocks.png)
+![Kivan on iPhone](mocks/mocks-iphone.png)
 
 *Every screen above is rendered from the app's real design tokens — the
-translucent header wash, adaptive tile rails that reshape from iPhone to iPad,
-device-aware masonry, and the floating glass tab bar. Interactive version:
-open [`mocks/index.html`](mocks/index.html) in a browser.*
+translucent header wash, adaptive tile rails, device-aware masonry, and the
+floating glass tab bar.*
+
+![Kivan on iPad](mocks/mocks-ipad.png)
+
+*The same code on iPad: rails become static grids, masonry widens to four
+columns — all from the device-driven layout math, no iPad-specific screens.*
+
+![Kivan on Android](mocks/mocks-android.png)
+
+*And on Android: identical app, Android system chrome.*
+
+*Interactive versions: open [`mocks/iphone.html`](mocks/iphone.html),
+[`mocks/ipad.html`](mocks/ipad.html), or [`mocks/android.html`](mocks/android.html)
+in a browser.*
 
 **What you'll have built by the end:**
 
@@ -81,7 +95,8 @@ Docker/Colima — including the Apple-Silicon-safe amd64 build profile that App
 Runner requires. [`01-prerequisites/README.md`](01-prerequisites/README.md) then lists the few
 accounts a script can't create for you — AWS (≈ $5–10/month while deployed;
 `terraform destroy` stops all charges), Clerk (auth), Firecrawl (scraping),
-and optionally Mailgun and Apple Sign-In — with exact click-paths, plus the
+and optionally Mailgun, Apple Sign-In, and Android Studio (to run on the
+Android emulator) — with exact click-paths, plus the
 secrets hygiene rules every later step relies on.
 
 ## Working through the steps

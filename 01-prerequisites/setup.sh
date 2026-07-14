@@ -62,6 +62,13 @@ else
   todo "Install Xcode from the App Store, open it once, then: Xcode ▸ Settings ▸ Components ▸ install an iOS simulator runtime"
 fi
 
+# ------------------------------------------------------- Android (optional)
+if [ -d "/Applications/Android Studio.app" ]; then
+  ok "Android Studio (optional, for the Android emulator)"
+else
+  todo "Optional (Android): install Android Studio → open once → Virtual Device Manager → create an emulator; then 'npx expo run:android'"
+fi
+
 # ------------------------------------------------------------------- Node
 if command -v node >/dev/null 2>&1 && [ "$(node -v | sed 's/v\([0-9]*\).*/\1/')" -ge 20 ]; then
   ok "Node $(node -v)"

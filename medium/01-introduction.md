@@ -4,18 +4,26 @@
 
 ---
 
-![Kivan — the end-user experience across iPhone and iPad](../mocks/mocks.png)
+![Kivan on iPhone](../mocks/mocks-iphone.png)
 
-*Every screen above is rendered from the app's real design tokens — the adaptive tile rails that reshape from iPhone to iPad, device-aware masonry, the translucent header wash, and the floating glass tab bar.*
+*Every screen above is rendered from the app's real design tokens — the translucent header wash, adaptive tile rails, device-aware masonry, and the floating glass tab bar.*
 
-> **[On Medium: upload `mocks/mocks.png` here, full width, with the caption above.]**
+![Kivan on iPad](../mocks/mocks-ipad.png)
+
+*The same code on iPad: rails become static grids and masonry widens to four columns — purely from device-driven layout math, no iPad-specific screens.*
+
+![Kivan on Android](../mocks/mocks-android.png)
+
+*And on Android: the identical app with Android system chrome.*
+
+> **[On Medium: upload the three images from `mocks/` (`mocks-iphone.png`, `mocks-ipad.png`, `mocks-android.png`) full width, each with its caption above.]**
 
 Most mobile-app tutorials teach you a todo list. You follow along, it works, and then you hit the wall every tutorial quietly avoids: real authentication, real infrastructure, real money on a cloud bill, photos that orphan themselves in S3, notifications that need a queue, and an app store's worth of screens that have to feel consistent.
 
 This series takes the opposite approach. We're going to build **Kivan** — a real social-wishlist product, end to end:
 
 - Create wishlists for life's moments — birthdays, weddings, housewarmings, graduations
-- Add wishes by **browsing real stores inside the app**, with prices scraped in any currency
+- Add wishes by **browsing real stores inside the app** — the store directory adapts to your country, and prices come back in whatever currency each store sells (₹, $, £, €, AED and more)
 - Follow friends, discover popular wishlists, love the ones you like
 - Plan events around wishlists — RSVPs, co-hosts, guest invites by email, photo galleries
 - Get notified in-app and by email
@@ -103,6 +111,7 @@ When the script finishes, it prints exactly what's still yours to do. Which is t
 4. **A Firecrawl API key** *(step 9)* — powers the product scraping.
 5. **Mailgun** *(step 12, optional)* — a sandbox domain is enough to see email notifications work; skip it entirely and everything else still runs.
 6. **Apple Sign-In** *(step 4, optional)* — needs the paid Apple Developer Program. Email + Google auth is complete without it.
+7. **Android Studio** *(optional)* — only if you want to run on the Android emulator instead of (or alongside) the iOS simulator: install it, open it once so it pulls the SDK, create a virtual device, and `npx expo run:android`. Nothing else in the tutorial changes.
 
 ### Secrets hygiene, from day one
 
