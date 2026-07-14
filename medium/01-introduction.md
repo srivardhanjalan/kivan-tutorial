@@ -44,7 +44,7 @@ You're not just building Kivan. You're building a platform you'll reuse for your
 
 The GitHub repository is structured so that **the git history is the curriculum**:
 
-- **One folder per step** (`step-01` through `step-16`). `step-01` sets up your machine and accounts; every folder from `step-02` on is a **complete, runnable, deployable snapshot** of the app at that stage. You never need another folder to run a step.
+- **One folder per step, named for what it builds** (`01-prerequisites` through `16-operations`). The first sets up your machine and accounts; every folder from `02-app-shell` on is a **complete, runnable, deployable snapshot** of the app at that stage. You never need another folder to run a step.
 - **One commit per step**, in order — so `git diff` between two adjacent steps shows you *exactly* what a feature costs in code.
 - **`final/`** is the finished application, including `MODULES.md` — the jigsaw contract documentation.
 - **Zero bloat**: every step contains exactly the code that stage needs. No dead files, no "we'll use this later," no scaffolding you have to ignore.
@@ -78,12 +78,12 @@ Each step will get its own post in this series.
 
 ## Step 1 — get your machine ready
 
-That's this post. Step 1 is the `step-01/` folder in the repository: a setup script plus a README with the short list of accounts no script can create for you. Work through it here (or in `step-01/README.md` — they're the same list), and you're done with Part 1 of the series.
+That's this post. Step 1 is the `01-prerequisites/` folder in the repository: a setup script plus a README with the short list of accounts no script can create for you. Work through it here (or in `01-prerequisites/README.md` — they're the same list), and you're done with Part 1 of the series.
 
 ### One script does almost everything
 
 ```bash
-cd step-01 && ./setup.sh
+cd 01-prerequisites && ./setup.sh
 ```
 
 It's idempotent — it installs **only what's missing** and skips the rest, so it's safe to re-run any time. It covers Homebrew itself (if you've never installed it), the Xcode command line tools, Node.js 20+, Python 3.12, Terraform, the AWS CLI (and verifies your credentials actually work), Docker + Colima + buildx + watchman, and — on Apple Silicon — Rosetta 2 with a correctly configured build profile.

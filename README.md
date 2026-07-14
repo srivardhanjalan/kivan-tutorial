@@ -36,9 +36,10 @@ own. You're not just building Kivan; you're building a platform you can reuse.
 
 **How the repository works:**
 
-- **One folder per step** (`step-01` … `step-16`). `step-01` sets up your
-  machine and accounts; every folder from `step-02` on is a **complete,
-  runnable, deployable snapshot** — you never need another folder to run a step.
+- **One folder per step**, named for what it builds (`01-prerequisites` …
+  `16-operations`). `01-prerequisites` sets up your machine and accounts; every
+  folder from `02-app-shell` on is a **complete, runnable, deployable
+  snapshot** — you never need another folder to run a step.
 - **One commit per step**, in order — the git history *is* the curriculum, and
   `git diff` between adjacent steps shows exactly what a feature costs.
 - **`final/`** (last commit) is the complete application.
@@ -46,38 +47,38 @@ own. You're not just building Kivan; you're building a platform you can reuse.
 
 ## The steps
 
-| Step | You build | You can then |
+| Folder | You build | You can then |
 |---|---|---|
-| 01 | Prerequisites — `cd step-01 && ./setup.sh` + the accounts list | verify your machine is ready |
-| 02 | App shell & design system — config (name, scheme, theme, tabs), liquid-glass chrome, shared components | run a fully themed app standalone |
-| 03 | Backend & infra core — FastAPI skeleton, Terraform (ECR, App Runner, monitoring base), the amd64 deploy loop | see the app talk to your live AWS backend |
-| 04 | Auth & onboarding — Clerk sign-in/up (email, Google, Apple), JWKS verification, just-in-time user provisioning, roles foundation, first-run tutorial | create real accounts end-to-end |
-| 05 | Profiles — profile data, birthday, Settings, account deletion | manage a real user profile |
-| 06 | Media — S3 photos with backend-owned lifecycle (pending upload → claim on save → auto-expiry), profile & cover photos | upload photos safely, orphan-free |
-| 07 | 🧩 Collections — wishlists & wishes, life-events, Home/My Stuff/detail/create screens | keep real wishlists |
-| 08 | 🧩 Storefronts — curated stores with products | add wishes from a curated catalog |
-| 09 | 🧩 Browser acquisition — brand directory, in-app browser, product scrapers, multi-currency prices | add wishes from real store websites |
-| 10 | Social — follow graph, Discover, public profiles, loves | build your network |
-| 11 | In-app notifications — SQS → Lambda pipeline, notification screens, per-type mutes | get notified about social activity |
-| 12 | Email notifications — Mailgun delivery leg, per-user opt-in, delivery-time checks | receive email copies of notifications |
-| 13 | 🧩 Events — gatherings around wishlists: RSVP, hosts, guest invites (incl. email invites for non-users), multi-photo galleries | see the full delta of integrating a feature into notifications & media |
-| 14 | Sharing — `kivan://` deep links + the share-modal family | share wishlists, profiles, events |
-| 15 | Admin — role enforcement + an admin dashboard (brands, life events, storefronts & products, users) | operate the app's catalog |
-| 16 | Operations — CloudWatch alarms & dashboards, cost management, CI/CD references | run it like production |
+| `01-prerequisites` | Run `./setup.sh` + the accounts list | verify your machine is ready |
+| `02-app-shell` | App shell & design system — config (name, scheme, theme, tabs), liquid-glass chrome, shared components | run a fully themed app standalone |
+| `03-backend-core` | Backend & infra core — FastAPI skeleton, Terraform (ECR, App Runner, monitoring base), the amd64 deploy loop | see the app talk to your live AWS backend |
+| `04-auth` | Auth & onboarding — Clerk sign-in/up (email, Google, Apple), JWKS verification, just-in-time user provisioning, roles foundation, first-run tutorial | create real accounts end-to-end |
+| `05-profiles` | Profiles — profile data, birthday, Settings, account deletion | manage a real user profile |
+| `06-media` | Media — S3 photos with backend-owned lifecycle (pending upload → claim on save → auto-expiry), profile & cover photos | upload photos safely, orphan-free |
+| `07-collections` | 🧩 Collections — wishlists & wishes, life-events, Home/My Stuff/detail/create screens | keep real wishlists |
+| `08-storefronts` | 🧩 Storefronts — curated stores with products | add wishes from a curated catalog |
+| `09-browser` | 🧩 Browser acquisition — brand directory, in-app browser, product scrapers, multi-currency prices | add wishes from real store websites |
+| `10-social` | Social — follow graph, Discover, public profiles, loves | build your network |
+| `11-notifications` | In-app notifications — SQS → Lambda pipeline, notification screens, per-type mutes | get notified about social activity |
+| `12-email` | Email notifications — Mailgun delivery leg, per-user opt-in, delivery-time checks | receive email copies of notifications |
+| `13-events` | 🧩 Events — gatherings around wishlists: RSVP, hosts, guest invites (incl. email invites for non-users), multi-photo galleries | see the full delta of integrating a feature into notifications & media |
+| `14-sharing` | Sharing — `kivan://` deep links + the share-modal family | share wishlists, profiles, events |
+| `15-admin` | Admin — role enforcement + an admin dashboard (brands, life events, storefronts & products, users) | operate the app's catalog |
+| `16-operations` | Operations — CloudWatch alarms & dashboards, cost management, CI/CD references | run it like production |
 | `final/` | The complete application | the finished product + `MODULES.md` |
 
 ## Prerequisites
 
-Step 01 is its own folder — [`step-01/`](step-01/) — with the full walkthrough:
+Step 01 is its own folder — [`01-prerequisites/`](01-prerequisites/) — with the full walkthrough:
 
 ```bash
-cd step-01 && ./setup.sh
+cd 01-prerequisites && ./setup.sh
 ```
 
 The script is idempotent (installs only what's missing, Homebrew included)
 and covers the whole toolchain: Node, Python 3.12, Terraform, the AWS CLI,
 Docker/Colima — including the Apple-Silicon-safe amd64 build profile that App
-Runner requires. [`step-01/README.md`](step-01/README.md) then lists the few
+Runner requires. [`01-prerequisites/README.md`](01-prerequisites/README.md) then lists the few
 accounts a script can't create for you — AWS (≈ $5–10/month while deployed;
 `terraform destroy` stops all charges), Clerk (auth), Firecrawl (scraping),
 and optionally Mailgun and Apple Sign-In — with exact click-paths, plus the
@@ -86,8 +87,8 @@ secrets hygiene rules every later step relies on.
 ## Working through the steps
 
 ```bash
-cd step-01   # README + ./setup.sh: machine and accounts ready
-cd step-02   # each step from here: README first, then build & run
+cd 01-prerequisites   # README + ./setup.sh: machine and accounts ready
+cd 02-app-shell       # each step from here: README first, then build & run
 …
 ```
 

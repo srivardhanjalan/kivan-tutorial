@@ -51,4 +51,4 @@ shows the exact entries it needs.
 - [ ] `aws sts get-caller-identity` prints your account
 - [ ] Clerk keys created (Firecrawl/Mailgun can wait until their steps)
 
-Next: `step-02` — the app shell & design system.
+Next: `02-app-shell` — the app shell & design system.
