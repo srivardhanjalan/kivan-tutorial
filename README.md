@@ -8,6 +8,9 @@ your country, and prices are scraped in whatever currency each store sells —
 RSVPs and email invites, and get notified in-app and by email — all on live
 AWS infrastructure you deploy yourself.
 
+*This repository pairs with the **[Zero to Shipped](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**
+series on Medium — one post per step.*
+
 ![Kivan on iPhone](mocks/mocks-iphone.png)
 
 *Every screen above is rendered from the app's real design tokens — the
