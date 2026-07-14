@@ -28,11 +28,13 @@ with *notes*, *trips + destinations*, or any collection-shaped domain of your ow
 
 ## What you're building
 
-Open **[`mocks/index.html`](mocks/index.html)** in a browser — pixel-accurate
-mocks of the end experience (My Stuff, Discover, wishlist detail, Wish Store,
-the create editor, event detail), rendered with the app's exact design tokens
-and chrome: the liquid-glass header, edge-aligned titles and actions, tonal
-tiles, event cards, and the floating glass tab bar.
+Pixel-accurate mocks of the end experience, rendered with the app's exact
+design tokens and chrome — the liquid-glass header, edge-aligned titles and
+actions, adaptive tile rails, masonry, event cards, and the floating glass
+tab bar. (Interactive version: open [`mocks/index.html`](mocks/index.html)
+in a browser.)
+
+![Kivan end-user experience mocks](mocks/mocks.png)
 
 ## The steps
 
