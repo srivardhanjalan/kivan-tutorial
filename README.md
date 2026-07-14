@@ -74,10 +74,10 @@ own. You're not just building Kivan; you're building a platform you can reuse.
 - **Zero bloat, mechanically enforced**: every step contains exactly the code
   that stage needs. `tools/audit-step.sh <step>` is the pre-PR gate — tsc,
   dead-export analysis (knip), clone detection (jscpd), a color-literal
-  report, and a blocking **semantic-duplication attestation** — the machines
+  report, and a blocking **AI semantic-duplication review** — clone detectors
   can't judge whether two screens want one layout or a block wants to be a
-  shared component, so the gate fails until the reviewer attests that hunt
-  happened. Run repeatedly until it finds nothing, because deleting dead
+  shared component, so the gate feeds the step's source to a headless Claude
+  reviewer and fails on findings. Run repeatedly until it finds nothing, because deleting dead
   code orphans other code.
 
 ## The steps
