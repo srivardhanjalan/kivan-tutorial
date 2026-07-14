@@ -6,7 +6,7 @@ img{max-width:100%}pre{background:#f5f5f5;padding:14px;overflow-x:auto;font-size
 <h1>The App With No Features</h1>
 <p><em>Zero to Shipped · 02 — a fully themed app with zero domain code: design tokens, glass chrome, and a tab bar that&#39;s data.</em></p>
 <hr>
-<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-02.png?v=2478f9e" alt="Step 02 — the shell running (real simulator screenshots)"></p>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-02.png?v=b1258d6" alt="Step 02 — the shell running (real simulator screenshots)"></p>
 <p>This is step 02 of <strong>Zero to Shipped</strong>, a series where we build a real social product — iPhone, iPad, Android, and a live AWS backend — one deployable step at a time. New here? <strong><a href="https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9">Start with the introduction</a></strong>. The code lives at <strong><a href="https://github.com/srivardhanjalan/kivan-tutorial">github.com/srivardhanjalan/kivan-tutorial</a></strong>; this post is the <code>02-app-shell/</code> folder, and <a href="https://github.com/srivardhanjalan/kivan-tutorial/pull/7/files">PR #7</a> shows every line this step adds.</p>
 <p>Today we build an app with <strong>no features whatsoever</strong> — and I&#39;ll argue it&#39;s the most important step in the series.</p>
 <h2>Why start with an empty shell?</h2>
@@ -14,7 +14,7 @@ img{max-width:100%}pre{background:#f5f5f5;padding:14px;overflow-x:auto;font-size
 <ul>
 <li><strong>Every visual decision is a token.</strong> Colors, type sizes, spacing, radii, shadows — all live in <code>src/constants/</code>. Screens import them; they never invent them. When we build eleven real screens in later steps, they&#39;ll look like one app because they <em>can&#39;t</em> look like anything else.</li>
 <li><strong>The chrome is shared, not copied.</strong> One floating header, one screen layout, one tab bar — components every screen composes instead of re-implementing.</li>
-<li><strong>The app&#39;s identity is data.</strong> The product&#39;s name, deep-link scheme, logo, and even the mark the loading spinner animates live in <code>config/app.ts</code>; the tab bar is literally an array in <code>config/tabs.ts</code>.</li>
+<li><strong>Config is data, and it earns its way in.</strong> The tab bar is literally an array in <code>config/tabs.ts</code>; <code>config/app.ts</code> holds branding (the mark the loading spinner animates). Even the product&#39;s name and scheme live only in <code>app.json</code> for now — they join the config the moment code first consumes them, not before.</li>
 </ul>
 <p>Run it:</p>
 <pre><code class="language-bash">cd 02-app-shell/frontend
@@ -24,7 +24,7 @@ npm run ios
 <p>No backend, no accounts, no API keys — it runs standalone in Expo Go.</p>
 <h2>The pieces</h2>
 <h3>Design tokens</h3>
-<p><code>src/constants/</code> is the whole visual language: <code>Colors.ts</code> (the <code>#FF385C</code> primary, surface tiers, text tiers), <code>Typography.ts</code> (the 30pt/700/-0.5 large title and the section title — the only two text styles this step uses), <code>ScreenStyles.ts</code> (the app-wide 12pt content edge, the 60pt chrome pill height, the 34pt tab icons), plus exactly one radius and one shadow recipe — because that&#39;s all the shell references. Even the pressed-state grey is a named token (<code>Colors.pressedFill</code>), and the centering idiom is one shared style, not seven copies. <strong>A token joins these files when a screen first needs it, never in advance.</strong> That rule holds for the whole series: every step carries only code with a caller, so every file you read is load-bearing.</p>
+<p><code>src/constants/</code> is the whole visual language: <code>Colors.ts</code> (the <code>#FF385C</code> primary, surface tiers, text tiers), <code>Typography.ts</code> (the 30pt/700/-0.5 large title and the section title — the only two text styles this step uses), <code>ScreenStyles.ts</code> (the app-wide 12pt content edge, the 60pt chrome pill height, the 34pt tab icons), plus exactly one radius and one shadow recipe — because that&#39;s all the shell references. Even the pressed-state grey is a named token (<code>Colors.pressedFill</code>), the centering idiom is one shared style instead of seven copies — and the whole step passes a five-gate audit (types, dead code, clone detection, color literals, and an AI semantic-duplication reviewer) run to a fixed point. <strong>A token joins these files when a screen first needs it, never in advance.</strong> That rule holds for the whole series: every step carries only code with a caller, so every file you read is load-bearing.</p>
 <h3>The chrome</h3>
 <p>Two signature moves you saw in the mocks:</p>
 <ul>
@@ -45,9 +45,9 @@ npm run ios
 <h2>Make it yours in five minutes</h2>
 <p>The point of config-driven identity is that <em>renaming the product is a data change</em>:</p>
 <ol>
-<li><code>src/config/app.ts</code> — change <code>name: &#39;Kivan&#39;</code>, <code>scheme: &#39;kivan&#39;</code>, and point <code>branding.logo</code> / <code>branding.spinnerLogo</code> at your own mark — the animated loader rebrands itself</li>
+<li><code>app.json</code> — change <code>name</code> and <code>scheme</code> (the single identity source at this step)</li>
+<li><code>src/config/app.ts</code> — point <code>branding.spinnerLogo</code> at your own mark; the animated loader rebrands itself</li>
 <li><code>src/config/tabs.ts</code> — retitle the tabs: <code>Notes</code>, <code>Notebooks</code>, <code>Shared</code>…</li>
-<li><code>app.json</code> — keep the native <code>name</code>/<code>scheme</code> in sync</li>
 </ol>
 <p>Reload. Your app, your name, your tabs — and not one component file touched. Hold that thought for step 07, when the same trick swaps whole feature modules.</p>
 <h2>Gotchas from the real run</h2>

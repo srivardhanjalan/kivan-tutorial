@@ -16,7 +16,7 @@ Because consistency isn't something you add later. Every app-store-quality produ
 
 - **Every visual decision is a token.** Colors, type sizes, spacing, radii, shadows — all live in `src/constants/`. Screens import them; they never invent them. When we build eleven real screens in later steps, they'll look like one app because they *can't* look like anything else.
 - **The chrome is shared, not copied.** One floating header, one screen layout, one tab bar — components every screen composes instead of re-implementing.
-- **The app's identity is data.** The product's name, deep-link scheme, logo, and even the mark the loading spinner animates live in `config/app.ts`; the tab bar is literally an array in `config/tabs.ts`.
+- **Config is data, and it earns its way in.** The tab bar is literally an array in `config/tabs.ts`; `config/app.ts` holds branding (the mark the loading spinner animates). Even the product's name and scheme live only in `app.json` for now — they join the config the moment code first consumes them, not before.
 
 Run it:
 
@@ -32,7 +32,7 @@ No backend, no accounts, no API keys — it runs standalone in Expo Go.
 
 ### Design tokens
 
-`src/constants/` is the whole visual language: `Colors.ts` (the `#FF385C` primary, surface tiers, text tiers), `Typography.ts` (the 30pt/700/-0.5 large title and the section title — the only two text styles this step uses), `ScreenStyles.ts` (the app-wide 12pt content edge, the 60pt chrome pill height, the 34pt tab icons), plus exactly one radius and one shadow recipe — because that's all the shell references. Even the pressed-state grey is a named token (`Colors.pressedFill`), and the centering idiom is one shared style, not seven copies. **A token joins these files when a screen first needs it, never in advance.** That rule holds for the whole series: every step carries only code with a caller, so every file you read is load-bearing.
+`src/constants/` is the whole visual language: `Colors.ts` (the `#FF385C` primary, surface tiers, text tiers), `Typography.ts` (the 30pt/700/-0.5 large title and the section title — the only two text styles this step uses), `ScreenStyles.ts` (the app-wide 12pt content edge, the 60pt chrome pill height, the 34pt tab icons), plus exactly one radius and one shadow recipe — because that's all the shell references. Even the pressed-state grey is a named token (`Colors.pressedFill`), the centering idiom is one shared style instead of seven copies — and the whole step passes a five-gate audit (types, dead code, clone detection, color literals, and an AI semantic-duplication reviewer) run to a fixed point. **A token joins these files when a screen first needs it, never in advance.** That rule holds for the whole series: every step carries only code with a caller, so every file you read is load-bearing.
 
 ### The chrome
 
@@ -62,9 +62,9 @@ Every tab mounts the same `PlaceholderScreen`, which exists to exercise the syst
 
 The point of config-driven identity is that *renaming the product is a data change*:
 
-1. `src/config/app.ts` — change `name: 'Kivan'`, `scheme: 'kivan'`, and point `branding.logo` / `branding.spinnerLogo` at your own mark — the animated loader rebrands itself
-2. `src/config/tabs.ts` — retitle the tabs: `Notes`, `Notebooks`, `Shared`…
-3. `app.json` — keep the native `name`/`scheme` in sync
+1. `app.json` — change `name` and `scheme` (the single identity source at this step)
+2. `src/config/app.ts` — point `branding.spinnerLogo` at your own mark; the animated loader rebrands itself
+3. `src/config/tabs.ts` — retitle the tabs: `Notes`, `Notebooks`, `Shared`…
 
 Reload. Your app, your name, your tabs — and not one component file touched. Hold that thought for step 07, when the same trick swaps whole feature modules.
 
