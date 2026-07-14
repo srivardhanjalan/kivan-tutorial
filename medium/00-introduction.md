@@ -97,8 +97,6 @@ The next post — **step 01** — gets your machine ready: one idempotent setup 
 - **Follow me here** so the next part lands in your feed
 - **Tell me in the comments** what domain you'd swap into the platform — notes? trips? that idea you've been sitting on? The jigsaw exists exactly for that.
 
-*— Srivardhan*
-
 ---
 
 **Zero to Shipped — the series**

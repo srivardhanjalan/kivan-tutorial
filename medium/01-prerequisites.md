@@ -54,8 +54,6 @@ In **step 02**, we build the app shell and design system — the config files th
 
 **Following along?** ⭐ [Star the repo](https://github.com/srivardhanjalan/kivan-tutorial) and follow me here so step 02 lands in your feed.
 
-*— Srivardhan*
-
 ---
 
 **Zero to Shipped — the series**
