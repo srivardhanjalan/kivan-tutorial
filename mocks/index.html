@@ -31,6 +31,10 @@
   .col{display:flex;flex-direction:column;align-items:center;gap:12px}
   .lbl{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2)}
 
+  .pad{width:834px;height:600px;background:var(--bg);border-radius:36px;overflow:hidden;position:relative;
+    box-shadow:0 24px 60px rgba(20,20,30,.16),0 2px 8px rgba(20,20,30,.06);border:1px solid #e6e6ea}
+  .pad .content{padding:118px 12px 30px}
+  .pad .tile{width:180px}
   .phone{width:390px;height:820px;background:var(--bg);border-radius:47px;overflow:hidden;position:relative;
     box-shadow:0 24px 60px rgba(20,20,30,.16),0 2px 8px rgba(20,20,30,.06);border:1px solid #e6e6ea}
   .scroll{position:absolute;inset:0;overflow:hidden}
@@ -513,6 +517,74 @@
     <div class="status"><span>9:41</span><span>􀙇 􀛨</span></div>
   </div></div></div>
 
+
+  <!-- ================= IPAD ================= -->
+  <div class="col" style="width:100%"><div class="lbl">iPad — My Stuff (rails become a static grid: 4 tiles fit per row)</div>
+  <div class="pad"><div class="scroll">
+    <div class="content">
+      <div class="sec"><div><span class="t">My Wishlists</span><span class="meta">5</span></div>
+        <div class="plus"><svg class="ic24" viewBox="0 0 24 24" fill="none" stroke="#FF385C" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></div>
+      <div class="grid">
+        <div class="tile"><div class="art" style="background:var(--peach)">🎂<span class="love">♥ 12</span></div>
+          <div class="nm">Diya's Birthday</div><div class="mt">12 wishes</div></div>
+        <div class="tile"><div class="art" style="background:var(--mint)">🏡</div>
+          <div class="nm">Housewarming</div><div class="mt">7 wishes</div></div>
+        <div class="tile"><div class="art" style="background:var(--butter)">🎁</div>
+          <div class="nm">Saved for Later</div><div class="mt">4 wishes</div></div>
+        <div class="tile"><div class="art" style="background:var(--lavender)">💍</div>
+          <div class="nm">Wedding Registry</div><div class="mt">23 wishes</div></div>
+        <div class="tile"><div class="art" style="background:var(--sky)">🎓</div>
+          <div class="nm">Grad Gifts</div><div class="mt">2 wishes</div></div>
+      </div>
+    </div>
+    <div class="fade" style="height:60px"></div>
+    <div class="slab"><div class="hrow" style="margin-top:24px"><div class="hleft"><span class="htitle">My Stuff</span></div></div></div>
+    <div class="status" style="height:24px;padding-top:6px"><span>9:41</span><span>􀙇 􀛨</span></div>
+  </div></div></div>
+
+  <div class="col" style="width:100%"><div class="lbl">iPad — Wishlist Detail (masonry widens to 4 columns)</div>
+  <div class="pad"><div class="scroll">
+    <div class="content">
+      <div class="masonry">
+        <div class="mcol">
+          <div class="wcard" style="border-style:dashed;border-width:1.5px;border-color:rgba(0,0,0,.14)">
+            <div class="im" style="height:120px;background:var(--surface);color:var(--primary);font-size:34px">＋</div>
+            <div class="bd"><div class="wn" style="color:var(--text2)">Add a wish</div></div></div>
+          <div class="wcard"><div class="im" style="height:150px">🧦</div>
+            <div class="bd"><div class="wn">Cozy Socks</div><div class="wp">$14</div></div></div>
+        </div>
+        <div class="mcol">
+          <div class="wcard"><div class="im" style="height:160px">👟</div>
+            <div class="bd"><div class="wn">Nike Total 90 Shoes</div><div class="wp">$130 · nike.com</div></div></div>
+          <div class="wcard"><div class="im" style="height:110px">📷</div>
+            <div class="bd"><div class="wn">Instax Mini 12</div><div class="wp">$79</div></div></div>
+        </div>
+        <div class="mcol">
+          <div class="wcard"><div class="im" style="height:130px">🎧</div>
+            <div class="bd"><div class="wn">AirPods Pro</div><div class="wp">$249 · apple.com</div></div></div>
+          <div class="wcard"><div class="im" style="height:140px">🫖</div>
+            <div class="bd"><div class="wn">Teapot Set</div><div class="wp">$45</div></div></div>
+        </div>
+        <div class="mcol">
+          <div class="wcard"><div class="im" style="height:145px">🕰️</div>
+            <div class="bd"><div class="wn">Desk Clock</div><div class="wp">$32</div></div></div>
+          <div class="wcard"><div class="im" style="height:125px">🧴</div>
+            <div class="bd"><div class="wn">Hand Cream</div><div class="wp">$12</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="fade" style="height:60px"></div>
+    <div class="slab"><div class="hrow" style="margin-top:24px">
+      <div class="hleft">
+        <div class="chev"><svg class="ic28" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 5.5-6.5 6.5 6.5 6.5"/></svg></div>
+        <span class="htitle" style="font-size:26px">Diya's Birthday</span>
+      </div>
+      <div class="hactions">
+        <div class="abtn"><svg class="ic24" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M12 3 8.5 6.5M12 3l3.5 3.5"/><path d="M6 10H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg></div>
+      </div>
+    </div></div>
+    <div class="status" style="height:24px;padding-top:6px"><span>9:41</span><span>􀙇 􀛨</span></div>
+  </div></div></div>
 </div>
 </body>
 </html>
