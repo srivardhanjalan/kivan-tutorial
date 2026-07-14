@@ -47,7 +47,7 @@ shows the exact entries it needs.
 
 ## Done when
 
-- [ ] `./setup.sh` finishes with **"Everything is ready"** (no remaining manual items)
+- [ ] `./setup.sh` shows a green ✓ for every tool (the remaining items it prints are only accounts/keys)
 - [ ] Xcode opens and an iPhone simulator boots
 - [ ] `aws sts get-caller-identity` prints your account
 - [ ] Clerk keys created (Firecrawl/Mailgun can wait until their steps)

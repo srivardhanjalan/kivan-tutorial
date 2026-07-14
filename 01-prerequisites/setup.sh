@@ -66,7 +66,7 @@ fi
 if [ -d "/Applications/Android Studio.app" ]; then
   ok "Android Studio (optional, for the Android emulator)"
 else
-  todo "Optional (Android): install Android Studio → open once → Virtual Device Manager → create an emulator; then 'npx expo run:android'"
+  echo "  ${DIM}○ optional: Android Studio (for the Android emulator) — see the README's accounts table${NC}"
 fi
 
 # ------------------------------------------------------------------- Node
@@ -148,12 +148,9 @@ todo "Mailgun (step 12, optional): mailgun.com → sandbox domain + API key into
 
 # ------------------------------------------------------------------ Summary
 echo ""
-if [ ${#TODOS[@]} -eq 0 ]; then
-  echo "${GREEN}${BOLD}Everything is ready.${NC} Continue to 02-app-shell."
-else
-  echo "${BOLD}Remaining manual items:${NC}"
-  i=1
-  for t in "${TODOS[@]}"; do echo "  ${YELLOW}$i.${NC} $t"; i=$((i+1)); done
-  echo ""
-  echo "Re-run ${BOLD}./setup.sh${NC} any time — it only touches what's missing."
-fi
+echo "${GREEN}${BOLD}Toolchain ready.${NC} Remaining manual items (accounts a script can't create):"
+i=1
+for t in "${TODOS[@]}"; do echo "  ${YELLOW}$i.${NC} $t"; i=$((i+1)); done
+echo ""
+echo "Work through those, then continue to ${BOLD}02-app-shell${NC}."
+echo "Re-run ${BOLD}./setup.sh${NC} any time — it only touches what's missing."

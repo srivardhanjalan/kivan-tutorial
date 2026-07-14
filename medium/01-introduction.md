@@ -1,6 +1,6 @@
-# Build a Production Social-Wishlist App — iPhone, iPad, Android, and Web from One Codebase (Part 1)
+# Beyond the Todo App: Build a Real Social Product on iPhone, iPad, Android, and Live AWS (Part 1)
 
-*A step-by-step series where every step is a complete, deployable app — and the finished product is a platform you can reuse for your own ideas.*
+*A 16-part series where every step is a complete, deployable app — and what you finish with is a platform you can rebuild into your next three ideas.*
 
 ---
 
@@ -15,8 +15,6 @@
 ![Kivan on Android](../mocks/mocks-android.png)
 
 *And on Android: the identical app with Android system chrome.*
-
-> **[On Medium: upload the three images from `mocks/` (`mocks-iphone.png`, `mocks-ipad.png`, `mocks-android.png`) full width, each with its caption above.]**
 
 Most mobile-app tutorials teach you a todo list. You follow along, it works, and then you hit the wall every tutorial quietly avoids: real authentication, real infrastructure, real money on a cloud bill, photos that orphan themselves in S3, notifications that need a queue, and an app store's worth of screens that have to feel consistent.
 
@@ -62,7 +60,7 @@ The GitHub repository is structured so that **the git history is the curriculum*
 
 Every step from 03 onward ends in a deployable state: `terraform apply`, push the backend image, run the app, verify the step's checklist. And every step's README has a *Gotchas* section — the actual failure modes I hit while building this, not hypothetical ones.
 
-> **[LINK — insert the GitHub repository link here once the repo is public.]**
+The repository is public: **[github.com/srivardhanjalan/kivan-tutorial](https://github.com/srivardhanjalan/kivan-tutorial)** — every step folder, README, the setup script, and the mocks above live there.
 
 ## The roadmap
 
@@ -119,7 +117,7 @@ Secrets live in exactly two gitignored files, never in code: `frontend/.env.loca
 
 ### You're done with step 1 when
 
-- `./setup.sh` finishes with **"Everything is ready"** — no remaining manual items
+- `./setup.sh` shows a green ✓ for every tool — the only items it leaves you are the accounts above
 - Xcode opens and an iPhone simulator boots
 - `aws sts get-caller-identity` prints your account
 - Your Clerk keys exist (Firecrawl and Mailgun can wait until their steps)
@@ -134,4 +132,9 @@ If you want to work ahead, the repository has everything: each step folder is se
 
 ---
 
-> **[SERIES NOTE — after publishing, add each subsequent part's link here as a numbered list, and back-link this post from every part.]**
+**In this series**
+
+1. **Prerequisites — get your machine ready** *(this post)*
+2. App shell & design system *(coming soon)*
+
+*All code: [github.com/srivardhanjalan/kivan-tutorial](https://github.com/srivardhanjalan/kivan-tutorial)*
