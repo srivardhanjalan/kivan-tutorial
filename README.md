@@ -14,19 +14,6 @@ AWS infrastructure you deploy yourself.
 translucent header wash, adaptive tile rails, device-aware masonry, and the
 floating glass tab bar.*
 
-![Kivan on iPad](mocks/mocks-ipad.png)
-
-*The same code on iPad: rails become static grids, masonry widens to four
-columns — all from the device-driven layout math, no iPad-specific screens.*
-
-![Kivan on Android](mocks/mocks-android.png)
-
-*And on Android: identical app, Android system chrome.*
-
-*Interactive versions: open [`mocks/iphone.html`](mocks/iphone.html),
-[`mocks/ipad.html`](mocks/ipad.html), or [`mocks/android.html`](mocks/android.html)
-in a browser.*
-
 **What you'll have built by the end:**
 
 - A polished **Expo / React Native** app (iOS + iPad + Android + web) with a
@@ -37,6 +24,26 @@ in a browser.*
   backend-owned photo lifecycle, SQS → Lambda notifications, Mailgun email,
   CloudWatch alarms, budgets
 - An **admin dashboard**, deep-link sharing, and CI/CD references
+
+**Who this is for:** you're comfortable in a terminal and have written some
+JavaScript or Python. You do *not* need to know React Native, FastAPI,
+Terraform, or AWS — every step explains what it's doing and why. Budget
+roughly an evening per step; every step ends with something that runs.
+
+## One codebase, every device
+
+The same code on iPad — rails become static grids, masonry widens to four
+columns, all from device-driven layout math (no iPad-specific screens):
+
+![Kivan on iPad](mocks/mocks-ipad.png)
+
+And on Android — the identical app with Android system chrome:
+
+![Kivan on Android](mocks/mocks-android.png)
+
+*Interactive versions: open [`mocks/iphone.html`](mocks/iphone.html),
+[`mocks/ipad.html`](mocks/ipad.html), or [`mocks/android.html`](mocks/android.html)
+in a browser.*
 
 ## Why this tutorial is different: the jigsaw principle
 
