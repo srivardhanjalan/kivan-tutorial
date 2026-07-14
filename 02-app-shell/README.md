@@ -7,8 +7,7 @@ app's identity a data change. No backend, no auth — it runs standalone in
 Expo Go.
 
 **The exact delta this step adds:**
-[PR #2 — Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/2/files)
-· [PR #4 — the slim-down](https://github.com/srivardhanjalan/kivan-tutorial/pull/4/files)
+[PR #7 — Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/7/files)
 
 ## Run it
 
@@ -30,7 +29,7 @@ frontend/
                                logo + the mark the loading spinner animates)
     tabs.ts                    the tab bar as data: key, title, icons
   src/constants/
-    Colors.ts                  palette (primary #FF385C, surfaces, text tiers)
+    Colors.ts                  palette (primary #FF385C, text tiers, pressed fill)
     Typography.ts              type scale (largeTitle 30/700/-0.5, …)
     ScreenStyles.ts            spacing + chrome metrics (contentHorizontal 12,
                                chromePillHeight 60, tabIconSize 34, …)
