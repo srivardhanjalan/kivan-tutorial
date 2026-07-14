@@ -62,7 +62,7 @@ You're not just building Kivan. You're building a platform you'll reuse for your
 The GitHub repository is structured so that **the git history is the curriculum**:
 
 - **One folder per step, named for what it builds** (`01-prerequisites` through `16-operations`). The first sets up your machine and accounts; every folder from `02-app-shell` on is a **complete, runnable, deployable snapshot** of the app at that stage. You never need another folder to run a step.
-- **Two commits per step** — a *baseline* (exact copy of the previous step's folder) and then the *delta*: the step's actual work, opened as a **pull request**. The PR's *Files changed* view **is** what the feature costs — and you can ask questions right on the lines.
+- **Each step lands as a pull request** (on top of a baseline copy of the previous step's folder). The PR's *Files changed* view **is** what the feature costs — and you can ask questions right on the lines. A second small PR carries each step's post and imagery.
 - **`final/`** is the finished application, including `MODULES.md` — the jigsaw contract documentation.
 - **Zero bloat**: every step contains exactly the code that stage needs. No dead files, no "we'll use this later," no scaffolding you have to ignore.
 

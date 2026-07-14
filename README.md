@@ -64,12 +64,12 @@ own. You're not just building Kivan; you're building a platform you can reuse.
   `16-operations`). `01-prerequisites` sets up your machine and accounts; every
   folder from `02-app-shell` on is a **complete, runnable, deployable
   snapshot** — you never need another folder to run a step.
-- **Two commits per step**: first a *baseline* (an exact copy of the previous
-  step's folder, pushed straight to main), then the *delta* — the step's
-  actual work, opened as a **pull request**. The PR's *Files changed* view
-  **is** what the feature costs — browsable, commentable, linkable — and the
-  squash-merged result keeps main's history clean. The git history *is* the
-  curriculum; each step's README links its PR.
+- **Each step lands as two pull requests** (after a *baseline* commit that
+  copies the previous step's folder straight to main): a **code PR** — whose
+  *Files changed* view **is** what the feature costs, browsable, commentable,
+  linkable — and a small **content PR** with the step's Medium post and
+  imagery. Squash-merges keep main's history clean; each step's README links
+  its code PR.
 - **`final/`** (last commit) is the complete application.
 - **Zero bloat**: every step contains exactly the code that stage needs.
 
