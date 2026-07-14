@@ -1,0 +1,39 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Zero to Shipped 02 — hero</title>
+<link rel="stylesheet" href="mocks.css">
+<style>
+  body{margin:0;padding:0;background:#fff}
+  .hero{width:1500px;height:750px;overflow:hidden;position:relative;
+    background:linear-gradient(115deg,#FFE8EC 0%,#FDFFFF 42%,#E7F1F8 100%)}
+  .copy{position:absolute;left:96px;top:50%;transform:translateY(-50%);max-width:640px}
+  .eyebrow{font-size:15px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--primary);margin-bottom:18px}
+  .title{font-size:86px;font-weight:800;letter-spacing:-2px;line-height:1.02;color:var(--dark)}
+  .sub{font-size:25px;color:var(--text2);line-height:1.45;margin-top:22px}
+  .chips{display:flex;gap:10px;margin-top:30px}
+  .chip{height:40px;border-radius:999px;background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.07);
+    display:flex;align-items:center;padding:0 18px;font-size:15.5px;font-weight:700;color:var(--dark);white-space:nowrap}
+  .chip.hot{background:var(--primary);color:#fff;border-color:var(--primary)}
+  /* real simulator screenshots in device-ish frames */
+  .shot{position:absolute;width:300px;border-radius:34px;overflow:hidden;
+    box-shadow:0 30px 70px rgba(20,20,30,.26),0 4px 14px rgba(20,20,30,.10);border:1px solid #e6e6ea}
+  .shot img{display:block;width:100%}
+  .shot.a{right:420px;top:-6px}
+  .shot.b{right:80px;top:92px}
+  .badge{position:absolute;left:96px;bottom:52px;font-size:15px;font-weight:700;color:var(--text2)}
+  .badge b{color:var(--dark)}
+</style></head><body>
+<div class="hero">
+  <div class="copy">
+    <div class="eyebrow">Zero to Shipped · 02 — App Shell</div>
+    <div class="title">The app with no&nbsp;features.</div>
+    <div class="sub">Design tokens, glass chrome, and a tab bar that's data — a fully themed shell with zero domain code.</div>
+    <div class="chips">
+      <span class="chip hot">runs in Expo Go</span><span class="chip">design tokens</span>
+      <span class="chip">glass chrome</span><span class="chip">config-driven tabs</span>
+    </div>
+  </div>
+  <div class="badge">real simulator screenshots — not mocks →</div>
+  <div class="shot a"><img src="shot-02-home.png"></div>
+  <div class="shot b"><img src="shot-02-discover.png"></div>
+</div>
+</body></html>
