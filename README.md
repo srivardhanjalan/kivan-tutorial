@@ -36,10 +36,9 @@ own. You're not just building Kivan; you're building a platform you can reuse.
 
 **How the repository works:**
 
-- **Step 01 is this repo's root**: the Prerequisites section below plus
-  `./setup.sh`. There is no `step-01` folder — there'd be nothing in it to run.
-- **One folder per code step** (`step-02` … `step-16`), each a **complete,
-  runnable, deployable snapshot**. You never need another folder to run a step.
+- **One folder per step** (`step-01` … `step-16`). `step-01` sets up your
+  machine and accounts; every folder from `step-02` on is a **complete,
+  runnable, deployable snapshot** — you never need another folder to run a step.
 - **One commit per step**, in order — the git history *is* the curriculum, and
   `git diff` between adjacent steps shows exactly what a feature costs.
 - **`final/`** (last commit) is the complete application.
@@ -49,7 +48,7 @@ own. You're not just building Kivan; you're building a platform you can reuse.
 
 | Step | You build | You can then |
 |---|---|---|
-| 01 | Prerequisites (repo root — no folder) — run `./setup.sh` | verify your machine is ready |
+| 01 | Prerequisites — `cd step-01 && ./setup.sh` + the accounts list | verify your machine is ready |
 | 02 | App shell & design system — config (name, scheme, theme, tabs), liquid-glass chrome, shared components | run a fully themed app standalone |
 | 03 | Backend & infra core — FastAPI skeleton, Terraform (ECR, App Runner, monitoring base), the amd64 deploy loop | see the app talk to your live AWS backend |
 | 04 | Auth & onboarding — Clerk sign-in/up (email, Google, Apple), JWKS verification, just-in-time user provisioning, roles foundation, first-run tutorial | create real accounts end-to-end |
@@ -69,50 +68,25 @@ own. You're not just building Kivan; you're building a platform you can reuse.
 
 ## Prerequisites
 
-### 1. Run the setup script (5–20 minutes, mostly unattended)
+Step 01 is its own folder — [`step-01/`](step-01/) — with the full walkthrough:
 
 ```bash
-./setup.sh
+cd step-01 && ./setup.sh
 ```
 
-Idempotent and safe to re-run: it installs **only what's missing** and skips
-the rest — including Homebrew itself if you've never installed it. It covers:
-
-| Installs / verifies | Notes |
-|---|---|
-| Homebrew | via the official installer if absent |
-| Xcode command line tools | triggers the macOS dialog if needed |
-| Node.js 20+ | Metro/Expo runtime |
-| Python 3.12 | **not 3.13+** — the pinned pydantic won't build there |
-| Terraform | via the HashiCorp tap |
-| AWS CLI | and verifies your credentials work |
-| Docker + Colima + buildx + watchman | container tooling & file watcher |
-| Rosetta 2 + the `colima rosetta` profile | **Apple Silicon:** App Runner images must build through Rosetta with the *docker* driver — QEMU and docker-container builders corrupt layers (builds pass locally, `CREATE_FAILED` on AWS). The script configures this correctly; step 03 explains it. |
-
-It finishes by printing exactly what's still yours to do — which is the list below.
-
-### 2. Things a script can't do for you
-
-| # | What | When | How (exact steps) |
-|---|---|---|---|
-| 1 | **Xcode + iOS simulator** | step 02 | App Store → install Xcode → open once → Settings ▸ Components → install an iOS simulator runtime |
-| 2 | **AWS account + credentials** | step 03 | [aws.amazon.com](https://aws.amazon.com) → create account → IAM ▸ Users ▸ create user → attach `AdministratorAccess` (fine for a tutorial account) → Security credentials ▸ create access key → run `aws configure`. **Cost:** ≈ $5–10/month while deployed (App Runner dominates); step 16 adds budgets + alarms, and `terraform destroy` stops all charges. |
-| 3 | **Clerk application** (auth) | step 04 | [dashboard.clerk.com](https://dashboard.clerk.com) → Create application → toggle **Email** and **Google** on → API Keys: **Publishable key** → `frontend/.env.local`, **Secret key** → `infra/terraform.tfvars` |
-| 4 | **Firecrawl API key** (scraping) | step 09 | [firecrawl.dev](https://firecrawl.dev) → sign up → copy the `fc-…` key → `infra/terraform.tfvars` |
-| 5 | **Mailgun** *(optional — email)* | step 12 | [mailgun.com](https://mailgun.com) → sign up → Sending ▸ Overview: copy the **sandbox domain** and **API key** → `infra/terraform.tfvars` → Sending ▸ Authorized Recipients: add your own address. Sandbox only delivers to authorized recipients; for real delivery add a domain you own and publish its SPF/DKIM records. Leave keys empty to skip email — everything else works. |
-| 6 | **Apple Sign-In** *(optional)* | step 04 | Needs the paid Apple Developer Program; step 04's README covers the App ID + key. Skip it — email/Google auth is complete without it. |
-
-### Secrets hygiene
-
-Secrets live in exactly two gitignored files, never in code:
-`frontend/.env.local` (Clerk publishable key, API URL) and
-`infra/terraform.tfvars` (Clerk secret, Firecrawl, Mailgun). Each step's README
-shows the exact entries it needs.
+The script is idempotent (installs only what's missing, Homebrew included)
+and covers the whole toolchain: Node, Python 3.12, Terraform, the AWS CLI,
+Docker/Colima — including the Apple-Silicon-safe amd64 build profile that App
+Runner requires. [`step-01/README.md`](step-01/README.md) then lists the few
+accounts a script can't create for you — AWS (≈ $5–10/month while deployed;
+`terraform destroy` stops all charges), Clerk (auth), Firecrawl (scraping),
+and optionally Mailgun and Apple Sign-In — with exact click-paths, plus the
+secrets hygiene rules every later step relies on.
 
 ## Working through the steps
 
 ```bash
-./setup.sh   # step 01: prerequisites (this README + the script — no folder)
+cd step-01   # README + ./setup.sh: machine and accounts ready
 cd step-02   # each step from here: README first, then build & run
 …
 ```

@@ -142,7 +142,7 @@ todo "Mailgun (step 12, optional): mailgun.com → sandbox domain + API key into
 # ------------------------------------------------------------------ Summary
 echo ""
 if [ ${#TODOS[@]} -eq 0 ]; then
-  echo "${GREEN}${BOLD}Everything is ready.${NC} Start with step-01."
+  echo "${GREEN}${BOLD}Everything is ready.${NC} Continue to step-02."
 else
   echo "${BOLD}Remaining manual items:${NC}"
   i=1
