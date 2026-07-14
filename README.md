@@ -26,11 +26,19 @@ events). The modules plug into the platform like jigsaw pieces — `final/MODULE
 documents each piece's contract so you can replace *wishlists + wish stores*
 with *notes*, *trips + destinations*, or any collection-shaped domain of your own.
 
+## What you're building
+
+Open **[`mocks/index.html`](mocks/index.html)** in a browser — pixel-accurate
+mocks of the end experience (My Stuff, Discover, wishlist detail, Wish Store,
+the create editor, event detail), rendered with the app's exact design tokens
+and chrome: the liquid-glass header, edge-aligned titles and actions, tonal
+tiles, event cards, and the floating glass tab bar.
+
 ## The steps
 
 | Step | You build | You can then |
 |---|---|---|
-| 01 | Prerequisites & tooling check (`check-setup.sh`) | verify your machine is ready |
+| 01 | Prerequisites — run `./setup.sh` (installs everything missing, skips what's present) | verify your machine is ready |
 | 02 | App shell & design system — config (name, scheme, theme, tabs), liquid-glass chrome, shared components | run a fully themed app standalone |
 | 03 | Backend & infra core — FastAPI skeleton, Terraform (ECR, App Runner, monitoring base), the amd64 deploy loop | see the app talk to your live AWS backend |
 | 04 | Auth & onboarding — Clerk sign-in/up (email, Google, Apple), JWKS verification, just-in-time user provisioning, roles foundation, first-run tutorial | create real accounts end-to-end |
@@ -50,7 +58,18 @@ with *notes*, *trips + destinations*, or any collection-shaped domain of your ow
 
 ## Prerequisites
 
-Resolve these before step 01. Each item lists exactly how.
+**The fast path — one script does it all:**
+
+```bash
+./setup.sh
+```
+
+It installs everything that's missing (including Homebrew itself), skips
+everything already present, and is safe to re-run. It ends with a short list
+of the few things a script can't do for you — installing Xcode from the App
+Store, `aws configure`, and creating the accounts below.
+
+The tables that follow are the manual reference for what the script covers.
 
 ### Machine & tooling (required)
 
