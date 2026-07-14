@@ -7,7 +7,8 @@ script can create for you.
 ## 1. Run the setup script (5–20 minutes, mostly unattended)
 
 ```bash
-./setup.sh
+./setup.sh              # everything for the default (iOS) path
+./setup.sh --android    # + the full Android toolchain (see below)
 ```
 
 Idempotent and safe to re-run: it installs **only what's missing** and skips
@@ -23,6 +24,7 @@ the rest — including Homebrew itself if you've never installed it. It covers:
 | AWS CLI | and verifies your credentials work |
 | Docker + Colima + buildx + watchman | container tooling & file watcher |
 | Rosetta 2 + the `colima rosetta` profile | **Apple Silicon:** App Runner images must build through Rosetta with the *docker* driver — QEMU and docker-container builders corrupt layers (builds pass locally, `CREATE_FAILED` on AWS). The script configures this correctly; step 03 explains it. |
+| Android toolchain *(only with `--android`)* | JDK 17, the Android SDK + platform-tools, and a ready-to-boot Pixel 8 emulator named `kivan` — no Android Studio needed (~2 GB). Adds `ANDROID_HOME` to `~/.zprofile`. |
 
 It finishes by printing exactly what's still yours to do — which is the list below.
 
@@ -36,7 +38,7 @@ It finishes by printing exactly what's still yours to do — which is the list b
 | 4 | **Firecrawl API key** (scraping) | step 09 | [firecrawl.dev](https://firecrawl.dev) → sign up → copy the `fc-…` key → `infra/terraform.tfvars` |
 | 5 | **Mailgun** *(optional — email)* | step 12 | [mailgun.com](https://mailgun.com) → sign up → Sending ▸ Overview: copy the **sandbox domain** and **API key** → `infra/terraform.tfvars` → Sending ▸ Authorized Recipients: add your own address. Sandbox only delivers to authorized recipients; for real delivery add a domain you own and publish its SPF/DKIM records. Leave keys empty to skip email — everything else works. |
 | 6 | **Apple Sign-In** *(optional)* | step 04 | Needs the paid Apple Developer Program; step 04's README covers the App ID + key. Skip it — email/Google auth is complete without it. |
-| 7 | **Android Studio** *(optional — Android)* | any step | [developer.android.com/studio](https://developer.android.com/studio) → install → open once (it installs the SDK + JDK) → More Actions ▸ Virtual Device Manager → create a device (e.g. Pixel 8) → start it → run `npx expo run:android` in any step's `frontend/`. The tutorial's default path is the iOS simulator; nothing else changes for Android. |
+| 7 | **Android emulator** *(optional)* | any step | Fully scripted — run `./setup.sh --android`, then `emulator -avd kivan &` and `npx expo run:android` in any step's `frontend/`. The tutorial's default path is the iOS simulator; nothing else changes for Android. (Prefer the full IDE? Android Studio works too — it bundles the same SDK.) |
 
 ## Secrets hygiene
 

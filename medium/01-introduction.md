@@ -109,7 +109,7 @@ When the script finishes, it prints exactly what's still yours to do. Which is t
 4. **A Firecrawl API key** *(step 9)* — powers the product scraping.
 5. **Mailgun** *(step 12, optional)* — a sandbox domain is enough to see email notifications work; skip it entirely and everything else still runs.
 6. **Apple Sign-In** *(step 4, optional)* — needs the paid Apple Developer Program. Email + Google auth is complete without it.
-7. **Android Studio** *(optional)* — only if you want to run on the Android emulator instead of (or alongside) the iOS simulator: install it, open it once so it pulls the SDK, create a virtual device, and `npx expo run:android`. Nothing else in the tutorial changes.
+7. **Android** *(optional)* — and this one the script **does** handle: `./setup.sh --android` installs the JDK, the Android SDK, and a ready-to-boot Pixel 8 emulator — no Android Studio required. Then it's `emulator -avd kivan` and `npx expo run:android`. Nothing else in the tutorial changes.
 
 ### Secrets hygiene, from day one
 

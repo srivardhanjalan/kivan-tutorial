@@ -4,7 +4,8 @@
 # Idempotent: installs whatever is missing, skips whatever is already there.
 # Safe to re-run at any time. Nothing here is destructive.
 #
-#   ./setup.sh
+#   ./setup.sh              # everything for the default (iOS) path
+#   ./setup.sh --android     # + JDK, Android SDK, and a Pixel 8 emulator
 #
 set -uo pipefail
 
@@ -17,6 +18,8 @@ todo()    { TODOS+=("$1"); }
 
 echo "${BOLD}Kivan setup — checking your machine${NC}"
 ARCH=$(uname -m)
+WITH_ANDROID=0
+[ "${1:-}" = "--android" ] && WITH_ANDROID=1
 
 # ---------------------------------------------------------------- Homebrew
 if command -v brew >/dev/null 2>&1; then
@@ -63,10 +66,74 @@ else
 fi
 
 # ------------------------------------------------------- Android (optional)
-if [ -d "/Applications/Android Studio.app" ]; then
-  ok "Android Studio (optional, for the Android emulator)"
+# No Android Studio needed: expo run:android only wants a JDK, the SDK, and
+# an emulator image — all installable unattended.
+if [ "$WITH_ANDROID" = "1" ]; then
+  # openjdk formula, not the temurin cask: the cask's .pkg wants an
+  # interactive sudo password, which breaks unattended runs
+  if [ -d "$(brew --prefix openjdk@17 2>/dev/null)/libexec/openjdk.jdk" ]; then
+    ok "JDK 17 (openjdk@17)"
+  else
+    installs "openjdk@17"
+    brew install openjdk@17 || fail "JDK install failed"
+  fi
+  JAVA_HOME="$(brew --prefix openjdk@17)/libexec/openjdk.jdk/Contents/Home"
+  export JAVA_HOME
+
+  if command -v sdkmanager >/dev/null 2>&1; then
+    ok "Android command-line tools"
+  else
+    installs "android-commandlinetools"
+    brew install --cask android-commandlinetools || fail "cmdline-tools install failed"
+  fi
+
+  ANDROID_HOME="${ANDROID_HOME:-$(brew --prefix)/share/android-commandlinetools}"
+  export ANDROID_HOME
+  API=35
+  IMG_ARCH=$([ "$ARCH" = "arm64" ] && echo arm64-v8a || echo x86_64)
+  SYS_IMG="system-images;android-$API;google_apis;$IMG_ARCH"
+
+  if [ -x "$ANDROID_HOME/emulator/emulator" ] && [ -d "$ANDROID_HOME/system-images/android-$API" ]; then
+    ok "Android SDK (platform-tools, emulator, android-$API)"
+  else
+    installs "Android SDK packages (~2 GB — this is the long part)"
+    yes | sdkmanager --licenses >/dev/null 2>&1
+    sdkmanager --install "platform-tools" "platforms;android-$API" "emulator" "$SYS_IMG" \
+      || fail "sdkmanager install failed"
+  fi
+
+  if avdmanager list avd 2>/dev/null | grep -q "Name: kivan"; then
+    ok "emulator 'kivan' (Pixel 8)"
+  else
+    installs "emulator 'kivan' (Pixel 8)"
+    echo no | avdmanager create avd -n kivan -k "$SYS_IMG" -d pixel_8 >/dev/null \
+      || fail "avd create failed"
+  fi
+
+  # Future shells need JAVA_HOME, ANDROID_HOME + the emulator/adb on PATH
+  ZP="$HOME/.zprofile"
+  if grep -qs "ANDROID_HOME" "$ZP"; then
+    ok "ANDROID_HOME in ~/.zprofile"
+  else
+    {
+      echo ""
+      echo "# Android SDK (added by kivan setup.sh)"
+      echo "export ANDROID_HOME=\"$ANDROID_HOME\""
+      echo "export PATH=\"\$ANDROID_HOME/platform-tools:\$ANDROID_HOME/emulator:\$PATH\""
+    } >>"$ZP"
+    ok "ANDROID_HOME added to ~/.zprofile"
+  fi
+  if grep -qs "JAVA_HOME" "$ZP"; then
+    ok "JAVA_HOME in ~/.zprofile"
+  else
+    echo "export JAVA_HOME=\"$JAVA_HOME\"" >>"$ZP"
+    ok "JAVA_HOME added to ~/.zprofile"
+  fi
+  echo "  ${DIM}run it later with: emulator -avd kivan &  then  npx expo run:android${NC}"
+elif command -v avdmanager >/dev/null 2>&1 && avdmanager list avd 2>/dev/null | grep -q "Name: kivan"; then
+  ok "Android toolchain (set up earlier via --android)"
 else
-  echo "  ${DIM}○ optional: Android Studio (for the Android emulator) — see the README's accounts table${NC}"
+  echo "  ${DIM}○ optional: Android — re-run as ./setup.sh --android (JDK + SDK + Pixel 8 emulator, ~2 GB)${NC}"
 fi
 
 # ------------------------------------------------------------------- Node

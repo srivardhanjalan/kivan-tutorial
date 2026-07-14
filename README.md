@@ -95,9 +95,10 @@ Docker/Colima — including the Apple-Silicon-safe amd64 build profile that App
 Runner requires. [`01-prerequisites/README.md`](01-prerequisites/README.md) then lists the few
 accounts a script can't create for you — AWS (≈ $5–10/month while deployed;
 `terraform destroy` stops all charges), Clerk (auth), Firecrawl (scraping),
-and optionally Mailgun, Apple Sign-In, and Android Studio (to run on the
-Android emulator) — with exact click-paths, plus the
-secrets hygiene rules every later step relies on.
+and optionally Mailgun and Apple Sign-In — with exact click-paths, plus the
+secrets hygiene rules every later step relies on. Want Android too?
+`./setup.sh --android` scripts the whole toolchain (JDK, SDK, a Pixel 8
+emulator) — no Android Studio required.
 
 ## Working through the steps
 
