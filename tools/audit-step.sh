@@ -17,7 +17,7 @@ echo "── 2. Dead files / exports / types / dependencies (knip) ──"
 npx --yes knip --include files,exports,types,dependencies || exit 1
 
 echo "── 3. Copy-paste duplication (jscpd) — fails on any clone ──"
-npx --yes jscpd src App.tsx --min-tokens 35 --reporters console --exitCode 1 || exit 1
+npx --yes jscpd src App.tsx --min-tokens 35 --reporters console --exit-code 1 || exit 1
 
 echo "── 4. Color literals outside constants/ (each needs a comment or a token) ──"
 grep -rn "rgba(\|: '#" src --include="*.tsx" | grep -v "constants/" || true
