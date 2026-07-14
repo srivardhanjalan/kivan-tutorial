@@ -8,6 +8,7 @@ Expo Go.
 
 **The exact delta this step adds:**
 [PR #2 — Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/2/files)
+· [PR #4 — the slim-down](https://github.com/srivardhanjalan/kivan-tutorial/pull/4/files)
 
 ## Run it
 

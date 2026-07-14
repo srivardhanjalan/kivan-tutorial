@@ -1,10 +1,13 @@
+/**
+ * The palette. Every color in the app comes from here — screens never
+ * invent hex values. Tokens are added when a screen first needs them,
+ * never in advance.
+ */
 export default {
   primary: '#FF385C',
+  dark: '#1A1A1A',
   grey: '#5E5D5E',
   lightGrey: '#E0E0E0',
-  dark: '#1A1A1A',
-
-  // Extended palette (normalization tokens — keep in sync with dominant usage)
   white: '#fff',
   /** Default screen background */
   background: '#FDFFFF',
@@ -24,6 +27,4 @@ export default {
   danger: '#EF4444',
   /** Success/confirmation */
   success: '#34C759',
-  /** Warnings */
-  warning: '#FF9500',
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import HeaderIconButton from '../components/HeaderIconButton';
 import SectionHeader from '../components/SectionHeader';
@@ -8,16 +8,24 @@ import type { TabConfig } from '../config/tabs';
 
 /**
  * Stand-in screen for every tab while the shell is domain-free. It exists
- * to exercise the design system end to end: the floating header (title +
- * right action), section headers, empty states, and toasts — all on the
- * standard layout. Later steps replace it with real screens.
+ * to exercise the design system end to end: the branded loading state (a
+ * brief simulated load on mount), the floating header with a working
+ * action, section headers, empty states, and toasts. Later steps replace
+ * it with real screens.
  */
 export default function PlaceholderScreen({ tab }: { tab: TabConfig }) {
   const toast = useToast();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 450);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <FloatingHeaderLayout
       title={tab.title}
+      loading={loading}
       headerRight={
         <HeaderIconButton
           icon="sparkles-outline"
