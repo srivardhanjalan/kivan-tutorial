@@ -71,7 +71,10 @@ own. You're not just building Kivan; you're building a platform you can reuse.
   imagery. Squash-merges keep main's history clean; each step's README links
   its code PR.
 - **`final/`** (last commit) is the complete application.
-- **Zero bloat**: every step contains exactly the code that stage needs.
+- **Zero bloat, mechanically enforced**: every step contains exactly the code
+  that stage needs. `tools/audit-step.sh <step>` is the pre-PR gate — tsc,
+  dead-export analysis (knip), and a color-literal report — run repeatedly
+  until it finds nothing, because deleting dead code orphans other code.
 
 ## The steps
 
