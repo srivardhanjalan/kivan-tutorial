@@ -36,8 +36,10 @@ own. You're not just building Kivan; you're building a platform you can reuse.
 
 **How the repository works:**
 
-- **One folder per step** (`step-01` … `step-16`), each a **complete, runnable,
-  deployable snapshot**. You never need another folder to run a step.
+- **Step 01 is this repo's root**: the Prerequisites section below plus
+  `./setup.sh`. There is no `step-01` folder — there'd be nothing in it to run.
+- **One folder per code step** (`step-02` … `step-16`), each a **complete,
+  runnable, deployable snapshot**. You never need another folder to run a step.
 - **One commit per step**, in order — the git history *is* the curriculum, and
   `git diff` between adjacent steps shows exactly what a feature costs.
 - **`final/`** (last commit) is the complete application.
@@ -47,7 +49,7 @@ own. You're not just building Kivan; you're building a platform you can reuse.
 
 | Step | You build | You can then |
 |---|---|---|
-| 01 | Prerequisites — run `./setup.sh` | verify your machine is ready |
+| 01 | Prerequisites (repo root — no folder) — run `./setup.sh` | verify your machine is ready |
 | 02 | App shell & design system — config (name, scheme, theme, tabs), liquid-glass chrome, shared components | run a fully themed app standalone |
 | 03 | Backend & infra core — FastAPI skeleton, Terraform (ECR, App Runner, monitoring base), the amd64 deploy loop | see the app talk to your live AWS backend |
 | 04 | Auth & onboarding — Clerk sign-in/up (email, Google, Apple), JWKS verification, just-in-time user provisioning, roles foundation, first-run tutorial | create real accounts end-to-end |
@@ -110,8 +112,8 @@ shows the exact entries it needs.
 ## Working through the steps
 
 ```bash
-cd step-01   # read its README, run ./setup.sh from the repo root
-cd step-02   # each step: README first, then build & run
+./setup.sh   # step 01: prerequisites (this README + the script — no folder)
+cd step-02   # each step from here: README first, then build & run
 …
 ```
 
