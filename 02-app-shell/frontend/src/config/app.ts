@@ -6,7 +6,7 @@
  * sync with app.json ("scheme") — deep links (`{scheme}://wishlist/...`) and
  * the share modals derive from this value.
  */
-export const AppConfig = {
+const AppConfig = {
   name: 'Kivan',
   /** Deep-link URL scheme (matches app.json `scheme`) */
   scheme: 'kivan',

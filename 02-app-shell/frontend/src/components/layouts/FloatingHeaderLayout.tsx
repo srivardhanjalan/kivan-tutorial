@@ -5,7 +5,7 @@ import FloatingHeader from '../FloatingHeader';
 import LoadingView from '../LoadingView';
 import { CommonScreenStyles, Spacing } from '../../constants/ScreenStyles';
 
-export interface FloatingHeaderLayoutProps {
+interface FloatingHeaderLayoutProps {
   title?: string;
   /** Right header content (action buttons) */
   headerRight?: React.ReactNode;

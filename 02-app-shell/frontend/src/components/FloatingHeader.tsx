@@ -11,7 +11,7 @@ import Typography, { ChromeMaxFontSizeMultiplier } from '../constants/Typography
 // fades through black on iOS.
 const wash = (alpha: number) => `rgba(253, 255, 255, ${alpha})`;
 
-export interface FloatingHeaderProps {
+interface FloatingHeaderProps {
   title?: string;
   /** Content on the right — header action buttons */
   rightContent?: React.ReactNode;

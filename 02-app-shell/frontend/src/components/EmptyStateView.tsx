@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Colors from '../constants/Colors';
 import { CommonScreenStyles } from '../constants/ScreenStyles';
 
-export interface EmptyStateViewProps {
+interface EmptyStateViewProps {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   subtitle?: string;
