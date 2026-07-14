@@ -62,7 +62,7 @@ You're not just building Kivan. You're building a platform you'll reuse for your
 The GitHub repository is structured so that **the git history is the curriculum**:
 
 - **One folder per step, named for what it builds** (`01-prerequisites` through `16-operations`). The first sets up your machine and accounts; every folder from `02-app-shell` on is a **complete, runnable, deployable snapshot** of the app at that stage. You never need another folder to run a step.
-- **One commit per step**, in order — so `git diff` between two adjacent steps shows you *exactly* what a feature costs in code.
+- **Two commits per step** — a *baseline* (exact copy of the previous step's folder) and then the *delta*: the step's actual work, opened as a **pull request**. The PR's *Files changed* view **is** what the feature costs — and you can ask questions right on the lines.
 - **`final/`** is the finished application, including `MODULES.md` — the jigsaw contract documentation.
 - **Zero bloat**: every step contains exactly the code that stage needs. No dead files, no "we'll use this later," no scaffolding you have to ignore.
 
@@ -91,7 +91,7 @@ Sixteen steps, four of them jigsaw modules 🧩 — and each will get its own po
 
 ## Start here
 
-The next post — **step 01** — gets your machine ready: one idempotent setup script and the short list of accounts no script can create for you. If you'd rather not wait, the repository has everything: each step folder is self-contained, and the READMEs don't assume you've read these posts.
+The next post — **[step 01](https://medium.com/@srivardhanjalan/one-script-to-set-up-everything-ae8bcea2d649)** — gets your machine ready: one idempotent setup script and the short list of accounts no script can create for you. If you'd rather not wait, the repository has everything: each step folder is self-contained, and the READMEs don't assume you've read these posts.
 
 **If this sounds like your kind of series:**
 
@@ -104,6 +104,6 @@ The next post — **step 01** — gets your machine ready: one idempotent setup 
 **Zero to Shipped — the series**
 
 - **00 · Introduction** *(this post)*
-- **01 · Prerequisites: one script to set up everything** *(next — link when published)*
+- **01 · [Prerequisites: one script to set up everything](https://medium.com/@srivardhanjalan/one-script-to-set-up-everything-ae8bcea2d649)**
 
 *All code: [github.com/srivardhanjalan/kivan-tutorial](https://github.com/srivardhanjalan/kivan-tutorial)*

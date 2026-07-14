@@ -7,3 +7,4 @@ a Medium draft (images auto-import from this repo's raw URLs).
 Published:
 
 - 00 · [Zero to Shipped](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)
+- 01 · [One Script to Set Up Everything](https://medium.com/@srivardhanjalan/one-script-to-set-up-everything-ae8bcea2d649)
