@@ -1,6 +1,6 @@
-# Stop Building Todo Apps
+# Zero to Shipped
 
-*Build and ship a real social product — iPhone, iPad, Android, and a live AWS backend — one deployable step at a time. (Part 1 of 16)*
+*Build a real social product — iPhone, iPad, Android, and a live AWS backend — in 16 deployable steps. This is the series introduction.*
 
 ---
 
@@ -68,9 +68,9 @@ Every step from 03 onward ends in a deployable state: `terraform apply`, push th
 
 ## The roadmap
 
-Sixteen steps, four of them jigsaw modules 🧩:
+Sixteen steps, four of them jigsaw modules 🧩 — and each will get its own post in this series:
 
-1. **Prerequisites** — one setup script, and the short list of accounts a script can't create for you
+1. **Prerequisites** — one setup script (it even handles the Android toolchain), and the short list of accounts a script can't create for you
 2. **App shell & design system** — config-driven identity (name, scheme, theme, tabs), the glass chrome, shared components; a fully themed app that runs standalone
 3. **Backend & infra core** — the FastAPI skeleton, Terraform for ECR + App Runner + monitoring, and the amd64 deploy loop (with the Apple Silicon trap explained)
 4. **Auth & onboarding** — Clerk sign-in/up with email, Google, and Apple; JWKS verification; just-in-time user provisioning; the roles foundation; a first-run tutorial
@@ -87,64 +87,23 @@ Sixteen steps, four of them jigsaw modules 🧩:
 15. **Admin** — role enforcement plus a dashboard for brands, life events, storefronts, products, and users
 16. **Operations** — CloudWatch alarms and dashboards, cost management, CI/CD references
 
-Each step will get its own post in this series.
+## Start here
 
-## Step 1 — get your machine ready
-
-That's this post. Step 1 is the `01-prerequisites/` folder in the repository: a setup script plus a README with the short list of accounts no script can create for you. Work through it here (or in `01-prerequisites/README.md` — they're the same list), and you're done with Part 1 of the series.
-
-### One script does almost everything
-
-```bash
-cd 01-prerequisites && ./setup.sh
-```
-
-It's idempotent — it installs **only what's missing** and skips the rest, so it's safe to re-run any time. It covers Homebrew itself (if you've never installed it), the Xcode command line tools, Node.js 20+, Python 3.12, Terraform, the AWS CLI (and verifies your credentials actually work), Docker + Colima + buildx + watchman, and — on Apple Silicon — Rosetta 2 with a correctly configured build profile.
-
-That last one deserves a sentence, because it will save someone a lost evening: **AWS App Runner only runs amd64 images, and on Apple Silicon the obvious ways of building them are broken.** QEMU emulation and docker-container builders produce images that build fine locally and then fail on AWS with `CREATE_FAILED` and no logs. The script configures the one path that works — a Rosetta-backed Colima profile with the plain docker driver — and step 03 explains the why.
-
-When the script finishes, it prints exactly what's still yours to do. Which is this list:
-
-### The things a script can't do for you
-
-1. **Xcode + an iOS simulator** *(needed at step 2)* — install Xcode from the App Store, open it once, then Settings ▸ Components ▸ install an iOS simulator runtime.
-2. **An AWS account + credentials** *(step 3)* — create an account, create an IAM user with `AdministratorAccess` (fine for a tutorial account), create an access key, run `aws configure`. **Cost while deployed: roughly $5–10/month**, dominated by App Runner. Step 16 adds budgets and alarms, and `terraform destroy` stops all charges the moment you're done.
-3. **A Clerk application** *(step 4, free)* — this is the auth provider. Create an app at dashboard.clerk.com, toggle Email and Google on, and copy two keys into two gitignored files.
-4. **A Firecrawl API key** *(step 9)* — powers the product scraping.
-5. **Mailgun** *(step 12, optional)* — a sandbox domain is enough to see email notifications work; skip it entirely and everything else still runs.
-6. **Apple Sign-In** *(step 4, optional)* — needs the paid Apple Developer Program. Email + Google auth is complete without it.
-7. **Android** *(optional)* — and this one the script **does** handle: `./setup.sh --android` installs the JDK, the Android SDK, and a ready-to-boot Pixel 8 emulator — no Android Studio required. Then it's `emulator -avd kivan` and `npx expo run:android`. Nothing else in the tutorial changes.
-
-### Secrets hygiene, from day one
-
-Secrets live in exactly two gitignored files, never in code: `frontend/.env.local` (the Clerk publishable key and API URL) and `infra/terraform.tfvars` (the Clerk secret, Firecrawl, and Mailgun keys). Every step's README shows the exact entries it needs and nothing more.
-
-### You're done with step 1 when
-
-- `./setup.sh` shows a green ✓ for every tool — the only items it leaves you are the accounts above
-- Xcode opens and an iPhone simulator boots
-- `aws sts get-caller-identity` prints your account
-- Your Clerk keys exist (Firecrawl and Mailgun can wait until their steps)
-
-## What's next
-
-In **Part 2**, we build the app shell and design system — the config files that name the product, the design tokens every screen draws from, and the shared components that make eleven screens feel like one app. It runs standalone, with no backend at all, and it's where the jigsaw principle starts paying rent: by the end of it, renaming Kivan to your own product is a one-file change.
-
-If you want to work ahead, the repository has everything: each step folder is self-contained, and the READMEs don't assume you've read these posts.
+The next post — **step 01** — gets your machine ready: one idempotent setup script and the short list of accounts no script can create for you. If you'd rather not wait, the repository has everything: each step folder is self-contained, and the READMEs don't assume you've read these posts.
 
 **If this sounds like your kind of series:**
 
 - ⭐ **Star the repo** — [github.com/srivardhanjalan/kivan-tutorial](https://github.com/srivardhanjalan/kivan-tutorial) — so you can find it when you're at your keyboard
-- **Follow me here** so Part 2 lands in your feed
+- **Follow me here** so the next part lands in your feed
 - **Tell me in the comments** what domain you'd swap into the platform — notes? trips? that idea you've been sitting on? The jigsaw exists exactly for that.
 
 *— Srivardhan*
 
 ---
 
-**In this series**
+**Zero to Shipped — the series**
 
-1. **Prerequisites — get your machine ready** *(this post)*
-2. App shell & design system *(coming soon)*
+- **00 · Introduction** *(this post)*
+- **01 · Prerequisites: one script to set up everything** *(next — link when published)*
 
 *All code: [github.com/srivardhanjalan/kivan-tutorial](https://github.com/srivardhanjalan/kivan-tutorial)*
