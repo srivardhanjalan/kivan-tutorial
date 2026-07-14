@@ -109,6 +109,14 @@ if [ "$WITH_ANDROID" = "1" ]; then
     echo no | avdmanager create avd -n kivan -k "$SYS_IMG" -d pixel_8 >/dev/null \
       || fail "avd create failed"
   fi
+  # avdmanager defaults hw.keyboard=no — without this you can't type from
+  # your Mac keyboard, only the on-screen one
+  AVD_INI="$HOME/.android/avd/kivan.avd/config.ini"
+  if [ -f "$AVD_INI" ] && ! grep -q "^hw.keyboard *= *yes" "$AVD_INI"; then
+    sed -i '' '/^hw.keyboard *=/d' "$AVD_INI"
+    echo "hw.keyboard = yes" >>"$AVD_INI"
+    ok "hardware keyboard enabled on 'kivan'"
+  fi
 
   # Future shells need JAVA_HOME, ANDROID_HOME + the emulator/adb on PATH
   ZP="$HOME/.zprofile"
