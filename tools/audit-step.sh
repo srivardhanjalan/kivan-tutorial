@@ -22,10 +22,26 @@ npx --yes jscpd src App.tsx --min-tokens 35 --reporters console --exit-code 1 ||
 echo "── 4. Color literals outside constants/ (each needs a comment or a token) ──"
 grep -rn "rgba(\|: '#" src --include="*.tsx" | grep -v "constants/" || true
 
+echo "── 5. Semantic-duplication review (the rule: no step ships without it) ──"
+if [ "${SEMANTIC_REVIEWED:-0}" != "1" ]; then
+  cat <<'CHECKLIST'
+The machines above catch dead code and copy-paste. What they cannot catch,
+a human must — walk the PR diff and answer each:
+
+  [ ] Do any two screens/views want the same layout or scaffold?
+  [ ] Do any two functions do one job in two different ways?
+  [ ] Is any JSX/logic block a candidate for a shared component or hook?
+  [ ] Is anything hardcoded that should be config or a token?
+  [ ] Would deleting this step's feature leave anything behind?
+
+This gate FAILS until you attest the review happened:
+
+  SEMANTIC_REVIEWED=1 tools/audit-step.sh <step>
+
+CHECKLIST
+  exit 1
+fi
+echo "attested — semantic review completed by the operator"
 echo ""
-echo "AUDIT CLEAN — review any literals listed above; each should be a"
-echo "documented one-off or promoted to a token."
-echo ""
-echo "NOTE: the machines catch dead code and copy-paste. SEMANTIC duplication"
-echo "(two screens that should share a layout, two functions doing one job"
-echo "differently) is a review judgment — hunt for it in the PR diff."
+echo "AUDIT CLEAN — also review the literals under section 4; each should be"
+echo "a documented one-off or promoted to a token."
