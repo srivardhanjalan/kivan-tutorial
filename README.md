@@ -9,7 +9,7 @@ in-app and by email — all on live AWS infrastructure you deploy yourself.
 ![Kivan end-user experience mocks](mocks/mocks.png)
 
 *Every screen above is rendered from the app's real design tokens — the
-liquid-glass chrome, adaptive tile rails that reshape from iPhone to iPad,
+translucent header wash, adaptive tile rails that reshape from iPhone to iPad,
 device-aware masonry, and the floating glass tab bar. Interactive version:
 open [`mocks/index.html`](mocks/index.html) in a browser.*
 

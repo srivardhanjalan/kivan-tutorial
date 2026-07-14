@@ -4,8 +4,11 @@
 
 ---
 
-> **[IMAGE 1 — insert `mocks/mocks.png` here, full width. Suggested caption:]**
-> *Every screen above is rendered from the app's real design tokens — the adaptive tile rails that reshape from iPhone to iPad, device-aware masonry, the translucent header wash, and the floating glass tab bar.*
+![Kivan — the end-user experience across iPhone and iPad](../mocks/mocks.png)
+
+*Every screen above is rendered from the app's real design tokens — the adaptive tile rails that reshape from iPhone to iPad, device-aware masonry, the translucent header wash, and the floating glass tab bar.*
+
+> **[On Medium: upload `mocks/mocks.png` here, full width, with the caption above.]**
 
 Most mobile-app tutorials teach you a todo list. You follow along, it works, and then you hit the wall every tutorial quietly avoids: real authentication, real infrastructure, real money on a cloud bill, photos that orphan themselves in S3, notifications that need a queue, and an app store's worth of screens that have to feel consistent.
 
@@ -104,6 +107,13 @@ When the script finishes, it prints exactly what's still yours to do. Which is t
 ### Secrets hygiene, from day one
 
 Secrets live in exactly two gitignored files, never in code: `frontend/.env.local` (the Clerk publishable key and API URL) and `infra/terraform.tfvars` (the Clerk secret, Firecrawl, and Mailgun keys). Every step's README shows the exact entries it needs and nothing more.
+
+### You're done with step 1 when
+
+- `./setup.sh` finishes with **"Everything is ready"** — no remaining manual items
+- Xcode opens and an iPhone simulator boots
+- `aws sts get-caller-identity` prints your account
+- Your Clerk keys exist (Firecrawl and Mailgun can wait until their steps)
 
 ## What's next
 
