@@ -103,9 +103,12 @@ The script is idempotent (installs only what's missing, Homebrew included)
 and covers the whole toolchain: Node, Python 3.12, Terraform, the AWS CLI,
 Docker/Colima — including the Apple-Silicon-safe amd64 build profile that App
 Runner requires. [`01-prerequisites/README.md`](01-prerequisites/README.md) then lists the few
-accounts a script can't create for you — AWS (≈ $5–10/month while deployed;
-`terraform destroy` stops all charges), Clerk (auth), Firecrawl (scraping),
-and optionally Mailgun and Apple Sign-In — with exact click-paths, plus the
+accounts a script can't create for you — [AWS](https://aws.amazon.com)
+(≈ $5–10/month while deployed; `terraform destroy` stops all charges),
+[Clerk](https://dashboard.clerk.com) (auth),
+[Firecrawl](https://firecrawl.dev) (scraping), and optionally
+[Mailgun](https://www.mailgun.com) and Apple Sign-In — with exact
+click-paths, plus the
 secrets hygiene rules every later step relies on. Want Android too?
 `./setup.sh --android` scripts the whole toolchain (JDK, SDK, a Pixel 8
 emulator) — no Android Studio required.

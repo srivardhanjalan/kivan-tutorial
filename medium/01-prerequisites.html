@@ -6,7 +6,7 @@ img{max-width:100%}pre{background:#f5f5f5;padding:14px;overflow-x:auto;font-size
 <h1>One Script to Set Up Everything</h1>
 <p><em>Zero to Shipped · 01 — your machine, your accounts, and the Apple Silicon trap that eats evenings.</em></p>
 <hr>
-<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-01.png?v=9786450" alt="Zero to Shipped 01 — one script, everything ready"></p>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-01.png?v=6b1ef35" alt="Zero to Shipped 01 — one script, everything ready"></p>
 <p>This is step 01 of <strong>Zero to Shipped</strong>, a series where we build a real social product — iPhone, iPad, Android, and a live AWS backend — one deployable step at a time. New here? <strong><a href="https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9">Start with the introduction</a></strong> for what we&#39;re building and why the architecture is worth stealing. The code lives at <strong><a href="https://github.com/srivardhanjalan/kivan-tutorial">github.com/srivardhanjalan/kivan-tutorial</a></strong>; this post is the <code>01-prerequisites/</code> folder.</p>
 <p>By the end of this post your machine can build and deploy everything in the series, and you&#39;ll know exactly which accounts you need (and what they cost: about <strong>$5–10/month</strong> while deployed, and <code>terraform destroy</code> stops all charges).</p>
 <h2>One script does almost everything</h2>
@@ -21,12 +21,12 @@ img{max-width:100%}pre{background:#f5f5f5;padding:14px;overflow-x:auto;font-size
 <p>When the script finishes, it prints exactly what&#39;s still yours to do. Which is this list:</p>
 <h2>The things a script can&#39;t do for you</h2>
 <ol>
-<li><strong>Xcode + an iOS simulator</strong> <em>(needed at step 2)</em> — install Xcode from the App Store, open it once, then Settings ▸ Components ▸ install an iOS simulator runtime.</li>
-<li><strong>An AWS account + credentials</strong> <em>(step 3)</em> — create an account, create an IAM user with <code>AdministratorAccess</code> (fine for a tutorial account), create an access key, run <code>aws configure</code>. <strong>Cost while deployed: roughly $5–10/month</strong>, dominated by App Runner. Step 16 adds budgets and alarms, and <code>terraform destroy</code> stops all charges the moment you&#39;re done.</li>
-<li><strong>A Clerk application</strong> <em>(step 4, free)</em> — this is the auth provider. Create an app at dashboard.clerk.com, toggle Email and Google on, and copy two keys into two gitignored files.</li>
-<li><strong>A Firecrawl API key</strong> <em>(step 9)</em> — powers the product scraping.</li>
-<li><strong>Mailgun</strong> <em>(step 12, optional)</em> — a sandbox domain is enough to see email notifications work; skip it entirely and everything else still runs.</li>
-<li><strong>Apple Sign-In</strong> <em>(step 4, optional)</em> — needs the paid Apple Developer Program. Email + Google auth is complete without it.</li>
+<li><strong>Xcode + an iOS simulator</strong> <em>(needed at step 2)</em> — install <a href="https://apps.apple.com/app/xcode/id497799835">Xcode from the App Store</a>, open it once, then Settings ▸ Components ▸ install an iOS simulator runtime.</li>
+<li><strong>An AWS account + credentials</strong> <em>(step 3)</em> — <a href="https://aws.amazon.com">create an account</a>, create an IAM user with <code>AdministratorAccess</code> (fine for a tutorial account), create an access key, run <code>aws configure</code>. <strong>Cost while deployed: roughly $5–10/month</strong>, dominated by App Runner. Step 16 adds budgets and alarms, and <code>terraform destroy</code> stops all charges the moment you&#39;re done.</li>
+<li><strong>A Clerk application</strong> <em>(step 4, free)</em> — this is the auth provider. Create an app at <a href="https://dashboard.clerk.com">dashboard.clerk.com</a>, toggle Email and Google on, and copy two keys into two gitignored files.</li>
+<li><strong>A Firecrawl API key</strong> <em>(step 9)</em> — <a href="https://firecrawl.dev">firecrawl.dev</a> powers the product scraping.</li>
+<li><strong><a href="https://www.mailgun.com">Mailgun</a></strong> <em>(step 12, optional)</em> — a sandbox domain is enough to see email notifications work; skip it entirely and everything else still runs.</li>
+<li><strong>Apple Sign-In</strong> <em>(step 4, optional)</em> — needs the paid <a href="https://developer.apple.com/programs/">Apple Developer Program</a>. Email + Google auth is complete without it.</li>
 </ol>
 <h2>Secrets hygiene, from day one</h2>
 <p>Secrets live in exactly two gitignored files, never in code: <code>frontend/.env.local</code> (the Clerk publishable key and API URL) and <code>infra/terraform.tfvars</code> (the Clerk secret, Firecrawl, and Mailgun keys). Every step&#39;s README shows the exact entries it needs and nothing more.</p>

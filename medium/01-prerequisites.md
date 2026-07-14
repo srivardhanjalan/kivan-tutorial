@@ -32,12 +32,12 @@ When the script finishes, it prints exactly what's still yours to do. Which is t
 
 ## The things a script can't do for you
 
-1. **Xcode + an iOS simulator** *(needed at step 2)* — install Xcode from the App Store, open it once, then Settings ▸ Components ▸ install an iOS simulator runtime.
-2. **An AWS account + credentials** *(step 3)* — create an account, create an IAM user with `AdministratorAccess` (fine for a tutorial account), create an access key, run `aws configure`. **Cost while deployed: roughly $5–10/month**, dominated by App Runner. Step 16 adds budgets and alarms, and `terraform destroy` stops all charges the moment you're done.
-3. **A Clerk application** *(step 4, free)* — this is the auth provider. Create an app at dashboard.clerk.com, toggle Email and Google on, and copy two keys into two gitignored files.
-4. **A Firecrawl API key** *(step 9)* — powers the product scraping.
-5. **Mailgun** *(step 12, optional)* — a sandbox domain is enough to see email notifications work; skip it entirely and everything else still runs.
-6. **Apple Sign-In** *(step 4, optional)* — needs the paid Apple Developer Program. Email + Google auth is complete without it.
+1. **Xcode + an iOS simulator** *(needed at step 2)* — install [Xcode from the App Store](https://apps.apple.com/app/xcode/id497799835), open it once, then Settings ▸ Components ▸ install an iOS simulator runtime.
+2. **An AWS account + credentials** *(step 3)* — [create an account](https://aws.amazon.com), create an IAM user with `AdministratorAccess` (fine for a tutorial account), create an access key, run `aws configure`. **Cost while deployed: roughly $5–10/month**, dominated by App Runner. Step 16 adds budgets and alarms, and `terraform destroy` stops all charges the moment you're done.
+3. **A Clerk application** *(step 4, free)* — this is the auth provider. Create an app at [dashboard.clerk.com](https://dashboard.clerk.com), toggle Email and Google on, and copy two keys into two gitignored files.
+4. **A Firecrawl API key** *(step 9)* — [firecrawl.dev](https://firecrawl.dev) powers the product scraping.
+5. **[Mailgun](https://www.mailgun.com)** *(step 12, optional)* — a sandbox domain is enough to see email notifications work; skip it entirely and everything else still runs.
+6. **Apple Sign-In** *(step 4, optional)* — needs the paid [Apple Developer Program](https://developer.apple.com/programs/). Email + Google auth is complete without it.
 
 ## Secrets hygiene, from day one
 

@@ -32,12 +32,12 @@ It finishes by printing exactly what's still yours to do — which is the list b
 
 | # | What | When | How (exact steps) |
 |---|---|---|---|
-| 1 | **Xcode + iOS simulator** | step 02 | App Store → install Xcode → open once → Settings ▸ Components → install an iOS simulator runtime |
+| 1 | **Xcode + iOS simulator** | step 02 | [App Store → Xcode](https://apps.apple.com/app/xcode/id497799835) → install → open once → Settings ▸ Components → install an iOS simulator runtime |
 | 2 | **AWS account + credentials** | step 03 | [aws.amazon.com](https://aws.amazon.com) → create account → IAM ▸ Users ▸ create user → attach `AdministratorAccess` (fine for a tutorial account) → Security credentials ▸ create access key → run `aws configure`. **Cost:** ≈ $5–10/month while deployed (App Runner dominates); step 16 adds budgets + alarms, and `terraform destroy` stops all charges. |
 | 3 | **Clerk application** (auth) | step 04 | [dashboard.clerk.com](https://dashboard.clerk.com) → Create application → toggle **Email** and **Google** on → API Keys: **Publishable key** → `frontend/.env.local`, **Secret key** → `infra/terraform.tfvars` |
 | 4 | **Firecrawl API key** (scraping) | step 09 | [firecrawl.dev](https://firecrawl.dev) → sign up → copy the `fc-…` key → `infra/terraform.tfvars` |
 | 5 | **Mailgun** *(optional — email)* | step 12 | [mailgun.com](https://mailgun.com) → sign up → Sending ▸ Overview: copy the **sandbox domain** and **API key** → `infra/terraform.tfvars` → Sending ▸ Authorized Recipients: add your own address. Sandbox only delivers to authorized recipients; for real delivery add a domain you own and publish its SPF/DKIM records. Leave keys empty to skip email — everything else works. |
-| 6 | **Apple Sign-In** *(optional)* | step 04 | Needs the paid Apple Developer Program; step 04's README covers the App ID + key. Skip it — email/Google auth is complete without it. |
+| 6 | **Apple Sign-In** *(optional)* | step 04 | Needs the paid [Apple Developer Program](https://developer.apple.com/programs/); step 04's README covers the App ID + key. Skip it — email/Google auth is complete without it. |
 | 7 | **Android emulator** *(optional)* | any step | Fully scripted — run `./setup.sh --android`, then `emulator -avd kivan &` and `npx expo run:android` in any step's `frontend/`. The tutorial's default path is the iOS simulator; nothing else changes for Android. (Prefer the full IDE? Android Studio works too — it bundles the same SDK.) |
 
 ## Secrets hygiene
