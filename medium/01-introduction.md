@@ -1,6 +1,6 @@
 # Beyond the Todo App: Build a Real Social Product on iPhone, iPad, Android, and Live AWS (Part 1)
 
-*A 16-part series where every step is a complete, deployable app — and what you finish with is a platform you can rebuild into your next three ideas.*
+*A 16-part series where every step is a complete, deployable app — and what you finish with is a platform you can reuse for your next three ideas.*
 
 ---
 
@@ -8,17 +8,11 @@
 
 *Every screen above is rendered from the app's real design tokens — the translucent header wash, adaptive tile rails, device-aware masonry, and the floating glass tab bar.*
 
-![Kivan on iPad](../mocks/mocks-ipad.png)
-
-*The same code on iPad: rails become static grids and masonry widens to four columns — purely from device-driven layout math, no iPad-specific screens.*
-
-![Kivan on Android](../mocks/mocks-android.png)
-
-*And on Android: the identical app with Android system chrome.*
-
 Most mobile-app tutorials teach you a todo list. You follow along, it works, and then you hit the wall every tutorial quietly avoids: real authentication, real infrastructure, real money on a cloud bill, photos that orphan themselves in S3, notifications that need a queue, and an app store's worth of screens that have to feel consistent.
 
-This series takes the opposite approach. We're going to build **Kivan** — a real social-wishlist product, end to end:
+This series takes the opposite approach. Everything in it was built, broken, and rebuilt for real — the AWS bill, the 1 a.m. `CREATE_FAILED` with no logs, all of it — and the whole thing is already public at **[github.com/srivardhanjalan/kivan-tutorial](https://github.com/srivardhanjalan/kivan-tutorial)**, so you can see exactly where we're going.
+
+We're going to build **Kivan** — a real social-wishlist product, end to end:
 
 - Create wishlists for life's moments — birthdays, weddings, housewarmings, graduations
 - Add wishes by **browsing real stores inside the app** — the store directory adapts to your country, and prices come back in whatever currency each store sells (₹, $, £, €, AED and more)
@@ -29,12 +23,24 @@ This series takes the opposite approach. We're going to build **Kivan** — a re
 
 One codebase. iPhone, iPad, Android, and web. Live AWS infrastructure that **you** deploy, understand, and can tear down with one command.
 
+And "one codebase" isn't a slogan — here's the same code on an iPad:
+
+![Kivan on iPad](../mocks/mocks-ipad.png)
+
+*Rails become static grids and masonry widens to four columns — purely from device-driven layout math, no iPad-specific screens.*
+
+![Kivan on Android](../mocks/mocks-android.png)
+
+*And on Android: the identical app with Android system chrome.*
+
 By the end of the series you'll have built:
 
 - A polished **Expo / React Native** app with a token-driven design system and layouts that adapt from a phone to an iPad without a single hardcoded size
 - A **FastAPI** backend on **AWS App Runner**, with JWKS-verified Clerk authentication and just-in-time user provisioning
 - **Terraform** for the entire stack — ECR, App Runner, DynamoDB, S3 with a backend-owned photo lifecycle, an SQS → Lambda notification pipeline, Mailgun email, CloudWatch alarms, and cost budgets
 - An admin dashboard, deep-link sharing, and a production operations setup
+
+**Who this is for:** you're comfortable in a terminal and have written some JavaScript or Python. You do *not* need to know React Native, FastAPI, Terraform, or AWS — every step explains what it's doing and why, and each one is small enough to actually finish. If you've ever shipped a tutorial todo app and thought "…now what?", this is the now-what.
 
 ## Why this series is different: the jigsaw principle
 
@@ -58,9 +64,7 @@ The GitHub repository is structured so that **the git history is the curriculum*
 - **`final/`** is the finished application, including `MODULES.md` — the jigsaw contract documentation.
 - **Zero bloat**: every step contains exactly the code that stage needs. No dead files, no "we'll use this later," no scaffolding you have to ignore.
 
-Every step from 03 onward ends in a deployable state: `terraform apply`, push the backend image, run the app, verify the step's checklist. And every step's README has a *Gotchas* section — the actual failure modes I hit while building this, not hypothetical ones.
-
-The repository is public: **[github.com/srivardhanjalan/kivan-tutorial](https://github.com/srivardhanjalan/kivan-tutorial)** — every step folder, README, the setup script, and the mocks above live there.
+Every step from 03 onward ends in a deployable state: `terraform apply`, push the backend image, run the app, verify the step's checklist. Budget roughly an evening per step — and you end every single one with something that runs, not a promise that it will eventually. And every step's README has a *Gotchas* section — the actual failure modes I hit while building this, not hypothetical ones.
 
 ## The roadmap
 
@@ -127,6 +131,12 @@ Secrets live in exactly two gitignored files, never in code: `frontend/.env.loca
 In **Part 2**, we build the app shell and design system — the config files that name the product, the design tokens every screen draws from, and the shared components that make eleven screens feel like one app. It runs standalone, with no backend at all, and it's where the jigsaw principle starts paying rent: by the end of it, renaming Kivan to your own product is a one-file change.
 
 If you want to work ahead, the repository has everything: each step folder is self-contained, and the READMEs don't assume you've read these posts.
+
+**If this sounds like your kind of series:**
+
+- ⭐ **Star the repo** — [github.com/srivardhanjalan/kivan-tutorial](https://github.com/srivardhanjalan/kivan-tutorial) — so you can find it when you're at your keyboard
+- **Follow me here** so Part 2 lands in your feed
+- **Tell me in the comments** what domain you'd swap into the platform — notes? trips? that idea you've been sitting on? The jigsaw exists exactly for that.
 
 *— Srivardhan*
 
