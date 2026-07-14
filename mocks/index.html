@@ -64,10 +64,20 @@
 
   /* ————— Wishlist tiles (WishlistRailCard) ————— */
   .grid{display:flex;flex-wrap:wrap;gap:14px}
-  /* horizontal rail: single row scrolling off-screen; first tile on the content edge */
+  /* adaptive horizontal rail (TileRail): fills 1 row, then 2 rows, then a
+     2-row horizontal scroll; bleeds off the right edge, next column peeking */
   .rail{display:flex;gap:14px;overflow:hidden;margin-right:calc(-1 * var(--content-x))}
   .rail .tile{flex-shrink:0}
-  .tile{width:176px}
+  .rail .rcol{display:flex;flex-direction:column;gap:14px;flex-shrink:0}
+  /* masonry (WishlistDetail): device-width 2 columns, varied heights */
+  .masonry{display:flex;gap:12px}
+  .masonry .mcol{flex:1;display:flex;flex-direction:column;gap:12px}
+  .wcard{background:#fff;border:1px solid var(--border-subtle);border-radius:16px;overflow:hidden}
+  .wcard .im{display:flex;align-items:center;justify-content:center;font-size:38px;background:var(--surface)}
+  .wcard .bd{padding:10px 12px}
+  .wcard .wn{font-size:14px;font-weight:600;letter-spacing:-.2px;line-height:1.25}
+  .wcard .wp{font-size:13px;color:var(--text2);margin-top:3px}
+  .tile{width:157px}
   .tile .art{aspect-ratio:1/0.92;border-radius:22px;display:flex;align-items:center;
     justify-content:center;font-size:52px;position:relative}
   .tile .nm{font-size:15px;font-weight:600;letter-spacing:-.2px;margin:9px 2px 2px;line-height:1.25}
@@ -167,12 +177,22 @@
       <div class="sec"><div><span class="t">My Wishlists</span><span class="meta">3</span></div>
         <div class="plus"><svg class="ic24" viewBox="0 0 24 24" fill="none" stroke="#FF385C" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></div>
       <div class="rail">
-        <div class="tile"><div class="art" style="background:var(--peach)">🎂<span class="love">♥ 12</span></div>
-          <div class="nm">Diya's Birthday</div><div class="mt">12 wishes</div></div>
-        <div class="tile"><div class="art" style="background:var(--mint)">🏡</div>
-          <div class="nm">Housewarming</div><div class="mt">7 wishes</div></div>
-        <div class="tile"><div class="art" style="background:var(--butter)">🎁</div>
-          <div class="nm">Saved for Later</div><div class="mt">4 wishes</div></div>
+        <div class="rcol">
+          <div class="tile"><div class="art" style="background:var(--peach)">🎂<span class="love">♥ 12</span></div>
+            <div class="nm">Diya's Birthday</div><div class="mt">12 wishes</div></div>
+          <div class="tile"><div class="art" style="background:var(--mint)">🏡</div>
+            <div class="nm">Housewarming</div><div class="mt">7 wishes</div></div>
+        </div>
+        <div class="rcol">
+          <div class="tile"><div class="art" style="background:var(--butter)">🎁</div>
+            <div class="nm">Saved for Later</div><div class="mt">4 wishes</div></div>
+          <div class="tile"><div class="art" style="background:var(--lavender)">💍</div>
+            <div class="nm">Wedding Registry</div><div class="mt">23 wishes</div></div>
+        </div>
+        <div class="rcol">
+          <div class="tile"><div class="art" style="background:var(--sky)">🎓</div>
+            <div class="nm">Grad Gifts</div><div class="mt">2 wishes</div></div>
+        </div>
       </div>
 
       <div class="sec" style="margin-top:26px"><div><span class="t">My Events</span><span class="meta">2</span></div>
@@ -225,12 +245,22 @@
 
       <div class="sec" style="margin-top:26px"><div><span class="t">Popular wishlists</span></div></div>
       <div class="rail">
-        <div class="tile"><div class="art" style="background:var(--sky)">🎓<span class="love">♥ 41</span></div>
-          <div class="nm">Grad Gift Ideas</div><div class="mt"><span class="dot" style="background:#7CA9E8">R</span>Rahul Mehta</div></div>
-        <div class="tile"><div class="art" style="background:var(--blush)">👶<span class="love">♥ 28</span></div>
-          <div class="nm">Baby Shower</div><div class="mt"><span class="dot" style="background:#E8927C">A</span>Ananya Sharma</div></div>
-        <div class="tile"><div class="art" style="background:var(--butter)">🕯️</div>
-          <div class="nm">Cozy Home Finds</div><div class="mt"><span class="dot" style="background:#D8A24E">S</span>Sam Lee</div></div>
+        <div class="rcol">
+          <div class="tile"><div class="art" style="background:var(--sky)">🎓<span class="love">♥ 41</span></div>
+            <div class="nm">Grad Gift Ideas</div><div class="mt"><span class="dot" style="background:#7CA9E8">R</span>Rahul Mehta</div></div>
+          <div class="tile"><div class="art" style="background:var(--blush)">👶<span class="love">♥ 28</span></div>
+            <div class="nm">Baby Shower</div><div class="mt"><span class="dot" style="background:#E8927C">A</span>Ananya Sharma</div></div>
+        </div>
+        <div class="rcol">
+          <div class="tile"><div class="art" style="background:var(--butter)">🕯️</div>
+            <div class="nm">Cozy Home Finds</div><div class="mt"><span class="dot" style="background:#D8A24E">S</span>Sam Lee</div></div>
+          <div class="tile"><div class="art" style="background:var(--lavender)">🎄</div>
+            <div class="nm">Holiday Picks</div><div class="mt"><span class="dot" style="background:#9D8FE0">P</span>Priya K.</div></div>
+        </div>
+        <div class="rcol">
+          <div class="tile"><div class="art" style="background:var(--peach)">🌷</div>
+            <div class="nm">Spring Finds</div><div class="mt"><span class="dot" style="background:#72B98A">J</span>Jordan Diaz</div></div>
+        </div>
       </div>
     </div>
     <div class="fade"></div>
@@ -266,15 +296,20 @@
         <span class="dot" style="background:#E8927C;width:22px;height:22px;border-radius:11px;font-size:11px">A</span>
         <span style="font-size:13.5px;color:var(--text2)">Ananya Sharma · 12 wishes · $1,240 total</span>
       </div>
-      <div class="grid">
-        <div class="tile"><div class="art" style="background:#fff;border:1px solid var(--border-subtle);font-size:40px">👟</div>
-          <div class="nm">Nike Total 90 Shoes</div><div class="mt">$130 · nike.com</div></div>
-        <div class="tile"><div class="art" style="background:#fff;border:1px solid var(--border-subtle);font-size:40px">🎧</div>
-          <div class="nm">AirPods Pro</div><div class="mt">$249 · apple.com</div></div>
-        <div class="tile"><div class="art" style="background:#fff;border:1px solid var(--border-subtle);font-size:40px">📷</div>
-          <div class="nm">Instax Mini 12</div><div class="mt">$79</div></div>
-        <div class="tile"><div class="art" style="background:var(--surface);border:1.5px dashed rgba(0,0,0,.14);font-size:34px;color:var(--primary)">＋</div>
-          <div class="nm" style="color:var(--text2)">Add a wish</div></div>
+      <div class="masonry">
+        <div class="mcol">
+          <div class="wcard" style="border-style:dashed;border-width:1.5px;border-color:rgba(0,0,0,.14)">
+            <div class="im" style="height:140px;background:var(--surface);color:var(--primary);font-size:34px">＋</div>
+            <div class="bd"><div class="wn" style="color:var(--text2)">Add a wish</div></div></div>
+          <div class="wcard"><div class="im" style="height:180px">🎧</div>
+            <div class="bd"><div class="wn">AirPods Pro</div><div class="wp">$249 · apple.com</div></div></div>
+        </div>
+        <div class="mcol">
+          <div class="wcard"><div class="im" style="height:150px">👟</div>
+            <div class="bd"><div class="wn">Nike Total 90 Shoes</div><div class="wp">$130 · nike.com</div></div></div>
+          <div class="wcard"><div class="im" style="height:120px">📷</div>
+            <div class="bd"><div class="wn">Instax Mini 12</div><div class="wp">$79</div></div></div>
+        </div>
       </div>
     </div>
     <div class="fade"></div>
@@ -301,18 +336,23 @@
         <div class="brand"><svg width="34" height="14" viewBox="0 0 34 14"><path d="M33 1 12 13 1 8l2-3 8 3L29 0z" fill="#111"/></svg></div>
       </div>
       <div class="sec" style="margin-top:26px"><div><span class="t">Storefronts</span></div></div>
-      <div class="grid">
-        <div class="tile"><div class="art" style="background:var(--sky);font-size:40px">🧸</div>
-          <div class="nm">Kids Corner</div><div class="mt">18 products</div></div>
-        <div class="tile"><div class="art" style="background:var(--mint);font-size:40px">🪴</div>
-          <div class="nm">Green Living</div><div class="mt">9 products</div></div>
+      <div class="rail" style="gap:8px">
+        <div class="brand" style="font-size:30px">🧸</div>
+        <div class="brand" style="font-size:30px">🪴</div>
+        <div class="brand" style="font-size:30px">🎨</div>
+        <div class="brand" style="font-size:30px">🐾</div>
+        <div class="brand" style="font-size:30px">📚</div>
       </div>
       <div class="sec" style="margin-top:26px"><div><span class="t">Products</span></div></div>
-      <div class="grid">
-        <div class="tile"><div class="art" style="background:#fff;border:1px solid var(--border-subtle);font-size:40px">🧦</div>
-          <div class="nm">Cozy Socks 3-pack</div><div class="mt">$14</div></div>
-        <div class="tile"><div class="art" style="background:#fff;border:1px solid var(--border-subtle);font-size:40px">🕰️</div>
-          <div class="nm">Desk Clock</div><div class="mt">$32</div></div>
+      <div class="rail">
+        <div class="tile" style="width:120px"><div class="im" style="height:120px;border-radius:16px;background:#fff;border:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:center;font-size:34px">🧦</div>
+          <div class="nm" style="font-size:13px">Cozy Socks 3-pack</div><div class="mt" style="font-size:12px">$14</div></div>
+        <div class="tile" style="width:120px"><div class="im" style="height:120px;border-radius:16px;background:#fff;border:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:center;font-size:34px">🕰️</div>
+          <div class="nm" style="font-size:13px">Desk Clock</div><div class="mt" style="font-size:12px">$32</div></div>
+        <div class="tile" style="width:120px"><div class="im" style="height:120px;border-radius:16px;background:#fff;border:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:center;font-size:34px">🫖</div>
+          <div class="nm" style="font-size:13px">Teapot Set</div><div class="mt" style="font-size:12px">$45</div></div>
+        <div class="tile" style="width:120px"><div class="im" style="height:120px;border-radius:16px;background:#fff;border:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:center;font-size:34px">🧴</div>
+          <div class="nm" style="font-size:13px">Hand Cream</div><div class="mt" style="font-size:12px">$12</div></div>
       </div>
     </div>
     <div class="fade"></div>
