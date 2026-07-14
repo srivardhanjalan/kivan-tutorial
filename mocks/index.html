@@ -64,6 +64,9 @@
 
   /* ————— Wishlist tiles (WishlistRailCard) ————— */
   .grid{display:flex;flex-wrap:wrap;gap:14px}
+  /* horizontal rail: single row scrolling off-screen; first tile on the content edge */
+  .rail{display:flex;gap:14px;overflow:hidden;margin-right:calc(-1 * var(--content-x))}
+  .rail .tile{flex-shrink:0}
   .tile{width:176px}
   .tile .art{aspect-ratio:1/0.92;border-radius:22px;display:flex;align-items:center;
     justify-content:center;font-size:52px;position:relative}
@@ -163,15 +166,13 @@
     <div class="content">
       <div class="sec"><div><span class="t">My Wishlists</span><span class="meta">3</span></div>
         <div class="plus"><svg class="ic24" viewBox="0 0 24 24" fill="none" stroke="#FF385C" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></div>
-      <div class="grid">
+      <div class="rail">
         <div class="tile"><div class="art" style="background:var(--peach)">🎂<span class="love">♥ 12</span></div>
           <div class="nm">Diya's Birthday</div><div class="mt">12 wishes</div></div>
         <div class="tile"><div class="art" style="background:var(--mint)">🏡</div>
           <div class="nm">Housewarming</div><div class="mt">7 wishes</div></div>
         <div class="tile"><div class="art" style="background:var(--butter)">🎁</div>
           <div class="nm">Saved for Later</div><div class="mt">4 wishes</div></div>
-        <div class="tile"><div class="art" style="background:var(--lavender)">💍</div>
-          <div class="nm">Wedding Registry</div><div class="mt">23 wishes</div></div>
       </div>
 
       <div class="sec" style="margin-top:26px"><div><span class="t">My Events</span><span class="meta">2</span></div>
@@ -223,15 +224,13 @@
       </div>
 
       <div class="sec" style="margin-top:26px"><div><span class="t">Popular wishlists</span></div></div>
-      <div class="grid">
+      <div class="rail">
         <div class="tile"><div class="art" style="background:var(--sky)">🎓<span class="love">♥ 41</span></div>
           <div class="nm">Grad Gift Ideas</div><div class="mt"><span class="dot" style="background:#7CA9E8">R</span>Rahul Mehta</div></div>
         <div class="tile"><div class="art" style="background:var(--blush)">👶<span class="love">♥ 28</span></div>
           <div class="nm">Baby Shower</div><div class="mt"><span class="dot" style="background:#E8927C">A</span>Ananya Sharma</div></div>
         <div class="tile"><div class="art" style="background:var(--butter)">🕯️</div>
           <div class="nm">Cozy Home Finds</div><div class="mt"><span class="dot" style="background:#D8A24E">S</span>Sam Lee</div></div>
-        <div class="tile"><div class="art" style="background:var(--lavender)">🎄</div>
-          <div class="nm">Holiday Picks</div><div class="mt"><span class="dot" style="background:#9D8FE0">P</span>Priya K.</div></div>
       </div>
     </div>
     <div class="fade"></div>
