@@ -1,0 +1,51 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>01-prerequisites — paste into Medium</title>
+<style>body{max-width:740px;margin:40px auto;font-family:Georgia,serif;font-size:18px;line-height:1.6;color:#242424;padding:0 20px}
+img{max-width:100%}pre{background:#f5f5f5;padding:14px;overflow-x:auto;font-size:14px}code{background:#f5f5f5;padding:1px 4px;font-size:15px}</style>
+</head><body>
+<h1>One Script to Set Up Everything</h1>
+<p><em>Zero to Shipped · 01 — your machine, your accounts, and the Apple Silicon trap that eats evenings.</em></p>
+<hr>
+<p>This is step 01 of <strong>Zero to Shipped</strong>, a series where we build a real social product — iPhone, iPad, Android, and a live AWS backend — one deployable step at a time. New here? <strong><a href="#">Start with the introduction</a></strong> <em>(link to post 00)</em> for what we&#39;re building and why the architecture is worth stealing. The code lives at <strong><a href="https://github.com/srivardhanjalan/kivan-tutorial">github.com/srivardhanjalan/kivan-tutorial</a></strong>; this post is the <code>01-prerequisites/</code> folder.</p>
+<p>By the end of this post your machine can build and deploy everything in the series, and you&#39;ll know exactly which accounts you need (and what they cost: about <strong>$5–10/month</strong> while deployed, and <code>terraform destroy</code> stops all charges).</p>
+<h2>One script does almost everything</h2>
+<pre><code class="language-bash">cd 01-prerequisites &amp;&amp; ./setup.sh
+</code></pre>
+<p>It&#39;s idempotent — it installs <strong>only what&#39;s missing</strong> and skips the rest, so it&#39;s safe to re-run any time. It covers Homebrew itself (if you&#39;ve never installed it), the Xcode command line tools, Node.js 20+, Python 3.12, Terraform, the AWS CLI (and verifies your credentials actually work), Docker + Colima + buildx + watchman, and — on Apple Silicon — Rosetta 2 with a correctly configured build profile.</p>
+<p>That last one deserves a sentence, because it will save someone a lost evening: <strong>AWS App Runner only runs amd64 images, and on Apple Silicon the obvious ways of building them are broken.</strong> QEMU emulation and docker-container builders produce images that build fine locally and then fail on AWS with <code>CREATE_FAILED</code> and no logs. The script configures the one path that works — a Rosetta-backed Colima profile with the plain docker driver — and step 03 explains the why.</p>
+<p>Want Android too? The script handles the entire toolchain — no Android Studio required:</p>
+<pre><code class="language-bash">./setup.sh --android
+</code></pre>
+<p>That installs the JDK, the Android SDK, and creates a ready-to-boot Pixel 8 emulator named <code>kivan</code> (~2 GB). Then it&#39;s <code>emulator -avd kivan</code> and <code>npx expo run:android</code> in any step&#39;s <code>frontend/</code>. Nothing else in the series changes.</p>
+<p>When the script finishes, it prints exactly what&#39;s still yours to do. Which is this list:</p>
+<h2>The things a script can&#39;t do for you</h2>
+<ol>
+<li><strong>Xcode + an iOS simulator</strong> <em>(needed at step 2)</em> — install Xcode from the App Store, open it once, then Settings ▸ Components ▸ install an iOS simulator runtime.</li>
+<li><strong>An AWS account + credentials</strong> <em>(step 3)</em> — create an account, create an IAM user with <code>AdministratorAccess</code> (fine for a tutorial account), create an access key, run <code>aws configure</code>. <strong>Cost while deployed: roughly $5–10/month</strong>, dominated by App Runner. Step 16 adds budgets and alarms, and <code>terraform destroy</code> stops all charges the moment you&#39;re done.</li>
+<li><strong>A Clerk application</strong> <em>(step 4, free)</em> — this is the auth provider. Create an app at dashboard.clerk.com, toggle Email and Google on, and copy two keys into two gitignored files.</li>
+<li><strong>A Firecrawl API key</strong> <em>(step 9)</em> — powers the product scraping.</li>
+<li><strong>Mailgun</strong> <em>(step 12, optional)</em> — a sandbox domain is enough to see email notifications work; skip it entirely and everything else still runs.</li>
+<li><strong>Apple Sign-In</strong> <em>(step 4, optional)</em> — needs the paid Apple Developer Program. Email + Google auth is complete without it.</li>
+</ol>
+<h2>Secrets hygiene, from day one</h2>
+<p>Secrets live in exactly two gitignored files, never in code: <code>frontend/.env.local</code> (the Clerk publishable key and API URL) and <code>infra/terraform.tfvars</code> (the Clerk secret, Firecrawl, and Mailgun keys). Every step&#39;s README shows the exact entries it needs and nothing more.</p>
+<h2>You&#39;re done when</h2>
+<ul>
+<li><code>./setup.sh</code> shows a green ✓ for every tool — the only items it leaves you are the accounts above</li>
+<li>Xcode opens and an iPhone simulator boots</li>
+<li><code>aws sts get-caller-identity</code> prints your account</li>
+<li>Your Clerk keys exist (Firecrawl and Mailgun can wait until their steps)</li>
+</ul>
+<h2>What&#39;s next</h2>
+<p>In <strong>step 02</strong>, we build the app shell and design system — the config files that name the product, the design tokens every screen draws from, and the shared components that make eleven screens feel like one app. It runs standalone, with no backend at all, and it&#39;s where the jigsaw principle starts paying rent: by the end of it, renaming Kivan to your own product is a one-file change.</p>
+<p><strong>Following along?</strong> ⭐ <a href="https://github.com/srivardhanjalan/kivan-tutorial">Star the repo</a> and follow me here so step 02 lands in your feed.</p>
+<p><em>— Srivardhan</em></p>
+<hr>
+<p><strong>Zero to Shipped — the series</strong></p>
+<ul>
+<li><strong>00 · <a href="#">Introduction</a></strong> <em>(link to post 00)</em></li>
+<li><strong>01 · Prerequisites: one script to set up everything</strong> <em>(this post)</em></li>
+<li><strong>02 · App shell &amp; design system</strong> <em>(coming soon)</em></li>
+</ul>
+<p><em>All code: <a href="https://github.com/srivardhanjalan/kivan-tutorial">github.com/srivardhanjalan/kivan-tutorial</a></em></p>
+</body></html>

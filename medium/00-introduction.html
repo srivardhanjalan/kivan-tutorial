@@ -1,0 +1,90 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>00-introduction — paste into Medium</title>
+<style>body{max-width:740px;margin:40px auto;font-family:Georgia,serif;font-size:18px;line-height:1.6;color:#242424;padding:0 20px}
+img{max-width:100%}pre{background:#f5f5f5;padding:14px;overflow-x:auto;font-size:14px}code{background:#f5f5f5;padding:1px 4px;font-size:15px}</style>
+</head><body>
+<h1>Zero to Shipped</h1>
+<p><em>Build a real social product — iPhone, iPad, Android, and a live AWS backend — in 16 deployable steps. This is the series introduction.</em></p>
+<hr>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-iphone.png" alt="Kivan on iPhone"></p>
+<p><em>Every screen above is rendered from the app&#39;s real design tokens — the translucent header wash, adaptive tile rails, device-aware masonry, and the floating glass tab bar.</em></p>
+<p>Most mobile-app tutorials teach you a todo list. You follow along, it works, and then you hit the wall every tutorial quietly avoids: real authentication, real infrastructure, real money on a cloud bill, photos that orphan themselves in S3, notifications that need a queue, and an app store&#39;s worth of screens that have to feel consistent.</p>
+<p>This series takes the opposite approach. Everything in it was built, broken, and rebuilt for real — the AWS bill, the 1 a.m. <code>CREATE_FAILED</code> with no logs, all of it — and the whole thing is already public at <strong><a href="https://github.com/srivardhanjalan/kivan-tutorial">github.com/srivardhanjalan/kivan-tutorial</a></strong>, so you can see exactly where we&#39;re going.</p>
+<p>We&#39;re going to build <strong>Kivan</strong> — a real social-wishlist product, end to end:</p>
+<ul>
+<li>Create wishlists for life&#39;s moments — birthdays, weddings, housewarmings, graduations</li>
+<li>Add wishes by <strong>browsing real stores inside the app</strong> — the store directory adapts to your country, and prices come back in whatever currency each store sells (₹, $, £, €, AED and more)</li>
+<li>Follow friends, discover popular wishlists, love the ones you like</li>
+<li>Plan events around wishlists — RSVPs, co-hosts, guest invites by email, photo galleries</li>
+<li>Get notified in-app and by email</li>
+<li>Operate it all — an admin dashboard, CloudWatch alarms, budgets, CI/CD</li>
+</ul>
+<p>One codebase. iPhone, iPad, Android, and web. Live AWS infrastructure that <strong>you</strong> deploy, understand, and can tear down with one command.</p>
+<p>And &quot;one codebase&quot; isn&#39;t a slogan — here&#39;s the same code on an iPad:</p>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-ipad.png" alt="Kivan on iPad"></p>
+<p><em>Rails become static grids and masonry widens to four columns — purely from device-driven layout math, no iPad-specific screens.</em></p>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-android.png" alt="Kivan on Android"></p>
+<p><em>And on Android: the identical app with Android system chrome.</em></p>
+<p>By the end of the series you&#39;ll have built:</p>
+<ul>
+<li>A polished <strong>Expo / React Native</strong> app with a token-driven design system and layouts that adapt from a phone to an iPad without a single hardcoded size</li>
+<li>A <strong>FastAPI</strong> backend on <strong>AWS App Runner</strong>, with JWKS-verified Clerk authentication and just-in-time user provisioning</li>
+<li><strong>Terraform</strong> for the entire stack — ECR, App Runner, DynamoDB, S3 with a backend-owned photo lifecycle, an SQS → Lambda notification pipeline, Mailgun email, CloudWatch alarms, and cost budgets</li>
+<li>An admin dashboard, deep-link sharing, and a production operations setup</li>
+</ul>
+<p><strong>Who this is for:</strong> you&#39;re comfortable in a terminal and have written some JavaScript or Python. You do <em>not</em> need to know React Native, FastAPI, Terraform, or AWS — every step explains what it&#39;s doing and why, and each one is small enough to actually finish. If you&#39;ve ever shipped a tutorial todo app and thought &quot;…now what?&quot;, this is the now-what.</p>
+<h2>Why this series is different: the jigsaw principle</h2>
+<p>Here&#39;s the part I care about most, and the reason this isn&#39;t &quot;yet another clone tutorial.&quot;</p>
+<p>The app is deliberately split into two kinds of code:</p>
+<ul>
+<li>A domain-agnostic <strong>platform</strong>: the app shell and design system, auth and onboarding, profiles, media handling, the social graph, notifications, sharing, admin, and operations. None of it knows what a &quot;wishlist&quot; is.</li>
+<li>Swappable <strong>domain modules</strong> 🧩: collections (wishlists and wishes), storefronts, in-app browser acquisition, and events.</li>
+</ul>
+<p>The modules plug into the platform like jigsaw pieces, and the final step of the series documents each piece&#39;s contract. Swap <em>wishlists + wish stores</em> for <em>notes</em>, or <em>trips + destinations</em>, or any collection-shaped domain you can think of — and the platform (accounts, photos, follows, notifications, sharing, admin) comes along for free.</p>
+<p>You&#39;re not just building Kivan. You&#39;re building a platform you&#39;ll reuse for your next three ideas.</p>
+<h2>How the repository works</h2>
+<p>The GitHub repository is structured so that <strong>the git history is the curriculum</strong>:</p>
+<ul>
+<li><strong>One folder per step, named for what it builds</strong> (<code>01-prerequisites</code> through <code>16-operations</code>). The first sets up your machine and accounts; every folder from <code>02-app-shell</code> on is a <strong>complete, runnable, deployable snapshot</strong> of the app at that stage. You never need another folder to run a step.</li>
+<li><strong>One commit per step</strong>, in order — so <code>git diff</code> between two adjacent steps shows you <em>exactly</em> what a feature costs in code.</li>
+<li><strong><code>final/</code></strong> is the finished application, including <code>MODULES.md</code> — the jigsaw contract documentation.</li>
+<li><strong>Zero bloat</strong>: every step contains exactly the code that stage needs. No dead files, no &quot;we&#39;ll use this later,&quot; no scaffolding you have to ignore.</li>
+</ul>
+<p>Every step from 03 onward ends in a deployable state: <code>terraform apply</code>, push the backend image, run the app, verify the step&#39;s checklist. Budget roughly an evening per step — and you end every single one with something that runs, not a promise that it will eventually. And every step&#39;s README has a <em>Gotchas</em> section — the actual failure modes I hit while building this, not hypothetical ones.</p>
+<h2>The roadmap</h2>
+<p>Sixteen steps, four of them jigsaw modules 🧩 — and each will get its own post in this series:</p>
+<ol>
+<li><strong>Prerequisites</strong> — one setup script (it even handles the Android toolchain), and the short list of accounts a script can&#39;t create for you</li>
+<li><strong>App shell &amp; design system</strong> — config-driven identity (name, scheme, theme, tabs), the glass chrome, shared components; a fully themed app that runs standalone</li>
+<li><strong>Backend &amp; infra core</strong> — the FastAPI skeleton, Terraform for ECR + App Runner + monitoring, and the amd64 deploy loop (with the Apple Silicon trap explained)</li>
+<li><strong>Auth &amp; onboarding</strong> — Clerk sign-in/up with email, Google, and Apple; JWKS verification; just-in-time user provisioning; the roles foundation; a first-run tutorial</li>
+<li><strong>Profiles</strong> — profile data, Settings, account deletion done properly</li>
+<li><strong>Media</strong> — S3 photos with a backend-owned lifecycle: pending upload → claim on save → auto-expiry. Your bucket never accumulates orphans</li>
+<li>🧩 <strong>Collections</strong> — wishlists &amp; wishes, life events, and the Home / My Stuff / detail / create screens</li>
+<li>🧩 <strong>Storefronts</strong> — curated stores with products</li>
+<li>🧩 <strong>Browser acquisition</strong> — a brand directory, an in-app browser, product scrapers, multi-currency prices</li>
+<li><strong>Social</strong> — the follow graph, Discover, public profiles, loves</li>
+<li><strong>In-app notifications</strong> — an SQS → Lambda pipeline, notification screens, per-type mutes</li>
+<li><strong>Email notifications</strong> — the Mailgun delivery leg, per-user opt-in, delivery-time checks</li>
+<li>🧩 <strong>Events</strong> — gatherings around wishlists: RSVPs, hosts, email invites for people who don&#39;t have the app yet, multi-photo galleries. This step doubles as a demonstration: you&#39;ll see the <em>full</em> delta of integrating a new module into notifications and media</li>
+<li><strong>Sharing</strong> — <code>kivan://</code> deep links and the share-modal family</li>
+<li><strong>Admin</strong> — role enforcement plus a dashboard for brands, life events, storefronts, products, and users</li>
+<li><strong>Operations</strong> — CloudWatch alarms and dashboards, cost management, CI/CD references</li>
+</ol>
+<h2>Start here</h2>
+<p>The next post — <strong>step 01</strong> — gets your machine ready: one idempotent setup script and the short list of accounts no script can create for you. If you&#39;d rather not wait, the repository has everything: each step folder is self-contained, and the READMEs don&#39;t assume you&#39;ve read these posts.</p>
+<p><strong>If this sounds like your kind of series:</strong></p>
+<ul>
+<li>⭐ <strong>Star the repo</strong> — <a href="https://github.com/srivardhanjalan/kivan-tutorial">github.com/srivardhanjalan/kivan-tutorial</a> — so you can find it when you&#39;re at your keyboard</li>
+<li><strong>Follow me here</strong> so the next part lands in your feed</li>
+<li><strong>Tell me in the comments</strong> what domain you&#39;d swap into the platform — notes? trips? that idea you&#39;ve been sitting on? The jigsaw exists exactly for that.</li>
+</ul>
+<p><em>— Srivardhan</em></p>
+<hr>
+<p><strong>Zero to Shipped — the series</strong></p>
+<ul>
+<li><strong>00 · Introduction</strong> <em>(this post)</em></li>
+<li><strong>01 · Prerequisites: one script to set up everything</strong> <em>(next — link when published)</em></li>
+</ul>
+<p><em>All code: <a href="https://github.com/srivardhanjalan/kivan-tutorial">github.com/srivardhanjalan/kivan-tutorial</a></em></p>
+</body></html>
