@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../constants/Colors';
 import BorderRadius from '../constants/BorderRadius';
-import { CommonScreenStyles } from '../constants/ScreenStyles';
+import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 
 interface EmptyStateViewProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -26,13 +26,13 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     paddingVertical: 64,
-    paddingHorizontal: 24,
+    paddingHorizontal: Spacing.xxl,
   },
   iconCircle: {
     width: 112,
     height: 112,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.lightGrey + '55',
+    backgroundColor: Colors.subtleFill,
     marginBottom: 28,
   },
   title: {

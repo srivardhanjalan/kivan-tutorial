@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated, Image, Easing } from 'react-native';
+import { View, StyleSheet, Animated, Easing } from 'react-native';
 import Colors from '../constants/Colors';
 import BorderRadius from '../constants/BorderRadius';
 import { CommonScreenStyles } from '../constants/ScreenStyles';
-import AppConfig from '../config/app';
+import BrandMark from './BrandMark';
 
 /** Full-screen branded loading state: the brand mark spinning and pulsing
     in a white disc, centered on the app background. */
@@ -56,7 +56,7 @@ const LoadingView: React.FC = () => {
     <View style={[CommonScreenStyles.container, CommonScreenStyles.center]}>
       <View style={[CommonScreenStyles.center, styles.disc]}>
         <Animated.View style={{ transform: [{ rotate: spin }, { scale: pulseValue }] }}>
-          <Image source={AppConfig.branding.logo} style={styles.logo} resizeMode="contain" />
+          <BrandMark size={48} />
         </Animated.View>
       </View>
     </View>
@@ -69,10 +69,6 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.white,
-  },
-  logo: {
-    width: 48,
-    height: 48,
   },
 });
 

@@ -1,17 +1,11 @@
 import React from 'react';
-import { Image, StyleSheet } from 'react-native';
+import { Image } from 'react-native';
 import AppConfig from '../config/app';
 
-/** The brand mark at its standard display size — auth header, onboarding. */
-const BrandMark: React.FC = () => (
-  <Image source={AppConfig.branding.logo} style={styles.logo} resizeMode="contain" />
+/** The one spelling of "render the brand mark" — auth header and onboarding
+    at the standard size, the loader smaller via `size`. */
+const BrandMark: React.FC<{ size?: number }> = ({ size = AppConfig.branding.logoSize }) => (
+  <Image source={AppConfig.branding.logo} style={{ width: size, height: size }} resizeMode="contain" />
 );
-
-const styles = StyleSheet.create({
-  logo: {
-    width: AppConfig.branding.logoSize,
-    height: AppConfig.branding.logoSize,
-  },
-});
 
 export default BrandMark;

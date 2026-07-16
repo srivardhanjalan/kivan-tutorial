@@ -2,4 +2,6 @@
 export default {
   /** Buttons dimmed while their action is in flight */
   disabled: 0.6,
+  /** TouchableOpacity press feedback on custom buttons */
+  pressed: 0.7,
 };
