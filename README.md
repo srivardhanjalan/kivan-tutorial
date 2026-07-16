@@ -88,7 +88,7 @@ own. You're not just building Kivan; you're building a platform you can reuse.
 | `01-prerequisites` | Run `./setup.sh` + the accounts list | verify your machine is ready |
 | `02-app-shell` | App shell & design system — config (name, scheme, theme, tabs), liquid-glass chrome, shared components | run a fully themed app standalone |
 | `03-backend-core` | Backend & infra core — FastAPI skeleton, Terraform (ECR, App Runner, monitoring base), the amd64 deploy loop | see the app talk to your live AWS backend |
-| `04-auth` | Auth & onboarding — Clerk sign-in/up (email, Google, Apple), JWKS verification, just-in-time user provisioning, roles foundation, first-run tutorial | create real accounts end-to-end |
+| `04-auth` | Auth & onboarding — Clerk sign-in/up (email, Google, Apple), JWKS verification, just-in-time user provisioning, first-run tutorial | create real accounts end-to-end |
 | `05-profiles` | Profiles — profile data, birthday, Settings, account deletion | manage a real user profile |
 | `06-media` | Media — S3 photos with backend-owned lifecycle (pending upload → claim on save → auto-expiry), profile & cover photos | upload photos safely, orphan-free |
 | `07-collections` | 🧩 Collections — wishlists & wishes, life-events, Home/My Stuff/detail/create screens | keep real wishlists |
@@ -99,7 +99,7 @@ own. You're not just building Kivan; you're building a platform you can reuse.
 | `12-email` | Email notifications — Mailgun delivery leg, per-user opt-in, delivery-time checks | receive email copies of notifications |
 | `13-events` | 🧩 Events — gatherings around wishlists: RSVP, hosts, guest invites (incl. email invites for non-users), multi-photo galleries | see the full delta of integrating a feature into notifications & media |
 | `14-sharing` | Sharing — `kivan://` deep links + the share-modal family | share wishlists, profiles, events |
-| `15-admin` | Admin — role enforcement + an admin dashboard (brands, life events, storefronts & products, users) | operate the app's catalog |
+| `15-admin` | Admin — the user `role` field lands with its first readers (a safe default covers records provisioned earlier), role enforcement + an admin dashboard (brands, life events, storefronts & products, users) | operate the app's catalog |
 | `16-operations` | Operations — CloudWatch alarms & dashboards, cost management, CI/CD references | run it like production |
 | `final/` | The complete application | the finished product + `MODULES.md` |
 

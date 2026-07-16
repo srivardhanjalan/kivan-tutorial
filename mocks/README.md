@@ -17,6 +17,10 @@ and embedded in the root README and the Medium posts.
 | — | `shot-02-home.png`, `shot-02-discover.png` | real simulator screenshots of the step-02 shell |
 | `hero-03.html` | `mocks-hero-03.png` | post 03 cover (real rollout terminal + live app screenshot) |
 | — | `shot-03-healthy.png` | real screenshot: Backend · healthy from the live API |
+| `hero-04.html` | `mocks-hero-04.png` | post 04 cover (401s terminal + the app greeting you by name) |
+| `img-04-learns.html` | `mocks-04-learns.png` | post 04: sign-in → tutorial → named Home (real screenshots) |
+| `img-04-race.html` | `mocks-04-race.png` | post 04: the CREATE_FAILED IAM-race terminal |
+| — | `shot-04-signin.png`, `shot-04-verify.png`, `shot-04-onboarding.png`, `shot-04-home.png` | real simulator screenshots of the step-04 auth flow |
 
 Re-render after editing a page (adjust `--window-size` to the page):
 

@@ -1,0 +1,39 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="mocks.css">
+<style>
+  body{margin:0;background:#fff}
+  .wrap{width:1400px;height:640px;position:relative;overflow:hidden;
+    background:linear-gradient(115deg,#FFE8EC 0%,#FDFFFF 42%,#E7F1F8 100%);
+    display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+  .term{width:1080px;border-radius:14px;background:#1D1E24;box-shadow:0 30px 70px rgba(20,20,30,.28);overflow:hidden}
+  .tbar{height:38px;background:#2A2B33;display:flex;align-items:center;padding:0 16px;gap:8px}
+  .dot2{width:12px;height:12px;border-radius:6px}
+  .ttitle{flex:1;text-align:center;color:#8A8B94;font-size:13px;font-weight:600;font-family:"SF Mono",Menlo,monospace;margin-right:44px}
+  .tbody{padding:20px 26px 24px;font-family:"SF Mono",Menlo,monospace;font-size:15px;line-height:1.75;color:#D6D7DE}
+  .g{color:#4ADE80}.r{color:#FF6B6B}.p{color:#FF6B8A}.dim{color:#8A8B94}.y{color:#FFD166}
+</style></head><body>
+<div class="wrap">
+  <div class="term">
+    <div class="tbar">
+      <span class="dot2" style="background:#FF5F57"></span>
+      <span class="dot2" style="background:#FEBC2E"></span>
+      <span class="dot2" style="background:#28C840"></span>
+      <span class="ttitle">CREATE_FAILED with no logs — cause #3</span>
+    </div>
+    <div class="tbody">
+<span class="dim">$</span> <span class="p">terraform apply</span><br>
+&nbsp;&nbsp;aws_apprunner_service: <span class="r">CREATE_FAILED</span><br>
+<span class="dim">$</span> <span class="p">aws logs filter-log-events …/service</span><br>
+&nbsp;&nbsp;[AppRunner] Successfully pulled your application image. <span class="g">✓</span><br>
+&nbsp;&nbsp;[AppRunner] <span class="r">Failed to deploy your application image.</span><br>
+<span class="dim">$</span> <span class="p">aws logs filter-log-events …/application</span><br>
+&nbsp;&nbsp;<span class="r">The specified log group does not exist.</span> <span class="dim">← the container never started</span><br>
+<span class="dim"># the instance role's ssm:GetParameters policy attached seconds AFTER</span><br>
+<span class="dim"># App Runner validated the secret. Terraform saw no reason to wait.</span><br>
+&nbsp;&nbsp;<span class="y">depends_on = [aws_iam_role_policy.apprunner_instance_ssm]</span><br>
+<span class="dim">$</span> <span class="p">terraform apply -replace=aws_apprunner_service.backend_ecr</span><br>
+&nbsp;&nbsp;aws_apprunner_service: <span class="g">RUNNING</span> ✓ <span class="dim">— same image, policy in place first</span>
+    </div>
+  </div>
+</div>
+</body></html>
