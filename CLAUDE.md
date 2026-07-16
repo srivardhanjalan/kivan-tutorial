@@ -32,6 +32,15 @@ product-manager (more as the user adds them).
 
 ## 1. Git & GitHub — every repo in this workspace
 
+- [ ] **New-repo bootstrap — run at creation, every repo:**
+      (1) `main-pr-only` ruleset — require PR, block force-push and branch
+      deletion, zero bypass actors — then PROVE it with a probe push that
+      must be rejected. Private repos on the free plan reject rulesets
+      (403: Pro required) — note it and rely on the behavioral rule until
+      the plan allows enforcement.
+      (2) Enable GitHub Pages (main, /) for public content repos and add a
+      site index. NEVER enable Pages on secret stores or the vault —
+      serving secrets as a website is exposure with no upside.
 - [ ] **NEVER commit or push directly to main/master.** Every change — code,
       docs, images, tooling — lands via branch → PR → squash-merge.
       (kivan-tutorial enforces this with an active GitHub ruleset, no
