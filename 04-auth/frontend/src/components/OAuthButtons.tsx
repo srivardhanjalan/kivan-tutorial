@@ -49,6 +49,8 @@ function OAuthButton({ strategy, label, icon }: OAuthProvider) {
       style={[CommonScreenStyles.outlinedSurface, styles.button, loading && styles.buttonDisabled]}
       onPress={onPress}
       disabled={loading}
+      accessibilityRole="button"
+      accessibilityLabel={label}
     >
       {loading ? (
         <ActivityIndicator color={Colors.textSecondary} />
