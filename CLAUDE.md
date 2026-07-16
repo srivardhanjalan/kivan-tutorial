@@ -142,11 +142,12 @@ memory — run the command/check each time.
 - [ ] **Mocks must match the end experience exactly** — when the app
       changes visually, regenerate the affected mock/hero images in the
       same round.
-- [ ] **Titles are value-first, not mood-first.** A title states the
-      concrete deliverable (quantify when possible: "One Script to…",
-      "Four Commands to…"); intrigue and war stories live in the subtitle.
-      Every title must survive an uncharitable first reading by someone
-      with zero context — memes, puns, and paradoxes fail that test.
+- [ ] **Titles: wit that carries the meaning ("Zero to Shipped"), never
+      wit that replaces it.** The test: at zero context, an uncharitable
+      reader must still decode what the piece delivers AND want to click.
+      Boring-but-accurate fails (no pull); clever-but-opaque fails
+      (misread); the target is both. Specifics and war stories live in the
+      subtitle.
 - [ ] **Article imagery must depict the article's actual content.** A cover
       or in-post image is built from the subject itself — a setup post shows
       the script's real terminal output, a UI step shows real screenshots of
