@@ -6,19 +6,23 @@
 
 ![Step 02 — the shell running (real simulator screenshots)](../mocks/mocks-hero-02.png)
 
-This is step 02 of **Zero to Shipped**, a series where we build a real social product — iPhone, iPad, Android, and a live AWS backend — one deployable step at a time. New here? **[Start with the introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**. The code lives at **[github.com/srivardhanjalan/kivan-tutorial](https://github.com/srivardhanjalan/kivan-tutorial)**; this post is the `02-app-shell/` folder, and [PR #7](https://github.com/srivardhanjalan/kivan-tutorial/pull/7/files) shows every line this step adds.
+Today we build an app that does nothing.
 
-Today we build an app with **no features whatsoever** — and I'll argue it's the most important step in the series.
+Not "a simple app." Nothing. Five tabs, and every one of them politely tells you its real screen hasn't arrived yet. If you demoed it to a friend they'd ask when you're going to start.
 
-## Why start with an empty shell?
+Here's my claim: this is the most important step in the series — and if you skip it, you'll spend week six of your project doing what I used to do, which is opening eleven screens one by one to fix the same padding.
 
-Because consistency isn't something you add later. Every app-store-quality product you admire has one property tutorials never teach: every screen looks like it was made by the same hands. That doesn't come from discipline — it comes from *making inconsistency impossible*. That's this step:
+*(This is step 02 of **Zero to Shipped**, where we build a real social product one deployable step at a time. New here? **[Start with the introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**. The code is the `02-app-shell/` folder; [PR #7](https://github.com/srivardhanjalan/kivan-tutorial/pull/7/files) shows every line.)*
 
-- **Every visual decision is a token.** Colors, type sizes, spacing, radii, shadows — all live in `src/constants/`. Screens import them; they never invent them. When we build eleven real screens in later steps, they'll look like one app because they *can't* look like anything else.
-- **The chrome is shared, not copied.** One floating header, one screen layout, one tab bar — components every screen composes instead of re-implementing.
-- **Config is data, and it earns its way in.** The tab bar is literally an array in `config/tabs.ts`; `config/app.ts` holds branding (the mark the loading spinner animates). Even the product's name and scheme live only in `app.json` for now — they join the config the moment code first consumes them, not before.
+## Consistency isn't a habit, it's a jail
 
-Run it:
+Every app you admire has one property tutorials never teach: every screen looks like the same person made it. That doesn't come from discipline. Discipline is what you have in week one. It comes from making inconsistency *impossible*:
+
+- **Every visual decision is a token.** Colors, type, spacing, radii, shadows — they live in `src/constants/`, screens import them, and no screen ever invents a hex value. When we build real screens later, they'll look like this shell because they physically can't look like anything else.
+- **The chrome is shared, not copied.** One floating header, one screen scaffold, one tab bar. Components compose them; nobody re-implements them.
+- **The app's identity is data.** The tab bar is literally an array in `config/tabs.ts`. Hold that thought — it gets a payoff at the end.
+
+Run it (no backend, no accounts, no API keys — Expo Go and go):
 
 ```bash
 cd 02-app-shell/frontend
@@ -26,26 +30,30 @@ npm install
 npm run ios
 ```
 
-No backend, no accounts, no API keys — it runs standalone in Expo Go.
-
-## The pieces
-
-### Design tokens
-
-`src/constants/` is the whole visual language: `Colors.ts` (the `#FF385C` primary, surface tiers, text tiers), `Typography.ts` (the 30pt/700/-0.5 large title and the section title — the only two text styles this step uses), `ScreenStyles.ts` (the app-wide 12pt content edge, the 60pt chrome pill height, the 34pt tab icons), plus exactly one radius and one shadow recipe — because that's all the shell references. Even the pressed-state grey is a named token (`Colors.pressedFill`), the centering idiom is one shared style instead of seven copies — and the whole step passes a five-gate audit (types, dead code, clone detection, color literals, and an AI semantic-duplication reviewer) run to a fixed point. **A token joins these files when a screen first needs it, never in advance.** That rule holds for the whole series: every step carries only code with a caller, so every file you read is load-bearing.
+## The tokens: fewer than you think
 
 ![The entire design system on one card — real token values](../mocks/mocks-02-tokens.png)
 
-### The chrome
+`src/constants/` is the whole visual language, and here's the part that surprises people: **Typography.ts contains two styles.** Not a "type scale." Two. The 30pt large title and the 20pt section title, because those are the only two styles this step *uses*.
 
-Two signature moves you saw in the mocks:
+That's the series' engineering rule doing its job: **a token joins the file when a screen first needs it, never in advance.** One radius (things that are fully round). One shadow recipe (things that float). Even the grey you feel when you press a button is a named token, `Colors.pressedFill`, because it appeared twice and a value that appears twice is a decision pretending to be a coincidence.
 
-- **The floating header** doesn't blur or draw an edge. It paints a translucent wash of the page background that eases out to nothing — content scrolling under the title stays visible, just lighter. (The Apple large-title treatment, without a `BlurView`.)
-- **The tab bar** is two floating glass pills — main tabs on the left, search on its own pill on the right. Active tabs get a soft pressed fill and a filled icon variant.
+### How I got humbled by my own linter
 
-### The tab bar is data
+Confession: the first version of this step didn't follow the rule. I copied the full constants files from the finished app — a radius scale, a shadow menu, a dozen text styles — because *obviously* later steps would need them.
 
-This is the jigsaw principle showing up on day one:
+Then I pointed the audit gate at it (types, dead-code analysis, clone detection, plus an AI reviewer told to hunt duplication by *meaning*), and it took **six rounds** to reach a clean pass. It found tokens with no callers. Then tokens whose only caller had just been deleted. Then a comment promising the spinner "defaults to the logo" while the code did no such thing. Then two names for the same concept. Every round I thought I was done; every round it found more. The step went from 1,670 lines to 829, rendering pixel-identical before and after.
+
+The lesson stuck: **speculative code isn't foresight, it's inventory** — and inventory rots. Every file in this step is load-bearing, and the gate that enforces it ships in the repo (`tools/audit-step.sh`), so you can hold your own steps to it.
+
+## The chrome: two moves you saw in the mocks
+
+- **The floating header doesn't blur, doesn't draw a line.** It paints a translucent wash of the page background that eases to nothing — content scrolling under the title stays visible, just lighter. Apple's large-title feel without a `BlurView`.
+- **The tab bar is two floating glass pills** — main tabs left, search in its own pill on the right. The active tab gets a soft pressed fill and a filled icon. That's the whole affordance language: if it responds to your finger, it fills grey.
+
+Every tab mounts the same `PlaceholderScreen`, which exists to exercise the system end to end: a brief branded loading pulse, the header with a working action, a section header, an empty state, and a toast when you tap ✨. Zero features, every primitive proven.
+
+## The payoff: rename the app in one edit
 
 ```ts
 export const Tabs = [
@@ -56,29 +64,25 @@ export const Tabs = [
 ] as const satisfies readonly TabConfig[];
 ```
 
-`TabNavigation` renders whatever this array declares — it doesn't know what a wishlist is. The route-name union is *derived* from the config (`(typeof Tabs)[number]['key']`), so adding a tab types the whole navigator automatically.
+`TabNavigation` renders whatever this array says. It has never heard of wishlists. Even the route-name union is *derived* from the config, so adding a tab types the whole navigator for free.
 
-Every tab mounts the same `PlaceholderScreen`, which exists to exercise the system end to end: the floating header with a working action button, a section header, an empty state, and a toast when you tap ✨.
+Which means you can steal the shell right now:
 
-## Make it yours in five minutes
-
-The point of config-driven identity is that *renaming the product is a data change*:
-
-1. `app.json` — change `name` and `scheme` (the single identity source at this step)
-2. `src/config/app.ts` — point `branding.spinnerLogo` at your own mark; the animated loader rebrands itself
-3. `src/config/tabs.ts` — retitle the tabs: `Notes`, `Notebooks`, `Shared`…
+1. `app.json` → your `name` and `scheme`
+2. `config/app.ts` → point `branding.spinnerLogo` at your mark; the loader rebrands itself
+3. `config/tabs.ts` → `Trips`, `Journal`, whatever you're actually building
 
 ![Rename the app in one config edit — same shell, your app](../mocks/mocks-02-rename.png)
 
-Reload. Your app, your name, your tabs — and not one component file touched. Hold that thought for step 07, when the same trick swaps whole feature modules.
+Reload. Your app, your tabs, not one component file touched. This is the jigsaw principle at its smallest scale — in step 07 the same trick starts swapping whole feature modules.
 
 ## Gotchas from the real run
 
 - **Metro port conflicts** — running two steps at once? Add `--port 8083`.
-- **Watchman can't hurt you here** — `metro.config.js` opts into Metro's Node file watcher (`useWatchman: false`); on a project this size watchman adds no speed, only a failure mode (a stale daemon hangs Metro at "Waiting for Watchman"). One config line deletes the whole problem.
+- **Watchman can't hurt you here** — `metro.config.js` opts into Metro's Node file watcher (`useWatchman: false`). On a project this size watchman adds no speed, only a failure mode (a stale daemon hangs Metro at "Waiting for Watchman"). One config line deletes the entire problem.
 - **Expo Go tracks the newest SDK** — this project pins SDK 54 with a committed lockfile, so `npm install` gives you the exact working set. If Expo Go itself moves ahead months from now, `npx expo install --fix` realigns everything.
-- **Physical device instead of a simulator?** The npm scripts pass `--localhost` (immune to VPN/firewall weirdness on simulators); a real phone needs the LAN — run `npx expo start` without the flag, same Wi-Fi.
-- **`id={undefined}` on the navigator** — React Navigation v7's types demand an explicit `id` even when you don't want one. It's deliberate; leave it.
+- **Physical phone instead of a simulator?** The npm scripts pass `--localhost` (immune to VPN/firewall weirdness on simulators); a real phone needs the LAN — `npx expo start` without the flag, same Wi-Fi.
+- **`id={undefined}` on the navigator** — React Navigation v7's types demand an explicit `id` even when you don't want one. Deliberate; leave it.
 
 ## You're done when
 
@@ -89,7 +93,7 @@ Reload. Your app, your name, your tabs — and not one component file touched. H
 
 ## What's next
 
-In **step 03** we leave the simulator: a FastAPI skeleton, Terraform for ECR + App Runner + monitoring, and the first real deploy — including the Apple Silicon Docker trap that fails only in production, and how the tutorial's build loop dodges it.
+In **step 03**, the app leaves the simulator: a FastAPI skeleton, Terraform for real AWS infrastructure, and a deploy that failed on me twice in ways your laptop will never warn you about. Every tab's placeholder gains a heartbeat.
 
 **Following along?** ⭐ [Star the repo](https://github.com/srivardhanjalan/kivan-tutorial) and follow me here so step 03 lands in your feed.
 
@@ -100,6 +104,6 @@ In **step 03** we leave the simulator: a FastAPI skeleton, Terraform for ECR + A
 - **00 · [Introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**
 - **01 · [One script to set up everything](https://medium.com/@srivardhanjalan/one-script-to-set-up-everything-ae8bcea2d649)**
 - **02 · Dressed to Ship** *(this post)*
-- **03 · Backend & infra core** *(coming soon)*
+- **03 · Alive on Arrival** *(coming soon)*
 
 *All code: [github.com/srivardhanjalan/kivan-tutorial](https://github.com/srivardhanjalan/kivan-tutorial)*
