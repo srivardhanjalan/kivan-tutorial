@@ -106,6 +106,18 @@ memory — run the command/check each time.
 - [ ] Secrets live only in gitignored `frontend/.env.local` and
       `infra/terraform.tfvars`. Never in code, never in a commit, never in
       a public image (mask account IDs in screenshots/heroes).
+- [ ] **The canonical secret store is `github.com/srivardhanjalan/secrets-vault`**
+      (PRIVATE; local clone at `~/workspace/secrets-vault`). One directory
+      per project, files mirroring their in-project paths, every key logged
+      in the project's NOTES.md (what/issuer/rotation). New secrets go to
+      the vault first, then the gitignored local copy. That repo must never
+      be public or referenced from public code.
+- [ ] **AWS: every resource is created through Terraform, tagged via the
+      provider's `default_tags` (Project + Environment), and thereby in the
+      stack's tag-based resource group — no untagged, ungrouped, or
+      console-created resources.** Where a service self-creates a resource
+      (e.g. App Runner log groups), the deploy script must tag it into the
+      group and bound it (retention), and teardown docs must sweep it.
 
 ## 6. Working with the user
 
