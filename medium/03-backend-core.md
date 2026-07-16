@@ -87,7 +87,7 @@ In **step 04** the app gets real users: Clerk sign-in/up, JWKS verification on t
 
 - **00 · [Introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**
 - **01 · [One script to set up everything](https://medium.com/@srivardhanjalan/one-script-to-set-up-everything-ae8bcea2d649)**
-- **02 · The App Gets a Face** *(link when published)*
+- **02 · Dressed to Ship** *(link when published)*
 - **03 · The App Gets a Heartbeat** *(this post)*
 - **04 · Auth & onboarding** *(coming soon)*
 
