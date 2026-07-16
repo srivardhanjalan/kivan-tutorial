@@ -1,102 +1,141 @@
-# Step 02 — App Shell & Design System
+# Step 03 — Backend & Infra Core
 
-A fully themed, runnable app with **zero domain code**: the design tokens,
-the glass chrome (floating fade-wash header + two glass tab pills), the
-shared primitives every later screen uses, and config files that make the
-app's identity a data change. No backend, no auth — it runs standalone in
-Expo Go.
+The app leaves the simulator: a FastAPI skeleton, the Terraform that gives it
+a home on AWS (ECR + App Runner + IAM + logs), and the deploy loop — ending
+with the shell from step 02 showing a live **Backend · healthy** line fetched
+from your own infrastructure.
 
 **The exact delta this step adds:**
-[PR #7 — Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/7/files)
+[PR #12 — Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/12/files)
 
-## Run it
+## Run it locally (no AWS needed yet)
+
+Terminal 1 — the backend (any Python 3.11+; the Docker image runs 3.11):
+
+```bash
+cd backend
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python run.py            # serves http://localhost:8000 (blocking)
+```
+
+Prefer container parity with production? Same Dockerfile App Runner runs
+(from the step root, not from inside `backend/`):
+
+```bash
+docker build -t kivan-api backend && docker run -p 8000:8000 kivan-api
+```
+
+Terminal 2 — the app:
 
 ```bash
 cd frontend
+cp .env.example .env.local         # EXPO_PUBLIC_API_URL=http://localhost:8000
 npm install
-npm run ios      # or: npm run android (emulator from step 01's --android)
+npm run ios
 ```
 
-Expo installs Expo Go on the simulator automatically on first run.
+Every tab now shows **Backend · healthy** under its section header — the
+app and your API are talking.
+
+## Deploy it (the real thing)
+
+App Runner can't start from an empty registry, so the first rollout is
+staged: create the registry, push an image, create the service, then one
+instant re-run to tag what App Runner self-created.
+
+```bash
+cd infra
+cp terraform.tfvars.example terraform.tfvars    # no secrets needed this step
+terraform init
+terraform apply -target=aws_ecr_repository.backend   # 1. registry first
+./scripts/deploy.sh                                   # 2. build amd64 → push
+terraform apply                                       # 3. everything else (~5 min)
+./scripts/deploy.sh                                   # 4. re-run: tags the log
+                                                      #    groups (cached, instant)
+
+terraform output -raw apprunner_ecr_service_url       # → frontend/.env.local
+```
+
+`EXPO_PUBLIC_*` values are inlined at **bundle time** — after editing
+`.env.local`, restart the dev server (`npx expo start -c --localhost`), a reload is not
+enough. Then: the same **Backend · healthy** line, now served from AWS.
+
+Every resource is tagged (`Project=kivan`, `Environment=…`) and thereby in
+the stack's resource group (IAM roles are tagged too, though as global
+resources they don't appear in the regional group's listing). One resource
+can't be Terraform-managed: App Runner creates its two log groups itself —
+`deploy.sh` tags them into the group and caps retention at 30 days.
+`terraform destroy` removes the stack; sweep the log groups after:
+
+```bash
+aws logs describe-log-groups --log-group-name-prefix /aws/apprunner/kivan \
+  --region us-east-1 --query 'logGroups[].logGroupName' --output text \
+  | xargs -n1 aws logs delete-log-group --region us-east-1 --log-group-name
+```
 
 ## What's here
 
 ```
-frontend/
-  App.tsx                      providers + navigation container — nothing else
-  src/config/
-    app.ts                     branding (the loader's animated mark); name
-                               and scheme join when code first consumes them
-    tabs.ts                    the tab bar as data: key, title, icons
-  src/constants/
-    Colors.ts                  palette (primary #FF385C, text tiers, pressed fill)
-    Typography.ts              type scale (largeTitle 30/700/-0.5, …)
-    ScreenStyles.ts            spacing + chrome metrics (contentHorizontal 12,
-                               chromePillHeight 60, tabIconSize 34, …)
-    BorderRadius.ts, Shadows.ts
-  src/components/
-    TabNavigation.tsx          two glass pills, built FROM config/tabs.ts
-    FloatingHeader.tsx         translucent fade-wash header (no blur, no edge)
-    HeaderIconButton.tsx       44pt header action, pressed-fill affordance
-    SectionHeader.tsx          section title + inline meta + optional action
-    EmptyStateView.tsx         icon + title + subtitle empty state
-    ToastProvider.tsx          bottom toasts (useToast().show(...))
-    KivanLoader.tsx            branded loading spinner
-    LoadingView.tsx            full-screen loading state
-    layouts/FloatingHeaderLayout.tsx
-                               the screen scaffold: safe area + header +
-                               scroll content with the app-wide edges
-  src/screens/
-    PlaceholderScreen.tsx      one screen, five tabs — exercises the header,
-                               section header, empty state, and toasts
+backend/
+  app/main.py        FastAPI app: gzip, CORS, `/` and `/health` (plus
+                     FastAPI's built-in /docs)
+  run.py             local dev server (uvicorn, hot reload)
+  Dockerfile         python:3.11-slim; the image App Runner runs
+  requirements.txt   fastapi + uvicorn — dependencies join with their features
+infra/
+  main.tf            ECR (+lifecycle policy), App Runner service (health-checked
+                     on /health, auto-deploys :latest), two IAM roles, and a
+                     resource group holding everything tagged Project=kivan
+  variables.tf       region, environment, App Runner cpu/memory — only what
+                     main.tf consumes
+  outputs.tf         the service URL, ECR URL, service ARN, resource group
+  terraform.tfvars.example   copy to terraform.tfvars (gitignored)
+  scripts/deploy.sh  the amd64 build-push loop (see the gotcha below)
+frontend/            step 02's shell plus:
+  src/services/api.ts          the API root (EXPO_PUBLIC_API_URL) + fetchHealth
+  src/components/ApiStatus.tsx the proof-of-life line on every placeholder tab
+  .env.example                 copy to .env.local (gitignored)
 ```
 
-## The two ideas this step plants
+## The idea this step plants
 
-1. **Every visual decision is a token.** No screen ever hardcodes a color,
-   size, or offset — they import from `constants/`. When step 07 builds real
-   screens, they'll look like this shell because they can't look like
-   anything else.
-2. **The shell is domain-blind.** `TabNavigation` renders whatever
-   `config/tabs.ts` declares; `PlaceholderScreen` renders whatever tab it's
-   given. Nothing in this folder knows what a wishlist is — that's the
-   jigsaw principle, enforced from the first line of code.
-
-## Make it yours (5 minutes)
-
-Rename the product without touching a component:
-
-- `app.json` → change `name` and `scheme` (the only identity source until
-  code consumes them)
-- `src/config/app.ts` → point `branding.spinnerLogo` at your own mark — the
-  animated loader rebrands itself
-- `src/config/tabs.ts` → retitle/re-icon the tabs (try `Notes`, `Trips`…)
-
-Reload — it's your app now.
-
-## Done when
-
-- [ ] The app boots in Expo Go with the splash, then five tabs
-- [ ] Tab switches move the pressed pill fill and swap icon weights
-- [ ] Each tab shows its own title in the floating header
-- [ ] The ✨ header button fires a toast
-- [ ] Scrolling isn't possible yet (placeholders are short) — but the header
-      wash is visible over the status bar
+**The backend earns its dependencies the same way the frontend earns its
+tokens.** No database, no auth middleware, no queue — `requirements.txt` is
+two lines because the skeleton reads nothing else. App Runner's env vars are
+`ENVIRONMENT` and `AWS_REGION` only; Clerk keys, bucket names, and queue URLs
+join in the steps that consume them. Same rule, both sides of the wire.
 
 ## Gotchas
 
-- **Port already in use** — running two steps' Metros at once? Add
-  `--port 8083` to the start command.
-- **Expo Go SDK drift** — Expo Go tracks the newest SDK; this project pins
-  SDK 54 with a committed lockfile. If Expo Go moves ahead of it later,
-  `npx expo install --fix` realigns the set.
-- **Testing on a physical phone?** The scripts pass `--localhost`, which is
-  ideal for simulators/emulators but unreachable from a real device — drop
-  the flag (`npx expo start`) and stay on the same Wi-Fi.
-- **`id={undefined}` on the navigator** — React Navigation v7's types
-  require an explicit `id` even when you don't want one. Intentional.
-- **Watchman** — pre-resolved: `metro.config.js` uses Metro's Node watcher
-  (`useWatchman: false`), so a stale watchman daemon can't hang Metro here.
-  Delete those lines if you prefer watchman on a big monorepo.
+- **Apple Silicon: the build that only fails in production.** App Runner
+  runs amd64 only. QEMU and docker-container builders produce images that
+  build and even run locally, then die on AWS with `CREATE_FAILED` and no
+  logs. `deploy.sh` works because step 01 configured the colima-rosetta
+  docker context (plain docker driver through Rosetta). Verify before your
+  first push: `docker context show` → `colima-rosetta`.
+- **The same `CREATE_FAILED`, second cause: BuildKit attestations.** Newer
+  Docker attaches provenance/SBOM manifests by default, turning the push
+  into an OCI image *index* — App Runner can't CREATE a service from it
+  (identical symptom: failure before the first log line; updating an
+  existing service tolerates it, which makes it maddening to bisect).
+  `deploy.sh` passes `--provenance=false --sbom=false`. We hit this for
+  real while verifying this step.
+- **`terraform apply` name collisions** — resource names embed
+  `environment`; if you deploy twice (or already ran the finished app),
+  change `environment` in `terraform.tfvars`.
+- **Physical phone?** Two changes, not one: run Metro without `--localhost`
+  (`npx expo start`, same Wi-Fi) so the phone can reach the bundler, and put
+  a URL the phone can reach in `.env.local` (your Mac's LAN IP, or the App
+  Runner URL).
 
-Next: `03-backend-core` — FastAPI + Terraform, and the first deploy.
+## Done when
+
+- [ ] `curl localhost:8000/health` → `{"status":"healthy"}`
+- [ ] Every tab shows **Backend · healthy** (green)
+- [ ] After the four-command rollout + `.env.local` + `expo start -c --localhost`: the
+      same green line, served from AWS
+- [ ] Stop the backend → cold-restart the app → **Backend · unreachable**
+      (red, with the reason): the line is real, not decorative
+
+Next: `04-auth` — Clerk sign-in/up, JWKS verification, and just-in-time
+user provisioning.

@@ -23,4 +23,8 @@ export default {
   textSecondary: '#6E6E73',
   /** The app-wide pressed/active fill on chrome buttons and tabs */
   pressedFill: 'rgba(0, 0, 0, 0.08)',
+  /** Success/confirmation */
+  success: '#34C759',
+  /** Destructive/error */
+  danger: '#EF4444',
 };
