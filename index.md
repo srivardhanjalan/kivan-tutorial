@@ -20,6 +20,10 @@ Code is best browsed [on GitHub](https://github.com/srivardhanjalan/kivan-tutori
 
 - [Series hero](mocks/hero.html) · [01](mocks/hero-01.html) · [02](mocks/hero-02.html) · [03](mocks/hero-03.html)
 
+## LinkedIn carousels (browser-rendered slides; PDF + post copy on GitHub)
+
+- [02 · Dressed to Ship — slides](linkedin/02-app-shell/carousel.html) · [PDF + post copy](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/linkedin/02-app-shell)
+
 ## The code (on GitHub)
 
 - [README — start here](https://github.com/srivardhanjalan/kivan-tutorial#readme)

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Dressed to Ship — LinkedIn carousel</title>
+<style>
+  @page { size: 1080px 1350px; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: -apple-system, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    color: #1A1A1A;
+  }
+  .slide {
+    width: 1080px; height: 1350px;
+    background: linear-gradient(135deg, #fdecef 0%, #fbfbfd 46%, #ecf2f8 100%);
+    padding: 100px 90px;
+    display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
+    page-break-after: always;
+  }
+  .eyebrow {
+    color: #FF385C; font-size: 27px; font-weight: 700;
+    letter-spacing: .2em; text-transform: uppercase;
+  }
+  h1 { font-size: 108px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.04; margin-top: 32px; }
+  h2 { font-size: 88px;  font-weight: 800; letter-spacing: -0.025em; line-height: 1.08; margin-top: 32px; }
+  .lede { font-size: 40px; line-height: 1.4; color: #6E6E73; margin-top: 40px; font-weight: 500; }
+  .lede strong { color: #1A1A1A; font-weight: 700; }
+  .accent { color: #FF385C; }
+
+  .chip {
+    display: inline-block; background: #FF385C; color: #fff;
+    border-radius: 999px; padding: 20px 38px;
+    font-family: "SF Mono", Menlo, monospace; font-size: 28px; font-weight: 600;
+    box-shadow: 0 6px 18px rgba(255,56,92,.25);
+  }
+
+  .footer {
+    position: absolute; bottom: 70px; left: 90px; right: 90px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 25px; font-weight: 700; letter-spacing: .14em;
+    text-transform: uppercase; color: #9a9aa0;
+  }
+
+  .card {
+    background: #fff; border-radius: 36px; box-shadow: 0 18px 50px rgba(26,26,26,.10);
+    overflow: hidden;
+  }
+
+  .stats { display: flex; gap: 24px; margin-top: 90px; }
+  .stat {
+    flex: 1; background: #fff; border-radius: 32px; padding: 52px 16px;
+    text-align: center; box-shadow: 0 10px 30px rgba(26,26,26,.07);
+  }
+  .stat .n { font-size: 76px; font-weight: 800; letter-spacing: -0.03em; color: #FF385C; }
+  .stat .l { font-size: 26px; color: #6E6E73; margin-top: 16px; font-weight: 600; line-height: 1.3; }
+
+  .phone {
+    width: 360px; border-radius: 52px; border: 10px solid #1A1A1A;
+    overflow: hidden; box-shadow: 0 30px 70px rgba(26,26,26,.18);
+    background: #fff;
+  }
+  .phone img { width: 100%; display: block; }
+  .mono { font-family: "SF Mono", Menlo, monospace; }
+</style>
+</head>
+<body>
+
+<!-- 1 · HOOK — one claim + one visual -->
+<section class="slide" id="s1">
+  <div class="eyebrow">Zero to Shipped · Step 02</div>
+  <h1 style="margin-top:48px;">Today we build an app that does <span class="accent">nothing.</span></h1>
+  <div class="lede" style="max-width:480px;"><strong>On purpose.</strong></div>
+  <div class="lede" style="margin-top:90px; font-weight:800; color:#FF385C; letter-spacing:.12em; text-transform:uppercase; font-size:28px;">swipe →</div>
+  <div style="position:absolute; right:80px; bottom:90px; width:360px;">
+    <div class="phone"><img src="../../mocks/shot-02-home.png" alt="Home tab — real simulator screenshot"></div>
+  </div>
+  <div style="position:absolute; left:90px; bottom:70px;">
+    <div style="font-size:38px; font-weight:800; letter-spacing:-0.01em; color:#1A1A1A;">Dressed to Ship<span class="accent">.</span></div>
+    <div style="margin-top:12px; font-size:25px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#9a9aa0;">@srivardhanjalan</div>
+  </div>
+</section>
+
+<!-- 2 · WHY — one idea + one visual -->
+<section class="slide" id="s2">
+  <div class="eyebrow">Why ship nothing?</div>
+  <h2 style="max-width:560px; font-size:76px;">Lock the visual system <span class="accent">before</span> the features exist.</h2>
+  <div class="lede" style="max-width:470px;">Or spend week six fixing the same padding on eleven screens.</div>
+  <div style="position:absolute; right:80px; bottom:145px; width:360px;">
+    <div class="phone"><img src="../../mocks/shot-02-discover.png" alt="Discover tab — real simulator screenshot"></div>
+  </div>
+  <div class="footer"><span>Dressed to Ship</span><span>2 / 8</span></div>
+</section>
+
+<!-- 3 · THE IDEA — text only, big type -->
+<section class="slide" id="s3" style="justify-content:center;">
+  <div class="eyebrow">The idea</div>
+  <h2 style="font-size:84px;">Consistency isn't a habit. It's a <span class="accent">door you lock</span> behind you.</h2>
+  <div class="lede" style="max-width:760px;">Make inconsistency impossible — you'll never have to resist it.</div>
+  <div class="footer"><span>Dressed to Ship</span><span>3 / 8</span></div>
+</section>
+
+<!-- 4 · THE TOKENS — one stat row -->
+<section class="slide" id="s4" style="justify-content:center;">
+  <div class="eyebrow">The tokens</div>
+  <h2>The <span class="accent">entire</span> design system.</h2>
+  <div class="stats">
+    <div class="stat"><div class="n">6</div><div class="l">colors</div></div>
+    <div class="stat"><div class="n">2</div><div class="l">text styles</div></div>
+    <div class="stat"><div class="n">1</div><div class="l">radius</div></div>
+    <div class="stat"><div class="n">2</div><div class="l">shadows</div></div>
+    <div class="stat"><div class="n">5</div><div class="l">chrome metrics</div></div>
+  </div>
+  <div class="lede" style="margin-top:80px;">A token joins the file when a screen first needs it. <strong>Never in advance.</strong></div>
+  <div class="footer"><span>Dressed to Ship</span><span>4 / 8</span></div>
+</section>
+
+<!-- 5 · THE QUOTE — one quote, nothing else -->
+<section class="slide" id="s5" style="justify-content:center;">
+  <div class="eyebrow">The rule</div>
+  <h2 style="font-size:84px; line-height:1.14;">"A value that appears twice is a <span class="accent">decision</span> pretending to be a <span class="accent">coincidence</span>."</h2>
+  <div class="footer"><span>Dressed to Ship</span><span>5 / 8</span></div>
+</section>
+
+<!-- 6 · WAR STORY — one stat row -->
+<section class="slide" id="s6" style="justify-content:center;">
+  <div class="eyebrow">Confession</div>
+  <h2>My own linter <span class="accent">humbled me.</span></h2>
+  <div class="stats">
+    <div class="stat"><div class="n" style="font-size:64px; display:flex; align-items:center; justify-content:center; height:72px;">6</div><div class="l">rounds to a clean pass</div></div>
+    <div class="stat" style="flex:1.4;"><div class="n" style="font-size:64px; display:flex; align-items:center; justify-content:center; gap:14px; height:72px;">1,670 <span style="font-size:46px; font-weight:700;">→</span> 829</div><div class="l">lines of code</div></div>
+    <div class="stat"><div class="n" style="font-size:64px; display:flex; align-items:center; justify-content:center; height:72px;">0px</div><div class="l">visual difference</div></div>
+  </div>
+  <div class="lede" style="margin-top:80px;">Speculative code is inventory — <strong>and inventory rots.</strong></div>
+  <div class="footer"><span>Dressed to Ship</span><span>6 / 8</span></div>
+</section>
+
+<!-- 7 · THE PAYOFF — one visual -->
+<section class="slide" id="s7" style="justify-content:center;">
+  <div class="eyebrow">The payoff</div>
+  <h2>Rename the app in <span class="accent">one edit.</span></h2>
+  <div style="margin-top:64px;">
+    <div style="width:860px; height:466px; overflow:hidden; margin:0 auto;">
+      <img src="../../mocks/mocks-02-rename.png" alt="Edit the Tabs array in src/config/tabs.ts" style="width:2013px; margin:-262px 0 0 -250px; display:block;">
+    </div>
+    <div style="text-align:center; color:#FF385C; font-size:54px; font-weight:800; margin:14px 0;">↓</div>
+    <div style="width:560px; height:192px; overflow:hidden; margin:0 auto;">
+      <img src="../../mocks/mocks-02-rename.png" alt="Same shell, your app — renamed tab bar" style="width:2064px; margin:-410px 0 0 -1312px; display:block;">
+    </div>
+  </div>
+  <div class="footer"><span>Dressed to Ship</span><span>7 / 8</span></div>
+</section>
+
+<!-- 8 · CTA -->
+<section class="slide" id="s8" style="justify-content:center;">
+  <div class="eyebrow">Zero to Shipped · Step 02</div>
+  <h2>The full build, step by step, <span class="accent">free on Medium.</span></h2>
+  <div style="margin-top:80px;"><span class="chip">Link in the first comment ↓</span></div>
+  <div class="lede" style="margin-top:90px; font-size:30px;"><strong>Zero to Shipped</strong><br><span class="mono" style="font-size:26px;">github.com/srivardhanjalan/kivan-tutorial</span></div>
+  <div class="footer"><span>@srivardhanjalan</span><span>8 / 8</span></div>
+</section>
+
+<script>
+  // Preview mode: open with #s4 to show only that slide (used for per-slide verification screenshots)
+  if (location.hash) {
+    document.querySelectorAll('.slide').forEach(s => {
+      if ('#' + s.id !== location.hash) s.style.display = 'none';
+    });
+  }
+</script>
+</body>
+</html>
