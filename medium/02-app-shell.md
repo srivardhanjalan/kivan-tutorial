@@ -1,6 +1,6 @@
-# The App With No Features
+# The App Gets a Face
 
-*Zero to Shipped · 02 — a fully themed app with zero domain code: design tokens, glass chrome, and a tab bar that's data.*
+*Zero to Shipped · 02 — design tokens, glass chrome, and a tab bar that's data: a fully themed app with zero features, on purpose.*
 
 ---
 
@@ -95,7 +95,7 @@ In **step 03** we leave the simulator: a FastAPI skeleton, Terraform for ECR + A
 
 - **00 · [Introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**
 - **01 · [One script to set up everything](https://medium.com/@srivardhanjalan/one-script-to-set-up-everything-ae8bcea2d649)**
-- **02 · The app with no features** *(this post)*
+- **02 · The App Gets a Face** *(this post)*
 - **03 · Backend & infra core** *(coming soon)*
 
 *All code: [github.com/srivardhanjalan/kivan-tutorial](https://github.com/srivardhanjalan/kivan-tutorial)*
