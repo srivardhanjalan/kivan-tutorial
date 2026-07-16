@@ -35,7 +35,7 @@ On the frontend, sign-in and sign-up looked like two screens until the clone det
 
 Those are real simulator screenshots from the verification run — Clerk's development instances accept test addresses (any email with a `+clerk_test` subaddress, verification code `424242`), which is how an automated UI test can sign up without an inbox.
 
-The audit gate ran eight times before this step came back clean, and the best finding wasn't even in my first draft — it was in my fix. I'd unified the brand logo's size behind one config value, which made two style blocks byte-identical, which the clone detector then flagged, which forced the real extraction (a shared `BrandMark`). Fixes to duplication are themselves duplication suspects. That's why the gate repeats until a full pass finds nothing.
+The audit gate ran eighteen times across two attack lenses before three consecutive passes came back clean — and the best finding wasn't even in my first draft. It was in my fix. I'd unified the brand logo's size behind one config value, which made two style blocks byte-identical, which the clone detector then flagged, which forced the real extraction (a shared `BrandMark`). Fixes to duplication are themselves duplication suspects. That's why the gate repeats until a full pass finds nothing.
 
 ## 401 means you, 503 means me
 
