@@ -14,11 +14,11 @@ Here's my claim: this is the most important step in the series — and if you sk
 
 *(This is step 02 of **Zero to Shipped**, where we build a real social product one deployable step at a time. New here? **[Start with the introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**. The code is the `02-app-shell/` folder; [PR #7](https://github.com/srivardhanjalan/kivan-tutorial/pull/7/files) shows every line.)*
 
-## Consistency isn't a habit, it's a jail
+## Consistency isn't a habit, it's a jail you build for your future self
 
-Every app you admire has one property tutorials never teach: every screen looks like the same person made it. That doesn't come from discipline. Discipline is what you have in week one. It comes from making inconsistency *impossible*:
+Every app you admire has one property tutorials never teach: every screen looks like the same person made it. That doesn't come from discipline. Discipline is what you have in week one. It comes from locking the door: make inconsistency impossible and you never have to resist it.
 
-- **Every visual decision is a token.** Colors, type, spacing, radii, shadows — they live in `src/constants/`, screens import them, and no screen ever invents a hex value. When we build real screens later, they'll look like this shell because they physically can't look like anything else.
+- **Every visual decision is a token.** Colors, type, radii, shadows, and the chrome's spacing metrics (`ScreenStyles.ts`) live in `src/constants/`; screens import them, and no screen ever invents a hex value. When we build real screens later, they'll look like this shell because they physically can't look like anything else.
 - **The chrome is shared, not copied.** One floating header, one screen scaffold, one tab bar. Components compose them; nobody re-implements them.
 - **The app's identity is data.** The tab bar is literally an array in `config/tabs.ts`. Hold that thought — it gets a payoff at the end.
 
@@ -36,13 +36,13 @@ npm run ios
 
 `src/constants/` is the whole visual language, and here's the part that surprises people: **Typography.ts contains two styles.** Not a "type scale." Two. The 30pt large title and the 20pt section title, because those are the only two styles this step *uses*.
 
-That's the series' engineering rule doing its job: **a token joins the file when a screen first needs it, never in advance.** One radius (things that are fully round). One shadow recipe (things that float). Even the grey you feel when you press a button is a named token, `Colors.pressedFill`, because it appeared twice and a value that appears twice is a decision pretending to be a coincidence.
+That's the series' engineering rule doing its job: a token joins the file when a screen first needs it, never in advance. One radius (things that are fully round). Two shadow recipes: one for the chrome pills, one for things that float over them. Even the grey you feel when you press a button is a named token, `Colors.pressedFill`, because it appeared twice and a value that appears twice is a decision pretending to be a coincidence.
 
 ### How I got humbled by my own linter
 
 Confession: the first version of this step didn't follow the rule. I copied the full constants files from the finished app — a radius scale, a shadow menu, a dozen text styles — because *obviously* later steps would need them.
 
-Then I pointed the audit gate at it (types, dead-code analysis, clone detection, plus an AI reviewer told to hunt duplication by *meaning*), and it took **six rounds** to reach a clean pass. It found tokens with no callers. Then tokens whose only caller had just been deleted. Then a comment promising the spinner "defaults to the logo" while the code did no such thing. Then two names for the same concept. Every round I thought I was done; every round it found more. The step went from 1,670 lines to 829, rendering pixel-identical before and after.
+Then I pointed the audit gate at it (types, dead-code analysis, clone detection, plus an AI reviewer told to hunt duplication by *meaning*), and it took **six rounds** to reach a clean pass. It found tokens with no callers. Then tokens whose only caller had just been deleted. Then a comment promising the spinner "defaults to the logo" while the code did no such thing. Then two names for the same concept. Every round I thought I was done; every round it found more. That day the step went from 1,670 lines to 829, rendering pixel-identical before and after. (It sits at 858 now — src plus App.tsx — after a later round added the pressed-fill token and friends. Clone it and count.)
 
 The lesson stuck: **speculative code isn't foresight, it's inventory** — and inventory rots. Every file in this step is load-bearing, and the gate that enforces it ships in the repo (`tools/audit-step.sh`), so you can hold your own steps to it.
 
@@ -64,7 +64,7 @@ export const Tabs = [
 ] as const satisfies readonly TabConfig[];
 ```
 
-`TabNavigation` renders whatever this array says. It has never heard of wishlists. Even the route-name union is *derived* from the config, so adding a tab types the whole navigator for free.
+That's the left pill (abridged — the search tab has its own `SearchTab` constant for the right pill, same file). `TabNavigation` renders whatever this config says. It has never heard of wishlists. Even the route-name union is *derived* from the config, so adding a tab types the whole navigator for free.
 
 Which means you can steal the shell right now:
 
@@ -78,10 +78,10 @@ Reload. Your app, your tabs, not one component file touched. This is the jigsaw 
 
 ## Gotchas from the real run
 
-- **Metro port conflicts** — running two steps at once? Add `--port 8083`.
+- **Metro port conflicts.** Running two steps at once? Add `--port 8083`.
 - **Watchman can't hurt you here** — `metro.config.js` opts into Metro's Node file watcher (`useWatchman: false`). On a project this size watchman adds no speed, only a failure mode (a stale daemon hangs Metro at "Waiting for Watchman"). One config line deletes the entire problem.
-- **Expo Go tracks the newest SDK** — this project pins SDK 54 with a committed lockfile, so `npm install` gives you the exact working set. If Expo Go itself moves ahead months from now, `npx expo install --fix` realigns everything.
-- **Physical phone instead of a simulator?** The npm scripts pass `--localhost` (immune to VPN/firewall weirdness on simulators); a real phone needs the LAN — `npx expo start` without the flag, same Wi-Fi.
+- **Expo Go tracks the newest SDK.** This project pins SDK 54 with a committed lockfile, so `npm install` gives you the exact working set. If Expo Go itself moves ahead months from now, `npx expo install --fix` realigns everything.
+- **Physical phone instead of a simulator?** The npm scripts pass `--localhost` (immune to VPN/firewall weirdness on simulators); a real phone needs the LAN — `npm start` (flagless), same Wi-Fi.
 - **`id={undefined}` on the navigator** — React Navigation v7's types demand an explicit `id` even when you don't want one. Deliberate; leave it.
 
 ## You're done when

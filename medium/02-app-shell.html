@@ -6,15 +6,15 @@ img{max-width:100%}pre{background:#f5f5f5;padding:14px;overflow-x:auto;font-size
 <h1>Dressed to Ship</h1>
 <p><em>Zero to Shipped · 02 — design tokens, glass chrome, and a tab bar that&#39;s data: a fully themed app with zero features, on purpose.</em></p>
 <hr>
-<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-02.png?v=b042baa" alt="Step 02 — the shell running (real simulator screenshots)"></p>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-02.png?v=0607124" alt="Step 02 — the shell running (real simulator screenshots)"></p>
 <p>Today we build an app that does nothing.</p>
 <p>Not &quot;a simple app.&quot; Nothing. Five tabs, and every one of them politely tells you its real screen hasn&#39;t arrived yet. If you demoed it to a friend they&#39;d ask when you&#39;re going to start.</p>
 <p>Here&#39;s my claim: this is the most important step in the series — and if you skip it, you&#39;ll spend week six of your project doing what I used to do, which is opening eleven screens one by one to fix the same padding.</p>
 <p>*(This is step 02 of <strong>Zero to Shipped</strong>, where we build a real social product one deployable step at a time. New here? <strong><a href="https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9">Start with the introduction</a></strong>. The code is the <code>02-app-shell/</code> folder; <a href="https://github.com/srivardhanjalan/kivan-tutorial/pull/7/files">PR #7</a> shows every line.)*</p>
-<h2>Consistency isn&#39;t a habit, it&#39;s a jail</h2>
-<p>Every app you admire has one property tutorials never teach: every screen looks like the same person made it. That doesn&#39;t come from discipline. Discipline is what you have in week one. It comes from making inconsistency <em>impossible</em>:</p>
+<h2>Consistency isn&#39;t a habit, it&#39;s a jail you build for your future self</h2>
+<p>Every app you admire has one property tutorials never teach: every screen looks like the same person made it. That doesn&#39;t come from discipline. Discipline is what you have in week one. It comes from locking the door: make inconsistency impossible and you never have to resist it.</p>
 <ul>
-<li><strong>Every visual decision is a token.</strong> Colors, type, spacing, radii, shadows — they live in <code>src/constants/</code>, screens import them, and no screen ever invents a hex value. When we build real screens later, they&#39;ll look like this shell because they physically can&#39;t look like anything else.</li>
+<li><strong>Every visual decision is a token.</strong> Colors, type, radii, shadows, and the chrome&#39;s spacing metrics (<code>ScreenStyles.ts</code>) live in <code>src/constants/</code>; screens import them, and no screen ever invents a hex value. When we build real screens later, they&#39;ll look like this shell because they physically can&#39;t look like anything else.</li>
 <li><strong>The chrome is shared, not copied.</strong> One floating header, one screen scaffold, one tab bar. Components compose them; nobody re-implements them.</li>
 <li><strong>The app&#39;s identity is data.</strong> The tab bar is literally an array in <code>config/tabs.ts</code>. Hold that thought — it gets a payoff at the end.</li>
 </ul>
@@ -24,12 +24,12 @@ npm install
 npm run ios
 </code></pre>
 <h2>The tokens: fewer than you think</h2>
-<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-02-tokens.png?v=b042baa" alt="The entire design system on one card — real token values"></p>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-02-tokens.png?v=0607124" alt="The entire design system on one card — real token values"></p>
 <p><code>src/constants/</code> is the whole visual language, and here&#39;s the part that surprises people: <strong>Typography.ts contains two styles.</strong> Not a &quot;type scale.&quot; Two. The 30pt large title and the 20pt section title, because those are the only two styles this step <em>uses</em>.</p>
-<p>That&#39;s the series&#39; engineering rule doing its job: <strong>a token joins the file when a screen first needs it, never in advance.</strong> One radius (things that are fully round). One shadow recipe (things that float). Even the grey you feel when you press a button is a named token, <code>Colors.pressedFill</code>, because it appeared twice and a value that appears twice is a decision pretending to be a coincidence.</p>
+<p>That&#39;s the series&#39; engineering rule doing its job: a token joins the file when a screen first needs it, never in advance. One radius (things that are fully round). Two shadow recipes: one for the chrome pills, one for things that float over them. Even the grey you feel when you press a button is a named token, <code>Colors.pressedFill</code>, because it appeared twice and a value that appears twice is a decision pretending to be a coincidence.</p>
 <h3>How I got humbled by my own linter</h3>
 <p>Confession: the first version of this step didn&#39;t follow the rule. I copied the full constants files from the finished app — a radius scale, a shadow menu, a dozen text styles — because <em>obviously</em> later steps would need them.</p>
-<p>Then I pointed the audit gate at it (types, dead-code analysis, clone detection, plus an AI reviewer told to hunt duplication by <em>meaning</em>), and it took <strong>six rounds</strong> to reach a clean pass. It found tokens with no callers. Then tokens whose only caller had just been deleted. Then a comment promising the spinner &quot;defaults to the logo&quot; while the code did no such thing. Then two names for the same concept. Every round I thought I was done; every round it found more. The step went from 1,670 lines to 829, rendering pixel-identical before and after.</p>
+<p>Then I pointed the audit gate at it (types, dead-code analysis, clone detection, plus an AI reviewer told to hunt duplication by <em>meaning</em>), and it took <strong>six rounds</strong> to reach a clean pass. It found tokens with no callers. Then tokens whose only caller had just been deleted. Then a comment promising the spinner &quot;defaults to the logo&quot; while the code did no such thing. Then two names for the same concept. Every round I thought I was done; every round it found more. That day the step went from 1,670 lines to 829, rendering pixel-identical before and after. (It sits at 858 now — src plus App.tsx — after a later round added the pressed-fill token and friends. Clone it and count.)</p>
 <p>The lesson stuck: <strong>speculative code isn&#39;t foresight, it&#39;s inventory</strong> — and inventory rots. Every file in this step is load-bearing, and the gate that enforces it ships in the repo (<code>tools/audit-step.sh</code>), so you can hold your own steps to it.</p>
 <h2>The chrome: two moves you saw in the mocks</h2>
 <ul>
@@ -45,21 +45,21 @@ npm run ios
   { key: &#39;NotificationsTab&#39;, title: &#39;Notifications&#39;, icon: &#39;notifications-outline&#39;, iconActive: &#39;notifications&#39; },
 ] as const satisfies readonly TabConfig[];
 </code></pre>
-<p><code>TabNavigation</code> renders whatever this array says. It has never heard of wishlists. Even the route-name union is <em>derived</em> from the config, so adding a tab types the whole navigator for free.</p>
+<p>That&#39;s the left pill (abridged — the search tab has its own <code>SearchTab</code> constant for the right pill, same file). <code>TabNavigation</code> renders whatever this config says. It has never heard of wishlists. Even the route-name union is <em>derived</em> from the config, so adding a tab types the whole navigator for free.</p>
 <p>Which means you can steal the shell right now:</p>
 <ol>
 <li><code>app.json</code> → your <code>name</code> and <code>scheme</code></li>
 <li><code>config/app.ts</code> → point <code>branding.spinnerLogo</code> at your mark; the loader rebrands itself</li>
 <li><code>config/tabs.ts</code> → <code>Trips</code>, <code>Journal</code>, whatever you&#39;re actually building</li>
 </ol>
-<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-02-rename.png?v=b042baa" alt="Rename the app in one config edit — same shell, your app"></p>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-02-rename.png?v=0607124" alt="Rename the app in one config edit — same shell, your app"></p>
 <p>Reload. Your app, your tabs, not one component file touched. This is the jigsaw principle at its smallest scale — in step 07 the same trick starts swapping whole feature modules.</p>
 <h2>Gotchas from the real run</h2>
 <ul>
-<li><strong>Metro port conflicts</strong> — running two steps at once? Add <code>--port 8083</code>.</li>
+<li><strong>Metro port conflicts.</strong> Running two steps at once? Add <code>--port 8083</code>.</li>
 <li><strong>Watchman can&#39;t hurt you here</strong> — <code>metro.config.js</code> opts into Metro&#39;s Node file watcher (<code>useWatchman: false</code>). On a project this size watchman adds no speed, only a failure mode (a stale daemon hangs Metro at &quot;Waiting for Watchman&quot;). One config line deletes the entire problem.</li>
-<li><strong>Expo Go tracks the newest SDK</strong> — this project pins SDK 54 with a committed lockfile, so <code>npm install</code> gives you the exact working set. If Expo Go itself moves ahead months from now, <code>npx expo install --fix</code> realigns everything.</li>
-<li><strong>Physical phone instead of a simulator?</strong> The npm scripts pass <code>--localhost</code> (immune to VPN/firewall weirdness on simulators); a real phone needs the LAN — <code>npx expo start</code> without the flag, same Wi-Fi.</li>
+<li><strong>Expo Go tracks the newest SDK.</strong> This project pins SDK 54 with a committed lockfile, so <code>npm install</code> gives you the exact working set. If Expo Go itself moves ahead months from now, <code>npx expo install --fix</code> realigns everything.</li>
+<li><strong>Physical phone instead of a simulator?</strong> The npm scripts pass <code>--localhost</code> (immune to VPN/firewall weirdness on simulators); a real phone needs the LAN — <code>npm start</code> (flagless), same Wi-Fi.</li>
 <li><strong><code>id={undefined}</code> on the navigator</strong> — React Navigation v7&#39;s types demand an explicit <code>id</code> even when you don&#39;t want one. Deliberate; leave it.</li>
 </ul>
 <h2>You&#39;re done when</h2>
