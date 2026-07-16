@@ -79,7 +79,7 @@ const KivanLoader: React.FC<KivanLoaderProps> = ({ size = 80 }) => {
         >
           <Image
             source={AppConfig.branding.logo}
-            style={[styles.logo, { width: size * 0.6, height: size * 0.6 }]}
+            style={{ width: size * 0.6, height: size * 0.6 }}
             resizeMode="contain"
           />
         </Animated.View>
@@ -92,9 +92,6 @@ const styles = StyleSheet.create({
   glassContainer: {
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.white,
-  },
-  logo: {
-    // Full opacity to keep original vibrant colors
   },
 });
 
