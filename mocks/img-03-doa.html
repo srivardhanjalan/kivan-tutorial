@@ -1,0 +1,44 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="mocks.css">
+<style>
+  body{margin:0;background:#fff}
+  .wrap{width:1400px;height:640px;position:relative;overflow:hidden;
+    background:linear-gradient(115deg,#FFE8EC 0%,#FDFFFF 42%,#E7F1F8 100%);
+    display:flex;align-items:center;justify-content:center;gap:44px}
+  .term{width:600px;border-radius:14px;background:#1D1E24;overflow:hidden;
+    box-shadow:0 24px 60px rgba(20,20,30,.24)}
+  .tbar{height:38px;background:#2A2B33;display:flex;align-items:center;padding:0 16px;gap:8px}
+  .dot2{width:12px;height:12px;border-radius:6px}
+  .ttitle{flex:1;text-align:center;color:#8A8B94;font-size:13px;font-weight:600;font-family:"SF Mono",Menlo,monospace;margin-right:44px}
+  .tbody{padding:18px 24px 22px;font-family:"SF Mono",Menlo,monospace;font-size:14.5px;line-height:1.75;color:#D6D7DE}
+  .g{color:#4ADE80}.r{color:#FF6B6B}.p{color:#FF6B8A}.dim{color:#8A8B94}
+  .tag{position:absolute;top:38px;font-size:15px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+  .tag.l{left:170px;color:#E24E64}.tag.rr{right:250px;color:#1FA455}
+</style></head><body>
+<div class="wrap">
+  <div class="tag l">dead on arrival</div>
+  <div class="tag rr">alive on arrival</div>
+  <div class="term">
+    <div class="tbar"><span class="dot2" style="background:#FF5F57"></span><span class="dot2" style="background:#FEBC2E"></span><span class="dot2" style="background:#28C840"></span><span class="ttitle">attempt 1</span></div>
+    <div class="tbody">
+<span class="dim">$</span> <span class="p">terraform apply</span><br>
+&nbsp;&nbsp;aws_apprunner_service: Still creating… <span class="dim">[02m50s]</span><br>
+&nbsp;&nbsp;aws_apprunner_service: <span class="r">CREATE_FAILED</span><br>
+<span class="dim">$</span> <span class="p">aws logs tail …/application</span><br>
+<span class="dim">(empty — the container never spoke)</span><br>
+<span class="dim">same image, runs perfectly on the laptop…</span>
+    </div>
+  </div>
+  <div class="term">
+    <div class="tbar"><span class="dot2" style="background:#FF5F57"></span><span class="dot2" style="background:#FEBC2E"></span><span class="dot2" style="background:#28C840"></span><span class="ttitle">attempt 2 — attestation-free push</span></div>
+    <div class="tbody">
+<span class="dim">$</span> <span class="p">./scripts/deploy.sh</span> <span class="dim"># --provenance=false --sbom=false</span><br>
+<span class="dim">$</span> <span class="p">terraform apply</span><br>
+&nbsp;&nbsp;aws_apprunner_service: <span class="g">RUNNING</span> ✓<br>
+<span class="dim">$</span> <span class="p">curl https://…awsapprunner.com/health</span><br>
+{"status":<span class="g">"healthy"</span>}<br>
+<span class="dim">same code. different manifest.</span>
+    </div>
+  </div>
+</div>
+</body></html>

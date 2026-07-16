@@ -6,7 +6,7 @@ img{max-width:100%}pre{background:#f5f5f5;padding:14px;overflow-x:auto;font-size
 <h1>Alive on Arrival</h1>
 <p><em>Zero to Shipped · 03 — a real pulse from real AWS: four commands, FastAPI + Terraform + App Runner, and the two ways deploys arrive dead instead.</em></p>
 <hr>
-<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-03.png?v=87c3f9b" alt="Step 03 — the staged rollout and the app talking to AWS"></p>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-03.png?v=588f76f" alt="Step 03 — the staged rollout and the app talking to AWS"></p>
 <p>While verifying this exact step, my deploy died like this: <code>terraform apply</code> waited three minutes on App Runner, returned <code>CREATE_FAILED</code>, and the service log group was <strong>empty</strong> — the container never produced a single line. The same image ran perfectly on my laptop. The API code was completely innocent. It took inspecting the pushed manifest to find the culprit, and it wasn&#39;t the one the internet warns you about.</p>
 <p>That story — both versions of it — is the second half of this post. The first half is the payoff it interrupts: a FastAPI backend running on your own AWS, deployed with four commands, every resource tagged and grouped, torn down to zero with one.</p>
 <p>*(This is step 03 of <strong>Zero to Shipped</strong>, where we build a real social product one deployable step at a time. New here? <strong><a href="https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9">Start with the introduction</a></strong>. The code is the <code>03-backend-core/</code> folder; <a href="https://github.com/srivardhanjalan/kivan-tutorial/pull/12/files">PR #12</a> shows every line this step adds.)*</p>
@@ -41,6 +41,7 @@ img{max-width:100%}pre{background:#f5f5f5;padding:14px;overflow-x:auto;font-size
 terraform apply                                       # 3. the service (~5 min)
 ./scripts/deploy.sh                                   # 4. instant re-run: tags the log groups
 </code></pre>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-03-doa.png?v=588f76f" alt="Dead on arrival vs alive on arrival — same code, different manifest"></p>
 <p>And now the story from the top of the post. <strong><code>CREATE_FAILED</code>, with empty logs</strong> — the service dies before the first line of application output. Two completely different causes share this identical symptom:</p>
 <ol>
 <li><strong>The wrong build path on Apple Silicon.</strong> QEMU emulation and docker-container builders produce amd64 images that pass every local test and fail only on AWS. The fix is the Rosetta-backed Colima context that step 01&#39;s script configured (<code>docker context show</code> → <code>colima-rosetta</code>).</li>
@@ -49,6 +50,7 @@ terraform apply                                       # 3. the service (~5 min)
 <p>Both are now one script: build on the right context, without attestations, push, done.</p>
 <h2>The proof of life</h2>
 <p>The frontend&#39;s whole delta is ~60 lines: <code>src/services/api.ts</code> (reads <code>EXPO_PUBLIC_API_URL</code> from the gitignored <code>.env.local</code>, owns the diagnosis when things fail) and an <code>ApiStatus</code> line on every placeholder tab — green <strong>Backend · healthy</strong>, or red <strong>Backend · unreachable</strong> <em>with the reason</em>. Kill the backend and cold-restart the app to watch it tell the truth.</p>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-03-truth.png?v=588f76f" alt="The line tells the truth — real screenshots, backend up vs killed"></p>
 <p>One trap: <code>EXPO_PUBLIC_*</code> values are inlined at <strong>bundle time</strong>. After pointing <code>.env.local</code> at your App Runner URL, restart the dev server (<code>npx expo start -c --localhost</code>) — a reload won&#39;t pick it up.</p>
 <h2>You&#39;re done when</h2>
 <ul>

@@ -55,6 +55,8 @@ terraform apply                                       # 3. the service (~5 min)
 ./scripts/deploy.sh                                   # 4. instant re-run: tags the log groups
 ```
 
+![Dead on arrival vs alive on arrival — same code, different manifest](../mocks/mocks-03-doa.png)
+
 And now the story from the top of the post. **`CREATE_FAILED`, with empty logs** — the service dies before the first line of application output. Two completely different causes share this identical symptom:
 
 1. **The wrong build path on Apple Silicon.** QEMU emulation and docker-container builders produce amd64 images that pass every local test and fail only on AWS. The fix is the Rosetta-backed Colima context that step 01's script configured (`docker context show` → `colima-rosetta`).
@@ -65,6 +67,8 @@ Both are now one script: build on the right context, without attestations, push,
 ## The proof of life
 
 The frontend's whole delta is ~60 lines: `src/services/api.ts` (reads `EXPO_PUBLIC_API_URL` from the gitignored `.env.local`, owns the diagnosis when things fail) and an `ApiStatus` line on every placeholder tab — green **Backend · healthy**, or red **Backend · unreachable** *with the reason*. Kill the backend and cold-restart the app to watch it tell the truth.
+
+![The line tells the truth — real screenshots, backend up vs killed](../mocks/mocks-03-truth.png)
 
 One trap: `EXPO_PUBLIC_*` values are inlined at **bundle time**. After pointing `.env.local` at your App Runner URL, restart the dev server (`npx expo start -c --localhost`) — a reload won't pick it up.
 
