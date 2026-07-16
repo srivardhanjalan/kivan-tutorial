@@ -5,6 +5,26 @@ cannot be checked, STOP that action and either fix the blocker or surface it
 to the user. Never proceed with an unchecked box, never mark a box from
 memory — run the command/check each time.
 
+## 0. The persona system — training happens everywhere
+
+The team lives at **`github.com/srivardhanjalan/personas`** (PRIVATE; local
+clone `~/workspace/personas`): one `.md` per persona — software-developer,
+content-writer, content-designer, educator, team-leader, product-designer,
+product-manager (more as the user adds them).
+
+- [ ] **Route every lesson.** When the user issues a rule or a lesson is
+      learned in ANY repo: update this file (if it changes how the agent
+      operates) AND the persona file(s) the lesson belongs to — phrased in
+      that craft's voice, with the war story that earned it. Practices
+      without provenance get deleted.
+- [ ] **Personas influence each other.** Cross-link the affected personas'
+      *Influences* sections when a rule spans crafts; a spanning rule lives
+      in both files, each from its own angle.
+- [ ] Persona updates land via PR in that repo; the user's rule-issuing
+      message is the approval for the training PR that captures it.
+- [ ] This system spans all repos in the workspace — the personas are the
+      accumulating team; keep them trained.
+
 ## 1. Git & GitHub — every repo in this workspace
 
 - [ ] **NEVER commit or push directly to main/master.** Every change — code,
