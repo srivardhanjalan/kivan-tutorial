@@ -9,6 +9,7 @@ Code is best browsed [on GitHub](https://github.com/srivardhanjalan/kivan-tutori
 - [01 · One Script to Set Up Everything](medium/01-prerequisites.html)
 - [02 · Dressed to Ship](medium/02-app-shell.html)
 - [03 · Alive on Arrival](medium/03-backend-core.html)
+- [04 · The App Learns Your Name](medium/04-auth.html)
 
 ## The mocks (interactive — real design tokens)
 
@@ -18,11 +19,12 @@ Code is best browsed [on GitHub](https://github.com/srivardhanjalan/kivan-tutori
 
 ## The covers
 
-- [Series hero](mocks/hero.html) · [01](mocks/hero-01.html) · [02](mocks/hero-02.html) · [03](mocks/hero-03.html)
+- [Series hero](mocks/hero.html) · [01](mocks/hero-01.html) · [02](mocks/hero-02.html) · [03](mocks/hero-03.html) · [04](mocks/hero-04.html)
 
 ## The code (on GitHub)
 
 - [README — start here](https://github.com/srivardhanjalan/kivan-tutorial#readme)
 - [01-prerequisites](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/01-prerequisites) ·
   [02-app-shell](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/02-app-shell) ·
-  [03-backend-core](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/03-backend-core)
+  [03-backend-core](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/03-backend-core) ·
+  [04-auth](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/04-auth)

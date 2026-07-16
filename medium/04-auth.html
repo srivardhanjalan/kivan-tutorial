@@ -1,0 +1,96 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>04-auth — paste into Medium</title>
+<style>
+  body{max-width:740px;margin:40px auto;font-family:Georgia,serif;font-size:18px;line-height:1.6;color:#242424;padding:0 20px}
+  img{max-width:100%}
+  pre{background:#f5f5f5;padding:14px;overflow-x:auto;font-size:14px}
+  code{background:#f5f5f5;padding:1px 4px;font-size:15px}
+</style></head><body>
+
+<h1>The App Learns Your Name</h1>
+<p><em>Zero to Shipped · 04 — Clerk sign-in, JWKS-verified tokens, and a user record no client ever writes. Plus the third way a deploy dies with CREATE_FAILED and no logs.</em></p>
+<hr>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-04.png?v=74fb7ee" alt="Zero to Shipped 04 hero — the app learns your name, with the terminal proof and the Home screen greeting Kivan Tester"></p>
+
+<p>While verifying this step, App Runner pulled my image, then printed: <code>Failed to deploy your application image.</code> The application log group didn't exist — the container had never started. If you read <a href="https://github.com/srivardhanjalan/kivan-tutorial/tree/main/03-backend-core">step 03</a>, you know I have history with <code>CREATE_FAILED</code> and empty logs: a QEMU-corrupted image, then BuildKit's attestation manifests. Same symptom, two causes. This step found a third, and it wasn't the image at all.</p>
+
+<p>By the end of this step you sign up inside the app, a verification code lands, the first-run tutorial plays, and Home greets you by name above a record the backend wrote for you. Real accounts, end to end.</p>
+
+<p>*(This is step 04 of <strong>Zero to Shipped</strong> — building a production social-wishlist app on Expo, FastAPI, and AWS. New here? <strong><a href="https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9">Start with the introduction</a></strong>. The code is the <code>04-auth/</code> folder; <a href="https://github.com/srivardhanjalan/kivan-tutorial/pull/22/files">PR #22</a> shows every line this step adds.)*</p>
+
+<h2>Nobody creates their own user</h2>
+
+<p>The obvious auth design — and the one this app's first life actually shipped — is a sync endpoint: the client signs up with Clerk, then calls <code>POST /users/sync</code> with its profile so the backend has a record. It breaks four ways. Sign-in never syncs, so a fresh database 404s forever. The sync races whatever screen loads next. An interrupted signup leaves half an account. And — the one that got it filed as a security bug — the client controls the payload, so any caller can assert any profile.</p>
+
+<p>So this step has no sync endpoint. The backend provisions the user <strong>just in time</strong>, inside the auth dependency: the first request carrying a valid token for an unknown user makes the backend fetch that user's profile from Clerk's own API — server to server — and write the record itself:</p>
+
+<pre><code class="language-python">users_table.put_item(
+    Item=new_user,
+    ConditionExpression="attribute_not_exists(id)"  # create-only, race-safe
+)</code></pre>
+
+<p>The client can't lie about a profile it never sends. Two racing first-requests can't double-create. Sign-in on a rebuilt database self-heals, because the guarantee runs on every authenticated request. And the record is eight fields — id, email, names, avatar, the onboarding flag, two timestamps. No follower counts, no search keys, no roles: DynamoDB is schemaless, so each field lands in the step that reads it, at the cost of one line and no migration. The table itself is a hash key and nothing else.</p>
+
+<h2>One form, two verbs</h2>
+
+<p>On the frontend, sign-in and sign-up looked like two screens until the clone detector pointed out they were one. Both are OAuth buttons, an "or" rule, email + password, a brand CTA, and a footer that flips to the other screen. So both screens <em>are</em> one component — <code>AuthMethods</code> — with different verbs plugged in; sign-up adds its verification stage and nothing else. The OAuth buttons themselves are config data, the same idiom as the tab bar: adding a provider is one line in an array, not a new component.</p>
+
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-learns.png?v=74fb7ee" alt="Three real simulator screenshots: the sign-in screen, the first-run tutorial, and Home greeting Kivan Tester by name"></p>
+
+<p>Those are real simulator screenshots from the verification run — Clerk's development instances accept test addresses (any email with a <code>+clerk_test</code> subaddress, verification code <code>424242</code>), which is how an automated UI test can sign up without an inbox.</p>
+
+<p>The audit gate ran eight times before this step came back clean, and the best finding wasn't even in my first draft — it was in my fix. I'd unified the brand logo's size behind one config value, which made two style blocks byte-identical, which the clone detector then flagged, which forced the real extraction (a shared <code>BrandMark</code>). Fixes to duplication are themselves duplication suspects. That's why the gate repeats until a full pass finds nothing.</p>
+
+<h2>401 means you, 503 means me</h2>
+
+<p>Auth is where readers spend the most time debugging, so a status code's job is to point at the right suspect. A missing token, a garbage token, a forged key ID — that's the caller's problem, and every one of them gets a generic <code>401 Invalid authentication token</code>. Clerk unreachable, the secret key wrong, the users table missing — that's our problem, and each gets a <code>503</code> whose message names the fix (the table one literally says "run terraform apply and set ENVIRONMENT to match"). The ported code did neither: a Clerk outage surfaced as a 401 <em>with the internal error string attached</em> — sending valid users off to debug their own tokens while leaking library internals to anyone unauthenticated.</p>
+
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-race.png?v=74fb7ee" alt="Terminal: CREATE_FAILED with no logs, the missing application log group, the depends_on fix, and the service reaching RUNNING"></p>
+
+<p>Two traps in the verifier, both found by reading the JWT library's source. One: an attacker spamming tokens with unknown key IDs forces a JWKS refetch per request — so network failures get their own exception branch, and unknown-key tokens stay plain 401s instead of turning into an amplification vector against Clerk's rate limits. Two: PyJWT's <code>cache_keys=True</code> looks like the performance option, but it's an <code>lru_cache</code> with no expiry — a rotated or revoked signing key would stay trusted until the process restarts. Key <em>set</em> caching with a one-hour lifespan gives you the same networkless hot path and picks up a rotation within the hour.</p>
+
+<h2>The secret that skips the console</h2>
+
+<p>The backend needs Clerk's secret key. The lazy route is a plaintext App Runner environment variable — readable in the AWS console and by anyone with <code>apprunner:DescribeService</code>. This step does it properly: the key lives in SSM as a <strong>SecureString</strong>, App Runner resolves it at instance start via <code>runtime_environment_secrets</code>, and the instance role gets <code>ssm:GetParameters</code> on exactly that one parameter.</p>
+
+<p>Which is where the opening story pays off. The first rollout died because App Runner validated its secret access <em>while Terraform was still attaching the SSM read policy</em>. Terraform saw no dependency — the service only references the role's ARN, not its policies — so it created both in parallel and lost the race. That's the third <code>CREATE_FAILED</code>-with-no-logs: not a bad image, not a bad manifest, but IAM that arrived seconds late. The fix is one honest line in the service resource — plus one <code>terraform apply -replace</code> of the dead service, because a <code>CREATE_FAILED</code> service doesn't heal itself:</p>
+
+<pre><code class="language-hcl">depends_on = [aws_iam_role_policy.apprunner_instance_ssm]</code></pre>
+
+<p>Same image, replaced with the policy in place first: <code>RUNNING</code>.</p>
+
+<h2>A tutorial that survives a reinstall</h2>
+
+<p>First sign-in shows a swipeable welcome carousel. The whole feature is one bit: <code>onboarding_completed</code> lives on the backend user record, not on the device — so a reinstall, a new phone, or a cleared cache doesn't replay the tutorial. "Get Started" flips it through an endpoint whose DynamoDB update carries <code>ConditionExpression="attribute_exists(id)"</code>, because <code>update_item</code> is secretly an upsert and an unguarded one can invent a half-formed user.</p>
+
+<p>One more scar from verification: the UI test could not tap the carousel's Next button. The button is text inside a glass blur view, and <strong>unlabeled content inside a BlurView doesn't reach the accessibility tree</strong>. The automation failed exactly where VoiceOver would have. Labels on the touchables fixed the test and the screen reader in the same commit.</p>
+
+<h2>You're done when</h2>
+
+<ul>
+  <li><code>curl $API/users/me</code> → 401; with a garbage token → 401, generic detail</li>
+  <li>Sign up with a <code>+clerk_test</code> address, code <code>424242</code> → the first-run tutorial appears</li>
+  <li>Home greets you by name, and <strong>Record</strong> shows your email + provisioned date in green — read from DynamoDB, written by no client</li>
+  <li>Sign out → sign in → no tutorial replay (the flag survived on the backend record)</li>
+  <li>"Continue with Google" opens the browser consent sheet (Apple rides the same Clerk OAuth flow)</li>
+</ul>
+
+<h2>What's next</h2>
+
+<p>Step 05 gives the account a past and a delete button: profile data, birthdays, Settings, account deletion — the first fields to join those eight, each with its first caller.</p>
+
+<p><strong>Following along?</strong> ⭐ <a href="https://github.com/srivardhanjalan/kivan-tutorial">Star the repo</a> — every step lands as a browsable pull request.</p>
+
+<hr>
+<p><strong>Zero to Shipped — the series</strong></p>
+<ul>
+  <li><strong>00 · <a href="https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9">Introduction</a></strong></li>
+  <li><strong>01 · <a href="https://medium.com/@srivardhanjalan/one-script-to-set-up-everything-ae8bcea2d649">One script to set up everything</a></strong></li>
+  <li><strong>02 · <a href="https://medium.com/@srivardhanjalan/dressed-to-ship-1e2591179d8a">Dressed to Ship</a></strong></li>
+  <li><strong>03 · Alive on Arrival</strong> <em>(link when published)</em></li>
+  <li><strong>04 · The App Learns Your Name</strong> <em>(this post)</em></li>
+  <li><strong>05 · Profiles</strong> <em>(coming soon)</em></li>
+</ul>
+<p><em>All code: <a href="https://github.com/srivardhanjalan/kivan-tutorial">github.com/srivardhanjalan/kivan-tutorial</a></em></p>
+
+</body></html>
