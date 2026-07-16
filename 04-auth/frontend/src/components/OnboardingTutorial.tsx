@@ -18,6 +18,7 @@ import Typography from '../constants/Typography';
 import BorderRadius from '../constants/BorderRadius';
 import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 import GlassPill from './GlassPill';
+import Opacity from '../constants/Opacity';
 import BrandMark from './BrandMark';
 
 const { width } = Dimensions.get('window');
@@ -140,7 +141,7 @@ export default function OnboardingTutorial({ visible, onDismiss }: OnboardingTut
           <TouchableOpacity
             style={[styles.skipButton, { top: insets.top + Spacing.md }]}
             onPress={onDismiss}
-            activeOpacity={0.7}
+            activeOpacity={Opacity.pressed}
           >
             <Text style={styles.skipText}>Skip</Text>
           </TouchableOpacity>
@@ -171,7 +172,7 @@ export default function OnboardingTutorial({ visible, onDismiss }: OnboardingTut
 
           <TouchableOpacity
             onPress={handleNext}
-            activeOpacity={0.7}
+            activeOpacity={Opacity.pressed}
             // BlurView content is invisible to the accessibility tree — the
             // label must live on the touchable or VoiceOver can't find it
             accessibilityRole="button"

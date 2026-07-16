@@ -23,7 +23,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({ title, onPress, loading =
     style={[styles.button, loading && styles.disabled]}
     onPress={onPress}
     disabled={loading}
-    activeOpacity={0.8}
+    activeOpacity={Opacity.pressed}
   >
     {loading ? (
       <ActivityIndicator color={Colors.white} />
