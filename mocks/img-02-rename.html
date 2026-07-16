@@ -1,0 +1,43 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="mocks.css">
+<style>
+  body{margin:0;background:#fff}
+  .wrap{width:1400px;height:600px;position:relative;overflow:hidden;
+    background:linear-gradient(115deg,#FFE8EC 0%,#FDFFFF 42%,#E7F1F8 100%);
+    display:flex;align-items:center;justify-content:center;gap:60px}
+  .term{width:560px;border-radius:14px;background:#1D1E24;overflow:hidden;box-shadow:0 24px 60px rgba(20,20,30,.24)}
+  .tbar{height:38px;background:#2A2B33;display:flex;align-items:center;padding:0 16px;gap:8px}
+  .dot2{width:12px;height:12px;border-radius:6px}
+  .ttitle{flex:1;text-align:center;color:#8A8B94;font-size:13px;font-weight:600;font-family:"SF Mono",Menlo,monospace;margin-right:44px}
+  .tbody{padding:18px 24px 22px;font-family:"SF Mono",Menlo,monospace;font-size:14.5px;line-height:1.8;color:#D6D7DE}
+  .k{color:#7DD3FC}.s{color:#FDBA74}.dim{color:#8A8B94}.del{color:#FF6B6B;text-decoration:line-through}.add{color:#4ADE80}
+  .arrow{font-size:44px;color:var(--primary);font-weight:800}
+  .pillDemo{display:flex;flex-direction:column;gap:16px;align-items:center}
+  .navpill2{height:60px;border-radius:999px;background:rgba(255,255,255,.85);box-shadow:0 10px 25px rgba(0,0,0,.12);
+    display:flex;align-items:center;justify-content:space-evenly;padding:6px;width:330px}
+  .cap{font-size:14px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text2)}
+</style></head><body>
+<div class="wrap">
+  <div class="term">
+    <div class="tbar"><span class="dot2" style="background:#FF5F57"></span><span class="dot2" style="background:#FEBC2E"></span><span class="dot2" style="background:#28C840"></span><span class="ttitle">src/config/tabs.ts</span></div>
+    <div class="tbody">
+<span class="k">export const</span> Tabs = [<br>
+&nbsp;&nbsp;{ key, <span class="k">title:</span> <span class="del">'Wish Store'</span> <span class="add">'Trips'</span>, <span class="k">icon:</span> <span class="del">'gift'</span> <span class="add">'airplane'</span> },<br>
+&nbsp;&nbsp;{ key, <span class="k">title:</span> <span class="del">'My Stuff'</span> <span class="add">'Journal'</span>, <span class="k">icon:</span> <span class="del">'layers'</span> <span class="add">'book'</span> },<br>
+&nbsp;&nbsp;<span class="dim">…</span><br>
+] <span class="k">as const satisfies readonly</span> TabConfig[];<br>
+<span class="dim">// no component files touched</span>
+    </div>
+  </div>
+  <div class="arrow">→</div>
+  <div class="pillDemo">
+    <div class="navpill2">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#FF385C" stroke-width="1.7" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#6E6E73" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#6E6E73" stroke-width="1.7" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#6E6E73" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9a6 6 0 1 0-12 0c0 6-2.5 7-2.5 7h17S18 15 18 9ZM10 20a2.2 2.2 0 0 0 4 0"/></svg>
+    </div>
+    <div class="cap">same shell, your app</div>
+  </div>
+</div>
+</body></html>
