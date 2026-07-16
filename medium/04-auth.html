@@ -8,11 +8,11 @@
 </style></head><body>
 
 <h1>Signed, Sealed, Delivered</h1>
-<p><em>Zero to Shipped · 04 — the app learns your name: Clerk sign-in, JWKS-verified tokens, and a user record no client ever writes. Plus the third way a deploy dies with CREATE_FAILED and no logs.</em></p>
+<p><em>Zero to Shipped · 04 — the app learns your name: Clerk sign-in, JWKS-verified tokens, and a user record no client ever creates. Plus the third way a deploy dies with CREATE_FAILED and no logs.</em></p>
 <hr>
 <p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-04.png?v=e769be9" alt="Zero to Shipped 04 hero — signed, sealed, delivered: the 401s terminal and the Home screen greeting Kivan Tester by name"></p>
 
-<p>While verifying this step, App Runner pulled my image, then printed: <code>Failed to deploy your application image.</code> The application log group didn't exist — the container had never started. If you read <a href="https://github.com/srivardhanjalan/kivan-tutorial/tree/main/03-backend-core">step 03</a>, you know I have history with <code>CREATE_FAILED</code> and empty logs: a QEMU-corrupted image, then BuildKit's attestation manifests. Same symptom, two causes. This step found a third, and it wasn't the image at all.</p>
+<p>While verifying this step, App Runner pulled my image, then printed: <code>Failed to deploy your application image.</code> The application log group didn't exist — the container had never started. <a href="https://github.com/srivardhanjalan/kivan-tutorial/tree/main/03-backend-core">Step 03</a> hit <code>CREATE_FAILED</code> with empty logs twice — once from a QEMU-corrupted image, once from BuildKit's attestation manifests. Same symptom, two causes. This step found a third, and it wasn't the image at all.</p>
 
 <p>By the end of this step you sign up inside the app, a verification code lands, the first-run tutorial plays, and Home greets you by name above a record the backend wrote for you. Real accounts, end to end.</p>
 
@@ -29,7 +29,7 @@
     ConditionExpression="attribute_not_exists(id)"  # create-only, race-safe
 )</code></pre>
 
-<p>The client can't lie about a profile it never sends. Two racing first-requests can't double-create. Sign-in on a rebuilt database self-heals, because the guarantee runs on every authenticated request. And the record is eight fields — id, email, names, avatar, the onboarding flag, two timestamps. No follower counts, no search keys, no roles: DynamoDB is schemaless, so each field lands in the step that reads it, at the cost of one line and no migration. The table itself is a hash key and nothing else.</p>
+<p>The client can't lie about a profile it never sends. Two racing first-requests can't double-create. Sign-in on a rebuilt database self-heals, because the guarantee runs on every authenticated request. And the record is eight fields — id, email, first and last name, avatar, the onboarding flag, two timestamps. No follower counts, no search keys, no roles: DynamoDB is schemaless, so each field lands in the step that reads it, at the cost of one line and no migration. The table itself is a hash key and nothing else.</p>
 
 <h2>One form, two verbs</h2>
 
@@ -47,7 +47,7 @@
 
 <p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-race.png?v=e769be9" alt="Terminal: CREATE_FAILED with no logs, the missing application log group, the depends_on fix, and the service reaching RUNNING"></p>
 
-<p>Two traps in the verifier, both found by reading the JWT library's source. One: an attacker spamming tokens with unknown key IDs forces a JWKS refetch per request — so network failures get their own exception branch, and unknown-key tokens stay plain 401s instead of turning into an amplification vector against Clerk's rate limits. Two: PyJWT's <code>cache_keys=True</code> looks like the performance option, but it's an <code>lru_cache</code> with no expiry — a rotated or revoked signing key would stay trusted until the process restarts. Key <em>set</em> caching with a one-hour lifespan gives you the same networkless hot path and picks up a rotation within the hour.</p>
+<p>Two traps in the verifier, both found by reading the JWT library's source. One: an attacker spamming tokens with unknown key IDs forces a JWKS refetch per request. The refetch itself is the library's behavior — what the verifier must get right is the classification: an unknown key is the caller's 401 at info level, never a 503 or an error-level log, so the spam can't masquerade as a Clerk outage while it hammers your logs. Two: PyJWT's <code>cache_keys=True</code> looks like the performance option, but it's an <code>lru_cache</code> with no expiry — a rotated or revoked signing key can stay trusted until the process restarts. Key <em>set</em> caching with a one-hour lifespan gives you the same networkless hot path and picks up a rotation within the hour.</p>
 
 <h2>The secret that skips the console</h2>
 
@@ -70,9 +70,9 @@
 <ul>
   <li><code>curl $API/users/me</code> → 401; with a garbage token → 401, generic detail</li>
   <li>Sign up with a <code>+clerk_test</code> address, code <code>424242</code> → the first-run tutorial appears</li>
-  <li>Home greets you by name, and <strong>Record</strong> shows your email + provisioned date in green — read from DynamoDB, written by no client</li>
+  <li>Home greets you by name, and <strong>Record</strong> shows your email + provisioned date in green — read from DynamoDB, created by no client</li>
   <li>Sign out → sign in → no tutorial replay (the flag survived on the backend record)</li>
-  <li>"Continue with Google" opens the browser consent sheet (Apple rides the same Clerk OAuth flow)</li>
+  <li>"Continue with Google" opens the browser consent sheet (Apple shares the code path — verify it the same way once enabled in your Clerk app)</li>
 </ul>
 
 <h2>What's next</h2>
