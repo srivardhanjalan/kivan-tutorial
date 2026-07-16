@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import HeaderIconButton from '../components/HeaderIconButton';
 import SectionHeader from '../components/SectionHeader';
+import ApiStatus from '../components/ApiStatus';
 import EmptyStateView from '../components/EmptyStateView';
 import { useToast } from '../components/ToastProvider';
 import type { TabConfig } from '../config/tabs';
@@ -34,6 +35,7 @@ export default function PlaceholderScreen({ tab }: { tab: TabConfig }) {
       }
     >
       <SectionHeader title="Coming soon" meta="0" />
+      <ApiStatus />
       <EmptyStateView
         icon={tab.iconActive}
         title={`Nothing in ${tab.title} yet`}
