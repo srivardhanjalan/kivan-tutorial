@@ -10,7 +10,7 @@
 <h1>Signed, Sealed, Delivered</h1>
 <p><em>Zero to Shipped · 04 — the app learns your name: Clerk sign-in, JWKS-verified tokens, and a user record no client ever creates. Plus the third way a deploy dies with CREATE_FAILED and no logs.</em></p>
 <hr>
-<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-04.png?v=e769be9" alt="Zero to Shipped 04 hero — signed, sealed, delivered: the 401s terminal and the Home screen greeting Kivan Tester by name"></p>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-04.png?v=39854ac" alt="Zero to Shipped 04 hero — signed, sealed, delivered: the 401s terminal and the Home screen greeting Kivan Tester by name"></p>
 
 <p>While verifying this step, App Runner pulled my image, then printed: <code>Failed to deploy your application image.</code> The application log group didn't exist — the container had never started. <a href="https://github.com/srivardhanjalan/kivan-tutorial/tree/main/03-backend-core">Step 03</a> hit <code>CREATE_FAILED</code> with empty logs twice — once from a QEMU-corrupted image, once from BuildKit's attestation manifests. Same symptom, two causes. This step found a third, and it wasn't the image at all.</p>
 
@@ -35,7 +35,7 @@
 
 <p>On the frontend, sign-in and sign-up looked like two screens until the clone detector pointed out they were one. Both are OAuth buttons, an "or" rule, email + password, a brand CTA, and a footer that flips to the other screen. So both screens <em>are</em> one component — <code>AuthMethods</code> — with different verbs plugged in; sign-up adds its verification stage and nothing else. The OAuth buttons themselves are config data, the same idiom as the tab bar: adding a provider is one line in an array, not a new component.</p>
 
-<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-learns.png?v=e769be9" alt="Three real simulator screenshots: the sign-in screen, the first-run tutorial, and Home greeting Kivan Tester by name"></p>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-learns.png?v=39854ac" alt="Three real simulator screenshots: the sign-in screen, the first-run tutorial, and Home greeting Kivan Tester by name"></p>
 
 <p>Those are real simulator screenshots from the verification run — Clerk's development instances accept test addresses (any email with a <code>+clerk_test</code> subaddress, verification code <code>424242</code>), which is how an automated UI test can sign up without an inbox.</p>
 
@@ -45,7 +45,7 @@
 
 <p>Auth is where readers spend the most time debugging, so a status code's job is to point at the right suspect. A missing token, a garbage token, a forged key ID — that's the caller's problem, and every one of them gets a generic <code>401 Invalid authentication token</code>. Clerk unreachable, the secret key wrong, the users table missing — that's our problem, and each gets a <code>503</code> whose message names the fix (the table one literally says "run terraform apply and set ENVIRONMENT to match"). The ported code did neither: a Clerk outage surfaced as a 401 <em>with the internal error string attached</em> — sending valid users off to debug their own tokens while leaking library internals to anyone unauthenticated.</p>
 
-<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-race.png?v=e769be9" alt="Terminal: CREATE_FAILED with no logs, the missing application log group, the depends_on fix, and the service reaching RUNNING"></p>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-race.png?v=39854ac" alt="Terminal: CREATE_FAILED with no logs, the missing application log group, the depends_on fix, and the service reaching RUNNING"></p>
 
 <p>Two traps in the verifier, both found by reading the JWT library's source. One: an attacker spamming tokens with unknown key IDs forces a JWKS refetch per request. The refetch itself is the library's behavior — what the verifier must get right is the classification: an unknown key is the caller's 401 at info level, never a 503 or an error-level log, so the spam can't masquerade as a Clerk outage while it hammers your logs. Two: PyJWT's <code>cache_keys=True</code> looks like the performance option, but it's an <code>lru_cache</code> with no expiry — a rotated or revoked signing key can stay trusted until the process restarts. Key <em>set</em> caching with a one-hour lifespan gives you the same networkless hot path and picks up a rotation within the hour.</p>
 

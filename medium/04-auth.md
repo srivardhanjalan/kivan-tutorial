@@ -4,7 +4,7 @@
 
 ---
 
-![Zero to Shipped 04 hero — signed, sealed, delivered: the 401s terminal and the Home screen greeting Kivan Tester by name](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-04.png?v=e769be9)
+![Zero to Shipped 04 hero — signed, sealed, delivered: the 401s terminal and the Home screen greeting Kivan Tester by name](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-04.png?v=39854ac)
 
 While verifying this step, App Runner pulled my image, then printed: `Failed to deploy your application image.` The application log group didn't exist — the container had never started. [Step 03](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/03-backend-core) hit `CREATE_FAILED` with empty logs twice — once from a QEMU-corrupted image, once from BuildKit's attestation manifests. Same symptom, two causes. This step found a third, and it wasn't the image at all.
 
@@ -31,7 +31,7 @@ The client can't lie about a profile it never sends. Two racing first-requests c
 
 On the frontend, sign-in and sign-up looked like two screens until the clone detector pointed out they were one. Both are OAuth buttons, an "or" rule, email + password, a brand CTA, and a footer that flips to the other screen. So both screens *are* one component — `AuthMethods` — with different verbs plugged in; sign-up adds its verification stage and nothing else. The OAuth buttons themselves are config data, the same idiom as the tab bar: adding a provider is one line in an array, not a new component.
 
-![Three real simulator screenshots: the sign-in screen, the first-run tutorial, and Home greeting Kivan Tester by name](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-learns.png?v=e769be9)
+![Three real simulator screenshots: the sign-in screen, the first-run tutorial, and Home greeting Kivan Tester by name](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-learns.png?v=39854ac)
 
 Those are real simulator screenshots from the verification run — Clerk's development instances accept test addresses (any email with a `+clerk_test` subaddress, verification code `424242`), which is how an automated UI test can sign up without an inbox.
 
@@ -41,7 +41,7 @@ The audit gate ran eight times before this step came back clean, and the best fi
 
 Auth is where readers spend the most time debugging, so a status code's job is to point at the right suspect. A missing token, a garbage token, a forged key ID — that's the caller's problem, and every one of them gets a generic `401 Invalid authentication token`. Clerk unreachable, the secret key wrong, the users table missing — that's our problem, and each gets a `503` whose message names the fix (the table one literally says "run terraform apply and set ENVIRONMENT to match"). The ported code did neither: a Clerk outage surfaced as a 401 *with the internal error string attached* — sending valid users off to debug their own tokens while leaking library internals to anyone unauthenticated.
 
-![Terminal: CREATE_FAILED with no logs, the missing application log group, the depends_on fix, and the service reaching RUNNING](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-race.png?v=e769be9)
+![Terminal: CREATE_FAILED with no logs, the missing application log group, the depends_on fix, and the service reaching RUNNING](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-race.png?v=39854ac)
 
 Two traps in the verifier, both found by reading the JWT library's source. One: an attacker spamming tokens with unknown key IDs forces a JWKS refetch per request. The refetch itself is the library's behavior — what the verifier must get right is the classification: an unknown key is the caller's 401 at info level, never a 503 or an error-level log, so the spam can't masquerade as a Clerk outage while it hammers your logs. Two: PyJWT's `cache_keys=True` looks like the performance option, but it's an `lru_cache` with no expiry — a rotated or revoked signing key can stay trusted until the process restarts. Key *set* caching with a one-hour lifespan gives you the same networkless hot path and picks up a rotation within the hour.
 
