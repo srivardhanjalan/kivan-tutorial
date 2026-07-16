@@ -44,7 +44,29 @@ memory — run the command/check each time.
       ("defaults to X", "kept in sync with Y"), the code must enforce it or
       the comment must go.
 
-## 3. Verification & honesty
+## 3. Logical unification & abstraction — hunt duplication by meaning
+
+- [ ] **Every change round ends with a semantic-duplication hunt**, not just
+      mechanical checks. Ask, in order: do two screens/views want one layout
+      or scaffold? Do two functions do one job two ways? Is a JSX/logic
+      block a shared component or hook waiting to be named? Is a repeated or
+      semantic value a token/config entry? (The AI reviewer in the gate runs
+      exactly these questions — it is mandatory, never waived.)
+- [ ] **The extraction bar, both directions:** extract when it reduces net
+      complexity in the code as it exists NOW — a second real caller, a
+      semantic value hiding in literals, one concept spelled multiple ways
+      (`pill`+`full`, three circle idioms). Do NOT extract for imagined
+      future callers — speculative abstraction is a defect, exactly like
+      dead code.
+- [ ] **Where shared things live:** shared *values* → tokens/config; shared
+      *looks* → components; shared *behavior* → hooks/utils; shared
+      *scaffolds* → layout components. One concept, one name, one place —
+      if two names mean the same thing, collapse them.
+- [ ] **Unify to a fixed point.** Extraction changes the code, which exposes
+      the next duplication (6 rounds on an 800-line step). Repeat the hunt
+      until a full pass finds nothing.
+
+## 4. Verification & honesty
 
 - [ ] **Never say "verified/works/done" without having executed the thing
       in this session** — UI: build + boot + screenshot; API: real request;
@@ -58,7 +80,7 @@ memory — run the command/check each time.
 - [ ] **Report failures verbatim, immediately.** Two failed attempts at the
       same fix → change approach or surface to the user; never grind.
 
-## 4. This machine's environment traps
+## 5. This machine's environment traps
 
 - [ ] Metro/Expo for simulators: **always `--localhost`** (LAN IPs are
       blocked); never pipe a long-running server through `head`/`grep`
@@ -77,7 +99,7 @@ memory — run the command/check each time.
       `infra/terraform.tfvars`. Never in code, never in a commit, never in
       a public image (mask account IDs in screenshots/heroes).
 
-## 5. Working with the user
+## 6. Working with the user
 
 - [ ] **Design changes: propose before implementing.** Standing directive.
 - [ ] **"Why/what" questions get an answer and assessment first** — do not
@@ -93,7 +115,7 @@ memory — run the command/check each time.
       changes visually, regenerate the affected mock/hero images in the
       same round.
 
-## 6. The tutorial's own conventions (kivan-tutorial)
+## 7. The tutorial's own conventions (kivan-tutorial)
 
 - Step folders: `NN-name`, self-contained, runnable; posts numbered to match.
 - Per step: baseline commit (copy of previous step, via PR) → code PR →
