@@ -1,6 +1,6 @@
-# The Build That Only Fails in Production
+# It Worked on My Machine
 
-*Zero to Shipped · 03 — a FastAPI skeleton, real AWS infrastructure as code, and two ways your Docker image can pass every local test and still die on deploy.*
+*Zero to Shipped · 03 — a FastAPI skeleton, real AWS infrastructure as code, and the two ways a Docker image passes every local test and still dies on deploy. (The API is never the problem.)*
 
 ---
 
@@ -8,7 +8,7 @@
 
 This is step 03 of **Zero to Shipped**, a series where we build a real social product one deployable step at a time. New here? **[Start with the introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**. The code is the `03-backend-core/` folder, and [PR #12](https://github.com/srivardhanjalan/kivan-tutorial/pull/12/files) shows every line this step adds.
 
-Today the app leaves the simulator: by the end, every tab of step 02's shell shows a live **Backend · healthy** line — first from a local FastAPI process, then from your own AWS infrastructure. And along the way we'll hit the failure this post is named after. Twice.
+Today the app leaves the simulator: by the end, every tab of step 02's shell shows a live **Backend · healthy** line — first from a local FastAPI process, then from your own AWS infrastructure. And along the way we'll earn this post's title twice: deployments that fail on AWS with empty logs while the exact same code runs perfectly on the laptop — both times with the API itself completely innocent.
 
 ## The backend earns its dependencies
 
@@ -86,7 +86,7 @@ In **step 04** the app gets real users: Clerk sign-in/up, JWKS verification on t
 - **00 · [Introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**
 - **01 · [One script to set up everything](https://medium.com/@srivardhanjalan/one-script-to-set-up-everything-ae8bcea2d649)**
 - **02 · The app with no features** *(link when published)*
-- **03 · The build that only fails in production** *(this post)*
+- **03 · It worked on my machine** *(this post)*
 - **04 · Auth & onboarding** *(coming soon)*
 
 *All code: [github.com/srivardhanjalan/kivan-tutorial](https://github.com/srivardhanjalan/kivan-tutorial)*
