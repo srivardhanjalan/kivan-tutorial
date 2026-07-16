@@ -22,11 +22,37 @@ npx --yes jscpd src App.tsx --min-tokens 35 --reporters console --exit-code 1 ||
 echo "── 4. Color literals outside constants/ (each needs a comment or a token) ──"
 grep -rn "rgba(\|: '#" src --include="*.tsx" | grep -v "constants/" || true
 
-echo "── 5. Semantic-duplication review (AI reviewer) ──"
+# The AI stage is a sampler: the fixed point requires 3 consecutive clean
+# runs, the middle one under this alternate lens (AUDIT_LENS=deadweight).
+echo "── 5. Semantic review (AI reviewer, lens: ${AUDIT_LENS:-duplication}) ──"
 if command -v claude >/dev/null 2>&1; then
   PROMPT=$(mktemp)
   {
-    cat <<'BRIEF'
+    if [ "${AUDIT_LENS:-}" = "deadweight" ]; then
+      cat <<'BRIEF'
+You are the dead-weight reviewer for a React Native tutorial step. The
+mechanical gates (knip, jscpd, tsc) already passed — hunt what they cannot
+see:
+
+1. Referenced-but-empty artifacts: style entries, config keys, props that
+   are read but carry nothing.
+2. Comments claiming behavior the code does not enforce ("kept in sync
+   with", "defaults to", "full opacity to…").
+3. Abstraction layers with exactly one caller (a component/hook/util that
+   only one thing uses and that adds indirection, not capability).
+4. Props or parameters that every caller passes with the same value.
+5. Code that would be orphaned if this step's feature were deleted.
+
+Judge pragmatically; flag ONLY removals/collapses that reduce net
+complexity in the code as it exists now.
+
+Reply with exactly NO_FINDINGS if nothing meets that bar. Otherwise reply
+FINDINGS: followed by a terse bullet list (file, what, why it meets the bar).
+
+SOURCE FILES:
+BRIEF
+    else
+      cat <<'BRIEF'
 You are the semantic-duplication reviewer for a React Native tutorial step.
 Mechanical gates already passed: no dead exports (knip), no copy-paste
 clones (jscpd). Your job is what tokenizers cannot judge:
@@ -47,6 +73,7 @@ FINDINGS: followed by a terse bullet list (file, what, why it meets the bar).
 
 SOURCE FILES:
 BRIEF
+    fi
     find App.tsx src -name '*.ts' -o -name '*.tsx' | sort | while read -r f; do
       echo ""; echo "=== $f ==="; cat "$f"
     done

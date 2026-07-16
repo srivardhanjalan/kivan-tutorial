@@ -68,9 +68,14 @@ product-manager (more as the user adds them).
 - [ ] **Cleanliness claims come from tools, never from grep-and-assert.**
       The gate is `tools/audit-step.sh` (kivan-tutorial): tsc → knip →
       jscpd → color-literal report → AI semantic reviewer.
-- [ ] **Run the gate to a FIXED POINT.** Deleting dead code orphans other
-      code; repeat the full gate until it exits clean. A single pass is
-      never proof (it took 6 rounds on an 800-line step).
+- [ ] **Run the gate to a FIXED POINT — 3 consecutive clean runs.**
+      Deleting dead code orphans other code, AND the AI stage is a sampler:
+      runs 7–8 of step 04 were clean, run 9 found real items on unchanged
+      code. The fixed point is declared only after 3 consecutive no-finding
+      runs on unchanged code, the middle one under the alternate lens
+      (`AUDIT_LENS=deadweight`). Any finding resets the count. Deterministic
+      stages (tsc/knip/jscpd/grep) count from a single run. (It took 6
+      rounds on an 800-line step, 11+ on step 04.)
 - [ ] **Colors/radii/shadows/spacing are tokens.** A literal in a component
       is either a documented single-use one-off or a defect. A value used
       twice, or with semantic meaning, becomes a token at that moment.
@@ -115,9 +120,12 @@ product-manager (more as the user adds them).
       config, PR description — run an adversarial reviewer against it
       (`claude -p` with a brief to attack: correctness, false claims, missing
       cases, misleading copy, broken commands). Then address EVERY finding:
-      fix it, or record the explicit reason it stands. Repeat until a pass
-      returns no actionable findings. (The gate's semantic reviewer covers
-      step code; everything else gets its own adversarial pass.)
+      fix it, or record the explicit reason it stands. AI reviewers are
+      samplers — a review loop ends only after **3 consecutive no-finding
+      passes on the unchanged artifact**, the middle pass with a different
+      attack lens; any finding resets the count. (The gate's semantic
+      reviewer covers step code; everything else gets its own adversarial
+      pass.)
 - [ ] **Never say "verified/works/done" without having executed the thing
       in this session** — UI: build + boot + screenshot; API: real request;
       script: a real run (including its failure path). Files existing ≠
