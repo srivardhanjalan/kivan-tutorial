@@ -24,7 +24,13 @@ export default function HomeScreen() {
   return (
     <FloatingHeaderLayout
       title={`Hi, ${getUserDisplayName(user)}`}
-      headerRight={<HeaderIconButton icon="log-out-outline" onPress={() => signOut()} />}
+      headerRight={
+        <HeaderIconButton
+          icon="log-out-outline"
+          accessibilityLabel="Sign out"
+          onPress={() => signOut()}
+        />
+      }
     >
       <SectionHeader title="Your account" />
       <ApiStatus />

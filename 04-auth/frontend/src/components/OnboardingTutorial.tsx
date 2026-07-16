@@ -169,7 +169,14 @@ export default function OnboardingTutorial({ visible, onDismiss }: OnboardingTut
             ))}
           </View>
 
-          <TouchableOpacity onPress={handleNext} activeOpacity={0.7}>
+          <TouchableOpacity
+            onPress={handleNext}
+            activeOpacity={0.7}
+            // BlurView content is invisible to the accessibility tree — the
+            // label must live on the touchable or VoiceOver can't find it
+            accessibilityRole="button"
+            accessibilityLabel={isLastStep ? 'Get Started' : 'Next'}
+          >
             <GlassPill>
               <View style={[CommonScreenStyles.center, styles.nextContent]}>
                 <Text style={styles.nextText}>{isLastStep ? 'Get Started' : 'Next'}</Text>

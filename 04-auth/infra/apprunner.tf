@@ -3,6 +3,11 @@
 resource "aws_apprunner_service" "backend_ecr" {
   service_name = "${local.project_name}-api-apprunner-${local.environment}"
 
+  # The instance role must already be able to read the SSM secret when the
+  # service first provisions — Terraform can't infer that ordering from the
+  # role ARN alone, and losing the race is a CREATE_FAILED with no logs
+  depends_on = [aws_iam_role_policy.apprunner_instance_ssm]
+
   source_configuration {
     authentication_configuration {
       access_role_arn = aws_iam_role.apprunner_ecr_access.arn

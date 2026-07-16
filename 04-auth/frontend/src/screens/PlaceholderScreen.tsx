@@ -30,6 +30,7 @@ export default function PlaceholderScreen({ tab }: { tab: TabConfig }) {
       headerRight={
         <HeaderIconButton
           icon="sparkles-outline"
+          accessibilityLabel="Test the toast"
           onPress={() => toast.show(`${tab.title} says hi — the shell works.`)}
         />
       }

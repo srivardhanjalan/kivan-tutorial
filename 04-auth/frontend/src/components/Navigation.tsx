@@ -27,6 +27,11 @@ export default function Navigation() {
   // requests from their own mount effects, which run before a parent's.
   setAuthTokenGetter(() => getToken());
 
+  // Signing out always lands on Sign In, wherever the toggle was left
+  useEffect(() => {
+    if (!isSignedIn) setAuthScreen('signIn');
+  }, [isSignedIn]);
+
   // On sign-in, ask the backend whether the first-run tutorial was already
   // completed (it's on the user record, so reinstalls don't replay it).
   // This is often the user's very first authenticated request — the one
