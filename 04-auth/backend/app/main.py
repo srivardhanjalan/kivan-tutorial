@@ -10,7 +10,8 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Gzip compression middleware (70-90% payload reduction)
+# Gzip for responses over 1 KB — today that's only the OpenAPI document;
+# list endpoints grow into it in later steps
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # CORS middleware. The wildcard origin is safe for THIS api: auth is a
@@ -33,6 +34,6 @@ app.include_router(users.router)
 async def root():
     return {
         "message": "Kivan API",
-        "version": "1.0.0",
+        "version": app.version,
         "docs": "/docs"
     }

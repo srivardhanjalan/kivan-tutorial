@@ -11,11 +11,7 @@ import BorderRadius from '../constants/BorderRadius';
 import { CommonScreenStyles } from '../constants/ScreenStyles';
 import AppConfig from '../config/app';
 
-interface KivanLoaderProps {
-  size?: number;
-}
-
-const KivanLoader: React.FC<KivanLoaderProps> = ({ size = 80 }) => {
+const KivanLoader: React.FC = () => {
   const spinValue = useRef(new Animated.Value(0)).current;
   const pulseValue = useRef(new Animated.Value(1)).current;
 
@@ -64,7 +60,7 @@ const KivanLoader: React.FC<KivanLoaderProps> = ({ size = 80 }) => {
 
   return (
     <View style={CommonScreenStyles.center}>
-      <View style={[CommonScreenStyles.center, styles.glassContainer, { width: size, height: size }]}>
+      <View style={[CommonScreenStyles.center, styles.glassContainer]}>
         {/* Animated Kivan logo */}
         <Animated.View
           style={[
@@ -77,11 +73,7 @@ const KivanLoader: React.FC<KivanLoaderProps> = ({ size = 80 }) => {
             },
           ]}
         >
-          <Image
-            source={AppConfig.branding.logo}
-            style={{ width: size * 0.6, height: size * 0.6 }}
-            resizeMode="contain"
-          />
+          <Image source={AppConfig.branding.logo} style={styles.logo} resizeMode="contain" />
         </Animated.View>
       </View>
     </View>
@@ -90,8 +82,14 @@ const KivanLoader: React.FC<KivanLoaderProps> = ({ size = 80 }) => {
 
 const styles = StyleSheet.create({
   glassContainer: {
+    width: 80,
+    height: 80,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.white,
+  },
+  logo: {
+    width: 48,
+    height: 48,
   },
 });
 

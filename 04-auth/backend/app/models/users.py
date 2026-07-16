@@ -21,7 +21,3 @@ class User(BaseModel):
 class OnboardingStatus(BaseModel):
     onboarding_completed: bool
 
-
-class OnboardingResponse(BaseModel):
-    success: bool
-    message: str

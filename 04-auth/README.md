@@ -147,7 +147,7 @@ frontend/                      step 03's shell plus:
       date (green) — read from DynamoDB, written by no client
 - [ ] Sign out → sign in again → no tutorial replay (the flag survived on
       the backend record)
-- [ ] "Continue with Google" opens the browser consent sheet (Apple rides
-      the same Clerk OAuth flow)
+- [ ] "Continue with Google" opens the browser consent sheet (Apple shares
+      the code path — verify it the same way once enabled in your Clerk app)
 
 Next: `05-profiles` — profile data, birthday, Settings, account deletion.

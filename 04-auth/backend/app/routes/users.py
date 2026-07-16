@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.database import users_table
 from app.dependencies.auth import get_current_user_id
-from app.models.users import OnboardingResponse, OnboardingStatus, User
+from app.models.users import OnboardingStatus, User
 from app.utils.timestamps import utc_now_iso
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -37,7 +37,7 @@ def get_onboarding_status(user_id: str = Depends(get_current_user_id)):
     )
 
 
-@router.post("/me/onboarding/complete", response_model=OnboardingResponse)
+@router.post("/me/onboarding/complete", response_model=OnboardingStatus)
 def complete_onboarding(user_id: str = Depends(get_current_user_id)):
     """Mark the first-run tutorial as completed for the current user."""
     try:
@@ -59,4 +59,5 @@ def complete_onboarding(user_id: str = Depends(get_current_user_id)):
                 detail="User profile not found"
             )
         raise
-    return OnboardingResponse(success=True, message="Onboarding completed successfully")
+    # Echo the state the write just made true — no ceremony beyond that
+    return OnboardingStatus(onboarding_completed=True)

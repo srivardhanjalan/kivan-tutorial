@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  TouchableOpacity,
-  Text,
-  ActivityIndicator,
-  StyleSheet,
-  StyleProp,
-  ViewStyle,
-} from 'react-native';
+import { TouchableOpacity, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import Colors from '../constants/Colors';
 import Typography, { ChromeMaxFontSizeMultiplier } from '../constants/Typography';
 import BorderRadius from '../constants/BorderRadius';
@@ -19,21 +12,15 @@ interface PrimaryButtonProps {
   onPress: () => void;
   /** Shows an ActivityIndicator instead of the label and disables presses */
   loading?: boolean;
-  style?: StyleProp<ViewStyle>;
 }
 
 /**
  * The standard full-width CTA: brand-colored fill with a soft brand shadow.
  * Variants join when a screen first needs one.
  */
-const PrimaryButton: React.FC<PrimaryButtonProps> = ({
-  title,
-  onPress,
-  loading = false,
-  style,
-}) => (
+const PrimaryButton: React.FC<PrimaryButtonProps> = ({ title, onPress, loading = false }) => (
   <TouchableOpacity
-    style={[styles.button, loading && styles.disabled, style]}
+    style={[styles.button, loading && styles.disabled]}
     onPress={onPress}
     disabled={loading}
     activeOpacity={0.8}

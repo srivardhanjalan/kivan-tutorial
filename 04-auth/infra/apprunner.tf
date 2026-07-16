@@ -44,8 +44,8 @@ resource "aws_apprunner_service" "backend_ecr" {
     instance_role_arn = aws_iam_role.apprunner_instance.arn
   }
 
-  # Using AWS DefaultConfiguration for autoscaling (matching working examples)
-  # No custom auto_scaling_configuration_arn needed
+  # AWS DefaultConfiguration autoscaling — a custom configuration joins
+  # when a step needs to tune it
 
   health_check_configuration {
     protocol            = "HTTP"
