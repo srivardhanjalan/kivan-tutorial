@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
-from app.routes import health
+from app.routes import health, users
 
 app = FastAPI(
     title="Kivan API",
@@ -27,6 +27,7 @@ app.add_middleware(
 
 # Routers live in app/routes/, one domain per file; main.py only assembles
 app.include_router(health.router)
+app.include_router(users.router)
 
 
 @app.get("/")

@@ -78,7 +78,7 @@ const KivanLoader: React.FC<KivanLoaderProps> = ({ size = 80 }) => {
           ]}
         >
           <Image
-            source={AppConfig.branding.spinnerLogo}
+            source={AppConfig.branding.logo}
             style={[styles.logo, { width: size * 0.6, height: size * 0.6 }]}
             resizeMode="contain"
           />

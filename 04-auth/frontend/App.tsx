@@ -1,17 +1,18 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { ClerkProvider } from '@clerk/clerk-expo';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ToastProvider } from './src/components/ToastProvider';
-import TabNavigation from './src/components/TabNavigation';
+import Navigation from './src/components/Navigation';
+import { clerkConfig } from './src/config/clerk';
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <ToastProvider>
-        <NavigationContainer>
-          <TabNavigation />
-        </NavigationContainer>
-      </ToastProvider>
-    </SafeAreaProvider>
+    <ClerkProvider publishableKey={clerkConfig.publishableKey} tokenCache={clerkConfig.tokenCache}>
+      <SafeAreaProvider>
+        <ToastProvider>
+          <Navigation />
+        </ToastProvider>
+      </SafeAreaProvider>
+    </ClerkProvider>
   );
 }
