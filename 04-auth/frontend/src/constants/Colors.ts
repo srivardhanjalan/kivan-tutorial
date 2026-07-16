@@ -29,6 +29,8 @@ export default {
   hairline: 'rgba(0, 0, 0, 0.08)',
   /** Placeholder/disabled text */
   textMuted: '#A1A1A6',
+  /** Soft grey disc behind empty-state icons */
+  subtleFill: 'rgba(224, 224, 224, 0.33)',
   /** Success/confirmation */
   success: '#34C759',
   /** Destructive/error */
