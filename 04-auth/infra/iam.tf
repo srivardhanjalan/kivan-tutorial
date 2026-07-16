@@ -48,6 +48,42 @@ resource "aws_iam_role_policy" "apprunner_ecr_access" {
   })
 }
 
+# IAM Policy for App Runner to resolve runtime_environment_secrets from SSM
+resource "aws_iam_role_policy" "apprunner_instance_ssm" {
+  name = "${local.project_name}-apprunner-ssm-policy-${local.environment}"
+  role = aws_iam_role.apprunner_instance.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["ssm:GetParameters"]
+        Resource = aws_ssm_parameter.clerk_secret_key.arn
+      }
+    ]
+  })
+}
+
+# IAM Policy for the running backend to reach its DynamoDB tables
+resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
+  name = "${local.project_name}-apprunner-dynamodb-policy-${local.environment}"
+  role = aws_iam_role.apprunner_instance.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem"
+        ]
+        Resource = aws_dynamodb_table.users.arn
+      }
+    ]
+  })
+}
+
 # IAM Role for App Runner Instance
 resource "aws_iam_role" "apprunner_instance" {
   name = "${local.project_name}-apprunner-instance-role-${local.environment}"

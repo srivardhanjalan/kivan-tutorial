@@ -6,9 +6,11 @@
  */
 const AppConfig = {
   branding: {
-    /** The mark the animated loader spins — point it at your own asset to
-        restyle every spinner at once */
-    spinnerLogo: require('../../assets/kivan.png'),
+    /** The brand mark — the loader spins it, the auth screens crown their
+        forms with it. Point it at your own asset to rebrand both at once. */
+    logo: require('../../assets/kivan.png'),
+    /** The mark's display size wherever it appears full-size */
+    logoSize: 120,
   },
 } as const;
 

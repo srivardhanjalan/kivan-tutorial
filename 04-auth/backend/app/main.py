@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
-from app.routes import health
+from app.routes import health, users
 
 app = FastAPI(
     title="Kivan API",
@@ -10,14 +10,14 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Gzip compression middleware (70-90% payload reduction)
+# Gzip for responses over 1 KB — today that's only the OpenAPI document;
+# list endpoints grow into it in later steps
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-# CORS middleware. The wildcard origin is safe for THIS api: nothing is
-# cookie-authenticated (auth arrives in step 04 as a Bearer header), so
-# there are no credentials to leak — which is also why allow_credentials
-# is absent (with it, Starlette would mirror every Origin as a
-# credentialed one).
+# CORS middleware. The wildcard origin is safe for THIS api: auth is a
+# Bearer header, not a cookie, so there are no credentials to leak — which
+# is also why allow_credentials is absent (with it, Starlette would mirror
+# every Origin as a credentialed one).
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -27,12 +27,13 @@ app.add_middleware(
 
 # Routers live in app/routes/, one domain per file; main.py only assembles
 app.include_router(health.router)
+app.include_router(users.router)
 
 
 @app.get("/")
 async def root():
     return {
         "message": "Kivan API",
-        "version": "1.0.0",
+        "version": app.version,
         "docs": "/docs"
     }

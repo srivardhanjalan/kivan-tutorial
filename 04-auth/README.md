@@ -1,142 +1,153 @@
-# Step 03 — Backend & Infra Core
+# Step 04 — Auth & Onboarding
 
-The app leaves the simulator: a FastAPI skeleton, the Terraform that gives it
-a home on AWS (ECR + App Runner + IAM + logs), and the deploy loop — ending
-with the shell from step 02 showing a live **Backend · healthy** line fetched
-from your own infrastructure.
+The app learns your name: Clerk sign-in/up (email + code, Google, Apple),
+JWKS-verified tokens on the backend, a DynamoDB user record created
+**just-in-time** by your first authenticated request, and a first-run
+tutorial whose "seen it" flag lives on that record — ending with Home
+greeting you by name over a line item proving the backend knows you too.
 
 **The exact delta this step adds:**
-[PR #16 — Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/16/files)
+[PR #22 — Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/22/files)
 
-## Run it locally (no AWS needed yet)
+## Accounts first (5 minutes, once)
 
-Terminal 1 — the backend (any Python 3.11+; the Docker image runs 3.11):
+1. [dashboard.clerk.com](https://dashboard.clerk.com) → Create application →
+   enable **Email** (with password + email verification code), **Google**,
+   and **Apple**. Development instances ship with shared OAuth credentials —
+   no Google/Apple console work needed for this step.
+2. From **API keys**: the publishable key (`pk_test_…`) goes to
+   `frontend/.env.local`, the secret key (`sk_test_…`) to
+   `infra/terraform.tfvars` (both gitignored — they never enter the repo).
+
+## Run it locally
+
+Terminal 1 — the backend now needs the Clerk secret and a users table.
+The table comes from Terraform (below); until it exists, authenticated
+routes answer 503 naming exactly what's missing:
 
 ```bash
 cd backend
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python run.py            # serves http://localhost:8000 (blocking)
+CLERK_SECRET_KEY=sk_test_… ENVIRONMENT=production .venv/bin/python run.py
 ```
 
-Prefer container parity with production? Same Dockerfile App Runner runs
-(from the step root, not from inside `backend/`):
-
-```bash
-docker build -t kivan-api backend && docker run -p 8000:8000 kivan-api
-```
+Config is environment-variables-only, on purpose: a missing
+`CLERK_SECRET_KEY` fails at startup naming the variable, and secrets keep
+exactly two sanctioned homes (`.env.local`, `terraform.tfvars`) — no third
+`.env` file to leak.
 
 Terminal 2 — the app:
 
 ```bash
 cd frontend
-cp .env.example .env.local         # EXPO_PUBLIC_API_URL=http://localhost:8000
+cp .env.example .env.local     # fill in EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
 npm install
 npm run ios
 ```
 
-Every tab now shows **Backend · healthy** under its section header — the
-app and your API are talking.
+## Deploy it
 
-## Deploy it (the real thing)
-
-App Runner can't start from an empty registry, so the first rollout is
-staged: create the registry, push an image, create the service, then one
-instant re-run to tag what App Runner self-created.
+Same staged rollout as step 03, plus one secret. The Clerk key reaches the
+container as an SSM **SecureString** via App Runner's
+`runtime_environment_secrets` — never a plaintext env var readable in the
+console:
 
 ```bash
 cd infra
-cp terraform.tfvars.example terraform.tfvars    # no secrets needed this step
+cp terraform.tfvars.example terraform.tfvars    # + your sk_test_… key
 terraform init
-terraform apply -target=aws_ecr_repository.backend   # 1. registry first
-./scripts/deploy.sh                                   # 2. build amd64 → push
-terraform apply                                       # 3. everything else (~5 min)
-./scripts/deploy.sh                                   # 4. re-run: tags the log
-                                                      #    groups (cached, instant)
+terraform apply -target=aws_ecr_repository.backend
+./scripts/deploy.sh
+terraform apply
+./scripts/deploy.sh                              # tags the log groups (instant)
 
-terraform output -raw apprunner_ecr_service_url       # → frontend/.env.local
+terraform output -raw apprunner_ecr_service_url  # → frontend/.env.local
 ```
 
-`EXPO_PUBLIC_*` values are inlined at **bundle time** — after editing
-`.env.local`, restart the dev server (`npx expo start -c --localhost`), a reload is not
-enough. Then: the same **Backend · healthy** line, now served from AWS.
+Restart the dev server after editing `.env.local`
+(`npx expo start -c --localhost` — `EXPO_PUBLIC_*` is inlined at bundle time).
 
-Every resource is tagged (`Project=kivan`, `Environment=…`) and thereby in
-the stack's resource group (IAM roles are tagged too, though as global
-resources they don't appear in the regional group's listing). One resource
-can't be Terraform-managed: App Runner creates its two log groups itself —
-`deploy.sh` tags them into the group and caps retention at 30 days.
-`terraform destroy` removes the stack; sweep the log groups after:
-
-```bash
-aws logs describe-log-groups --log-group-name-prefix /aws/apprunner/kivan \
-  --region us-east-1 --query 'logGroups[].logGroupName' --output text \
-  | xargs -n1 aws logs delete-log-group --region us-east-1 --log-group-name
-```
+**Try it end to end:** sign up (Clerk dev instances accept test addresses —
+any `you+clerk_test@example.com` verifies with code `424242`), watch the
+first-run tutorial appear, and check Home: your name in the header, and a
+**Record** line showing the email + provisioned date read back from
+DynamoDB — a record no client ever wrote.
 
 ## What's here
 
 ```
 backend/
-  app/main.py        assembles the app: middleware + router includes + `/`
-  app/routes/health.py   one domain per file — later routers land beside it
-  run.py             local dev server (uvicorn, hot reload)
-  Dockerfile         python:3.11-slim; the image App Runner runs
-  requirements.txt   fastapi + uvicorn — dependencies join with their features
-infra/               one file per concern:
-  providers.tf       terraform + AWS provider (default_tags) + locals
-  ecr.tf             the registry + its lifecycle policy
-  apprunner.tf       the service (health-checked on /health, auto-deploys :latest)
-  iam.tf             the ECR-access and instance roles
-  resource-group.tf  the tag-based group holding everything Project=kivan
-  variables.tf       region, environment, App Runner cpu/memory
-  outputs.tf         the service URL, ECR URL, service ARN, resource group
-  terraform.tfvars.example   copy to terraform.tfvars (gitignored)
-  scripts/deploy.sh  the amd64 build-push loop (see the gotcha below)
-frontend/            step 02's shell plus:
-  src/services/api.ts          the API root (EXPO_PUBLIC_API_URL) + fetchHealth
-  src/components/ApiStatus.tsx the proof-of-life line on every placeholder tab
-  .env.example                 copy to .env.local (gitignored)
+  app/dependencies/auth.py     JWKS verification (FastAPI dependency, not
+                               middleware — routes opt in via Depends)
+  app/utils/user_provisioning.py   JIT user creation, create-only conditional write
+  app/utils/timestamps.py      one spelling of "now" for records
+  app/routes/users.py          /users/me + the onboarding flag endpoints
+  app/models/users.py          the user record, one domain per file
+  app/config.py                env-only settings; clerk_secret_key required
+  app/database.py              boto3 + the users table handle
+infra/                         step 03's stack plus:
+  dynamodb.tf                  the users table — hash key only; indexes join
+                               in step 10 with the features that query them
+  ssm.tf                       the Clerk secret as a SecureString
+  iam.tf                       + scoped ssm:GetParameters and DynamoDB
+                               get/put/update (delete arrives with step 05)
+frontend/                      step 03's shell plus:
+  src/components/Navigation.tsx     the auth gate + onboarding orchestration
+  src/screens/SignInScreen.tsx      both auth screens are AuthMethods
+  src/screens/SignUpScreen.tsx        with different verbs
+  src/components/AuthMethods.tsx    OAuth buttons + email form + switch row
+  src/components/OAuthButtons.tsx   providers as config data (one line to add one)
+  src/components/OnboardingTutorial.tsx  the first-run carousel
+  src/screens/HomeScreen.tsx        the greeting + the Record proof line
+  src/hooks/useAuthAction.ts        loading + toast-on-error, spelled once
+  src/utils/tokenCache.ts           Clerk sessions in the device keychain
 ```
 
-## The idea this step plants
+## The ideas this step plants
 
-**The backend earns its dependencies the same way the frontend earns its
-tokens.** No database, no auth middleware, no queue — `requirements.txt` is
-two lines because the skeleton reads nothing else. App Runner's env vars are
-`ENVIRONMENT` and `AWS_REGION` only; Clerk keys, bucket names, and queue URLs
-join in the steps that consume them. Same rule, both sides of the wire.
+- **Never trust the client to create its own user.** There is no "sync me"
+  endpoint. The backend provisions the record server-side on the first
+  verified request, fetching the profile from Clerk directly — a client can
+  never assert someone else's name. Sign-in on a fresh database self-heals
+  the same way.
+- **The schema is as small as today's app.** The users table has a hash key
+  and nothing else; the record has eight fields. Follower counts, search
+  fields, roles — each lands in the step that reads it (DynamoDB is
+  schemaless; adding a field later costs one line, not a migration).
+- **401 means *your* fault, 503 means *ours*.** A forged token gets 401; an
+  unreachable Clerk or a missing table gets 503 with a message naming the
+  fix. Auth is where readers debug the most — status codes should point at
+  the right suspect.
 
 ## Gotchas
 
-- **Apple Silicon: the build that only fails in production.** App Runner
-  runs amd64 only. QEMU and docker-container builders produce images that
-  build and even run locally, then die on AWS with `CREATE_FAILED` and no
-  logs. `deploy.sh` works because step 01 configured the colima-rosetta
-  docker context (plain docker driver through Rosetta). Verify before your
-  first push: `docker context show` → `colima-rosetta`.
-- **The same `CREATE_FAILED`, second cause: BuildKit attestations.** Newer
-  Docker attaches provenance/SBOM manifests by default, turning the push
-  into an OCI image *index* — App Runner can't CREATE a service from it
-  (identical symptom: failure before the first log line; updating an
-  existing service tolerates it, which makes it maddening to bisect).
-  `deploy.sh` passes `--provenance=false --sbom=false`. We hit this for
-  real while verifying this step.
-- **`terraform apply` name collisions** — resource names embed
-  `environment`; if you deploy twice (or already ran the finished app),
-  change `environment` in `terraform.tfvars`.
-- **Physical phone?** Two changes, not one: run Metro without `--localhost`
-  (`npx expo start`, same Wi-Fi) so the phone can reach the bundler, and put
-  a URL the phone can reach in `.env.local` (your Mac's LAN IP, or the App
-  Runner URL).
+- **Expo Go pulls SDK-matched natives.** `@clerk/clerk-expo` transitively
+  wants a newer `expo-auth-session` than Expo Go 54 ships — the app crashes
+  at boot with `Cannot find native module 'ExpoCryptoAES'`. The fix is
+  pinning `expo-auth-session`/`expo-crypto` via `npx expo install` (already
+  in package.json) so npm dedupes Clerk onto the SDK-54 versions.
+- **`CREATE_FAILED` with no logs, cause #3: IAM propagation.** App Runner
+  validates its SSM secret while provisioning; Terraform doesn't know the
+  service depends on the instance role's SSM policy unless told. We lost
+  that race for real — hence the explicit `depends_on` in `apprunner.tf`.
+- **Text inside a BlurView is invisible to the accessibility tree.** The
+  onboarding's glass button carries `accessibilityRole`/`Label` on the
+  touchable for VoiceOver (and UI tests) to find it. Icon-only buttons
+  (sign-out) need labels for the same reason.
+- **`cache_keys=True` on PyJWKClient is a trap.** It's an `lru_cache` with
+  no TTL — a rotated Clerk signing key would stay trusted until restart.
+  The JWK-*set* cache (with `lifespan`) is the right one; we cache only that.
 
 ## Done when
 
-- [ ] `curl localhost:8000/health` → `{"status":"healthy"}`
-- [ ] Every tab shows **Backend · healthy** (green)
-- [ ] After the four-command rollout + `.env.local` + `expo start -c --localhost`: the
-      same green line, served from AWS
-- [ ] Stop the backend → cold-restart the app → **Backend · unreachable**
-      (red, with the reason): the line is real, not decorative
+- [ ] `curl $URL/users/me` → 401; with a garbage token → 401 (generic detail)
+- [ ] Sign up with a `+clerk_test` address, code `424242` → the first-run
+      tutorial appears
+- [ ] Home greets you by name; **Record** shows your email + provisioned
+      date (green) — read from DynamoDB, written by no client
+- [ ] Sign out → sign in again → no tutorial replay (the flag survived on
+      the backend record)
+- [ ] "Continue with Google" opens the browser consent sheet (Apple shares
+      the code path — verify it the same way once enabled in your Clerk app)
 
-Next: `04-auth` — Clerk sign-in/up, JWKS verification, and just-in-time
-user provisioning.
+Next: `05-profiles` — profile data, birthday, Settings, account deletion.

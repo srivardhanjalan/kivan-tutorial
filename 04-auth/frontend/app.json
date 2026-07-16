@@ -23,6 +23,10 @@
     },
     "web": {
       "favicon": "./assets/kivan.png"
-    }
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-web-browser"
+    ]
   }
 }

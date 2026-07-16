@@ -22,4 +22,10 @@ variable "apprunner_memory" {
   default     = "2048"
 }
 
+variable "clerk_secret_key" {
+  description = "Clerk secret key (sk_...) — the backend uses it to fetch JWKS and user profiles"
+  type        = string
+  sensitive   = true
+}
+
 

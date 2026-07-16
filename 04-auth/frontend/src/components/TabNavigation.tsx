@@ -1,14 +1,19 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { View, StyleSheet, Platform, TouchableOpacity } from 'react-native';
-import { BlurView } from 'expo-blur';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import Colors from '../constants/Colors';
 import BorderRadius from '../constants/BorderRadius';
-import Shadows from '../constants/Shadows';
 import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 import { Tabs, SearchTab, TabConfig, TabKey } from '../config/tabs';
+import GlassPill from './GlassPill';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
+import HomeScreen from '../screens/HomeScreen';
+
+// Tabs with a real screen; the rest stay placeholders until their step
+const TabScreens: Partial<Record<TabKey, React.ComponentType>> = {
+  HomeTab: HomeScreen,
+};
 
 // The param list comes from the config, so adding a tab there types the
 // whole navigator automatically
@@ -40,27 +45,14 @@ function TabButton({
   );
 }
 
-/** Glass pill wrapper: BlurView on iOS, near-opaque white on Android */
-function Pill({ style, children }: { style?: any; children: React.ReactNode }) {
-  return Platform.OS === 'ios' ? (
-    <BlurView intensity={80} tint="light" style={[styles.pillBlur, style]}>
-      <View style={styles.pillContent}>{children}</View>
-    </BlurView>
-  ) : (
-    <View style={[styles.pillBlur, styles.androidPill, style]}>
-      <View style={styles.pillContent}>{children}</View>
-    </View>
-  );
-}
-
 function CustomTabBar({ state, navigation }: any) {
   const currentRoute = state.routes[state.index].name;
   return (
     <View style={[styles.tabBarWrapper, { bottom: Spacing.tabBarBottomMargin }]}>
       <View style={styles.tabBarContainer}>
         {/* Left pill: the main tabs */}
-        <View style={styles.leftNavPill}>
-          <Pill>
+        <GlassPill style={styles.leftNavPill}>
+          <View style={styles.pillContent}>
             {Tabs.map((tab) => (
               <TabButton
                 key={tab.key}
@@ -69,19 +61,19 @@ function CustomTabBar({ state, navigation }: any) {
                 onPress={() => navigation.navigate(tab.key)}
               />
             ))}
-          </Pill>
-        </View>
+          </View>
+        </GlassPill>
 
         {/* Right pill: search/discover */}
-        <View style={styles.rightNavPill}>
-          <Pill>
+        <GlassPill style={styles.rightNavPill}>
+          <View style={styles.pillContent}>
             <TabButton
               tab={SearchTab}
               active={currentRoute === SearchTab.key}
               onPress={() => navigation.navigate(SearchTab.key)}
             />
-          </Pill>
-        </View>
+          </View>
+        </GlassPill>
       </View>
     </View>
   );
@@ -99,11 +91,14 @@ export default function TabNavigation() {
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
-      {[...Tabs, SearchTab].map((tab) => (
-        <Tab.Screen key={tab.key} name={tab.key}>
-          {() => <PlaceholderScreen tab={tab} />}
-        </Tab.Screen>
-      ))}
+      {[...Tabs, SearchTab].map((tab) => {
+        const Screen = TabScreens[tab.key];
+        return (
+          <Tab.Screen key={tab.key} name={tab.key}>
+            {() => (Screen ? <Screen /> : <PlaceholderScreen tab={tab} />)}
+          </Tab.Screen>
+        );
+      })}
     </Tab.Navigator>
   );
 }
@@ -128,14 +123,6 @@ const styles = StyleSheet.create({
   },
   rightNavPill: {
     width: 76,
-  },
-  pillBlur: {
-    borderRadius: BorderRadius.full,
-    overflow: 'hidden',
-    ...Shadows.chrome,
-  },
-  androidPill: {
-    backgroundColor: Colors.glassFallback,
   },
   pillContent: {
     flexDirection: 'row',

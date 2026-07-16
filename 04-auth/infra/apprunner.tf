@@ -3,6 +3,11 @@
 resource "aws_apprunner_service" "backend_ecr" {
   service_name = "${local.project_name}-api-apprunner-${local.environment}"
 
+  # The instance role must already be able to read the SSM secret when the
+  # service first provisions — Terraform can't infer that ordering from the
+  # role ARN alone, and losing the race is a CREATE_FAILED with no logs
+  depends_on = [aws_iam_role_policy.apprunner_instance_ssm]
+
   source_configuration {
     authentication_configuration {
       access_role_arn = aws_iam_role.apprunner_ecr_access.arn
@@ -13,10 +18,15 @@ resource "aws_apprunner_service" "backend_ecr" {
         port = "8000"
 
         runtime_environment_variables = {
-          # Entries join when the backend first reads them (auth keys arrive
-          # at step 04, queue/bucket names with their features)
+          # Entries join when the backend first reads them (queue/bucket
+          # names arrive with their features in later steps)
           ENVIRONMENT = var.environment
           AWS_REGION  = var.aws_region
+        }
+
+        # Secrets resolve from SSM at instance start via the instance role
+        runtime_environment_secrets = {
+          CLERK_SECRET_KEY = aws_ssm_parameter.clerk_secret_key.arn
         }
       }
 
@@ -34,8 +44,8 @@ resource "aws_apprunner_service" "backend_ecr" {
     instance_role_arn = aws_iam_role.apprunner_instance.arn
   }
 
-  # Using AWS DefaultConfiguration for autoscaling (matching working examples)
-  # No custom auto_scaling_configuration_arn needed
+  # AWS DefaultConfiguration autoscaling — a custom configuration joins
+  # when a step needs to tune it
 
   health_check_configuration {
     protocol            = "HTTP"

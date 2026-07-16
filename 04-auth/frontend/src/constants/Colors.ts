@@ -23,6 +23,12 @@ export default {
   textSecondary: '#6E6E73',
   /** The app-wide pressed/active fill on chrome buttons and tabs */
   pressedFill: 'rgba(0, 0, 0, 0.08)',
+  /** Raised input/card surface on the default background */
+  surface: '#FFFFFF',
+  /** Hairline borders on inputs and outlined buttons */
+  hairline: 'rgba(0, 0, 0, 0.08)',
+  /** Placeholder/disabled text */
+  textMuted: '#A1A1A6',
   /** Success/confirmation */
   success: '#34C759',
   /** Destructive/error */

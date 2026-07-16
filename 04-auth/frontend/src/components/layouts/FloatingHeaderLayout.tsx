@@ -16,7 +16,8 @@ interface FloatingHeaderLayoutProps {
 
 /**
  * The screen scaffold: safe-area container + floating header + scrollable
- * content with the app-wide top clearance (72) and tab-bar padding (98).
+ * content padded by Spacing.floatingHeaderContentPadding on top and
+ * Spacing.scrollContentBottom below (the chrome-derived getters).
  * Screens provide content + header config only.
  *
  * SAFE-AREA INVARIANT: SafeAreaView pads normal children by the top inset,

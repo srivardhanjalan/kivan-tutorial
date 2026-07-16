@@ -7,6 +7,8 @@ import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 
 interface HeaderIconButtonProps {
   icon: keyof typeof Ionicons.glyphMap;
+  /** What the button does — icons carry no text, so screen readers need this */
+  accessibilityLabel: string;
   onPress: () => void;
 }
 
@@ -15,8 +17,13 @@ interface HeaderIconButtonProps {
  * the visible affordance. Every screen's right-side header buttons are this
  * component, so they all look and align identically.
  */
-const HeaderIconButton: React.FC<HeaderIconButtonProps> = ({ icon, onPress }) => (
-  <Pressable onPress={onPress} style={({ pressed }) => [CommonScreenStyles.center, styles.button, pressed && styles.pressed]}>
+const HeaderIconButton: React.FC<HeaderIconButtonProps> = ({ icon, accessibilityLabel, onPress }) => (
+  <Pressable
+    onPress={onPress}
+    accessibilityRole="button"
+    accessibilityLabel={accessibilityLabel}
+    style={({ pressed }) => [CommonScreenStyles.center, styles.button, pressed && styles.pressed]}
+  >
     <Ionicons name={icon} size={24} color={Colors.dark} />
   </Pressable>
 );

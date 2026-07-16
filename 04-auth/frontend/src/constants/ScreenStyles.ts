@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import Colors from './Colors';
+import BorderRadius from './BorderRadius';
 
 /**
  * Spacing + chrome metrics. The chrome numbers are a single source of truth
@@ -7,7 +8,12 @@ import Colors from './Colors';
  * A value joins when a component first uses it, never in advance.
  */
 export const Spacing = {
+  sm: 8,
+  md: 12,
   lg: 16,
+  xl: 20,
+  xxl: 24,
+  xxxl: 32,
 
   /** The app-wide content edge — everything aligns to this */
   contentHorizontal: 12,
@@ -45,5 +51,13 @@ export const CommonScreenStyles = StyleSheet.create({
   center: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  /** The auth form's raised outlined element — text fields and OAuth buttons */
+  outlinedSurface: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.hairline,
   },
 });
