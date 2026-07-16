@@ -1,6 +1,6 @@
-# The App Gets a Heartbeat
+# Alive on Arrival
 
-*Zero to Shipped · 03 — a real pulse from real AWS: four commands, FastAPI + Terraform + App Runner, and the two silent ways deploys flatline on the way there.*
+*Zero to Shipped · 03 — a real pulse from real AWS: four commands, FastAPI + Terraform + App Runner, and the two ways deploys arrive dead instead.*
 
 ---
 
@@ -88,7 +88,7 @@ In **step 04** the app gets real users: Clerk sign-in/up, JWKS verification on t
 - **00 · [Introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**
 - **01 · [One script to set up everything](https://medium.com/@srivardhanjalan/one-script-to-set-up-everything-ae8bcea2d649)**
 - **02 · Dressed to Ship** *(link when published)*
-- **03 · The App Gets a Heartbeat** *(this post)*
+- **03 · Alive on Arrival** *(this post)*
 - **04 · Auth & onboarding** *(coming soon)*
 
 *All code: [github.com/srivardhanjalan/kivan-tutorial](https://github.com/srivardhanjalan/kivan-tutorial)*
