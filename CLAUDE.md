@@ -68,6 +68,14 @@ memory — run the command/check each time.
 
 ## 4. Verification & honesty
 
+- [ ] **Everything created gets an adversarial review before it ships.**
+      After creating ANY artifact — code, README, Medium post, image, script,
+      config, PR description — run an adversarial reviewer against it
+      (`claude -p` with a brief to attack: correctness, false claims, missing
+      cases, misleading copy, broken commands). Then address EVERY finding:
+      fix it, or record the explicit reason it stands. Repeat until a pass
+      returns no actionable findings. (The gate's semantic reviewer covers
+      step code; everything else gets its own adversarial pass.)
 - [ ] **Never say "verified/works/done" without having executed the thing
       in this session** — UI: build + boot + screenshot; API: real request;
       script: a real run (including its failure path). Files existing ≠
@@ -114,6 +122,12 @@ memory — run the command/check each time.
 - [ ] **Mocks must match the end experience exactly** — when the app
       changes visually, regenerate the affected mock/hero images in the
       same round.
+- [ ] **Article imagery must depict the article's actual content.** A cover
+      or in-post image is built from the subject itself — a setup post shows
+      the script's real terminal output, a UI step shows real screenshots of
+      that step, an infra post shows that step's stack — never generic app
+      shots or decoration. Prefer real artifacts over mocks whenever the
+      thing exists to capture.
 
 ## 7. The tutorial's own conventions (kivan-tutorial)
 
