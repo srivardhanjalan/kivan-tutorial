@@ -28,20 +28,19 @@ resource "aws_iam_role_policy" "apprunner_ecr_access" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
-        Action = [
-          "ecr:GetAuthorizationToken",
-          "ecr:BatchGetImage",
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:DescribeImages"
-        ]
+        # The only ECR action that requires "*" — it issues the registry
+        # login token, not access to any repository
+        Effect   = "Allow"
+        Action   = ["ecr:GetAuthorizationToken"]
         Resource = "*"
       },
       {
+        # Image pulls are scoped to this service's one repository
         Effect = "Allow"
         Action = [
           "ecr:BatchGetImage",
-          "ecr:GetDownloadUrlForLayer"
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:DescribeImages"
         ]
         Resource = aws_ecr_repository.backend.arn
       }
