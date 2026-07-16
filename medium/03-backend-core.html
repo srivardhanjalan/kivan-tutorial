@@ -3,10 +3,10 @@
 <style>body{max-width:740px;margin:40px auto;font-family:Georgia,serif;font-size:18px;line-height:1.6;color:#242424;padding:0 20px}
 img{max-width:100%}pre{background:#f5f5f5;padding:14px;overflow-x:auto;font-size:14px}code{background:#f5f5f5;padding:1px 4px;font-size:15px}</style>
 </head><body>
-<h1>Hello, Cloud</h1>
-<p><em>Zero to Shipped · 03 — your backend&#39;s first words from real AWS: four commands, FastAPI + Terraform + App Runner, and the two silent ways deploys die on the way there.</em></p>
+<h1>The App Gets a Heartbeat</h1>
+<p><em>Zero to Shipped · 03 — a real pulse from real AWS: four commands, FastAPI + Terraform + App Runner, and the two silent ways deploys flatline on the way there.</em></p>
 <hr>
-<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-03.png?v=6ba0c32" alt="Step 03 — the staged rollout and the app talking to AWS"></p>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-03.png?v=12ee553" alt="Step 03 — the staged rollout and the app talking to AWS"></p>
 <p>While verifying this exact step, my deploy died like this: <code>terraform apply</code> waited three minutes on App Runner, returned <code>CREATE_FAILED</code>, and the service log group was <strong>empty</strong> — the container never produced a single line. The same image ran perfectly on my laptop. The API code was completely innocent. It took inspecting the pushed manifest to find the culprit, and it wasn&#39;t the one the internet warns you about.</p>
 <p>That story — both versions of it — is the second half of this post. The first half is the payoff it interrupts: a FastAPI backend running on your own AWS, deployed with four commands, every resource tagged and grouped, torn down to zero with one.</p>
 <p>*(This is step 03 of <strong>Zero to Shipped</strong>, where we build a real social product one deployable step at a time. New here? <strong><a href="https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9">Start with the introduction</a></strong>. The code is the <code>03-backend-core/</code> folder; <a href="https://github.com/srivardhanjalan/kivan-tutorial/pull/12/files">PR #12</a> shows every line this step adds.)*</p>
@@ -66,7 +66,7 @@ terraform apply                                       # 3. the service (~5 min)
 <li><strong>00 · <a href="https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9">Introduction</a></strong></li>
 <li><strong>01 · <a href="https://medium.com/@srivardhanjalan/one-script-to-set-up-everything-ae8bcea2d649">One script to set up everything</a></strong></li>
 <li><strong>02 · The app with no features</strong> <em>(link when published)</em></li>
-<li><strong>03 · Hello, Cloud</strong> <em>(this post)</em></li>
+<li><strong>03 · The App Gets a Heartbeat</strong> <em>(this post)</em></li>
 <li><strong>04 · Auth &amp; onboarding</strong> <em>(coming soon)</em></li>
 </ul>
 <p><em>All code: <a href="https://github.com/srivardhanjalan/kivan-tutorial">github.com/srivardhanjalan/kivan-tutorial</a></em></p>
