@@ -64,8 +64,9 @@ own. You're not just building Kivan; you're building a platform you can reuse.
   `16-operations`). `01-prerequisites` sets up your machine and accounts; every
   folder from `02-app-shell` on is a **complete, runnable, deployable
   snapshot** — you never need another folder to run a step.
-- **Each step lands as two pull requests** (after a *baseline* commit that
-  copies the previous step's folder straight to main): a **code PR** — whose
+- **Everything lands through pull requests** — main accepts no direct pushes
+  (enforced by a repository ruleset, no admin bypass). Each step is three:
+  a *baseline* PR (exact copy of the previous step's folder), a **code PR** — whose
   *Files changed* view **is** what the feature costs, browsable, commentable,
   linkable — and a small **content PR** with the step's Medium post and
   imagery. Squash-merges keep main's history clean; each step's README links
