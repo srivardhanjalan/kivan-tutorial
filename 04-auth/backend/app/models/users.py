@@ -1,12 +1,12 @@
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 
 class User(BaseModel):
-    """The user record as JIT provisioning writes it. `extra='ignore'` lets
-    later steps add fields to the DynamoDB item without breaking this model."""
-    model_config = ConfigDict(extra="ignore")
+    """The user record as JIT provisioning writes it. Pydantic ignores extra
+    item fields by default, so later steps can add fields to the DynamoDB
+    record without breaking this model."""
 
     id: str
     email: str
@@ -20,4 +20,3 @@ class User(BaseModel):
 
 class OnboardingStatus(BaseModel):
     onboarding_completed: bool
-
