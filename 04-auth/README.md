@@ -89,7 +89,8 @@ infra/                         step 03's stack plus:
   dynamodb.tf                  the users table — hash key only; indexes join
                                in step 10 with the features that query them
   ssm.tf                       the Clerk secret as a SecureString
-  iam.tf                       + scoped ssm:GetParameters and DynamoDB CRUD
+  iam.tf                       + scoped ssm:GetParameters and DynamoDB
+                               get/put/update (delete arrives with step 05)
 frontend/                      step 03's shell plus:
   src/components/Navigation.tsx     the auth gate + onboarding orchestration
   src/screens/SignInScreen.tsx      both auth screens are AuthMethods
