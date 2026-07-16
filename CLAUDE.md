@@ -40,6 +40,14 @@ memory — run the command/check each time.
 - [ ] **Colors/radii/shadows/spacing are tokens.** A literal in a component
       is either a documented single-use one-off or a defect. A value used
       twice, or with semantic meaning, becomes a token at that moment.
+- [ ] **One concern per file, named for what it contains.** Terraform: one
+      file per resource/concern (providers, variables, outputs, ecr.tf,
+      apprunner.tf, iam.tf, …) — never a monolithic main.tf. FastAPI:
+      main.py only assembles (middleware + router includes); routers live in
+      app/routes/<domain>.py, models in app/models/<domain>.py, one domain
+      per file. The same principle applies to any stack: a file's name must
+      tell you what's inside, and growth happens by adding files, not by
+      fattening one.
 - [ ] **Comments must not lie.** If a comment claims a relationship
       ("defaults to X", "kept in sync with Y"), the code must enforce it or
       the comment must go.
