@@ -77,17 +77,18 @@ aws logs describe-log-groups --log-group-name-prefix /aws/apprunner/kivan \
 
 ```
 backend/
-  app/main.py        FastAPI app: gzip, CORS, `/` and `/health` (plus
-                     FastAPI's built-in /docs)
+  app/main.py        assembles the app: middleware + router includes + `/`
+  app/routes/health.py   one domain per file — later routers land beside it
   run.py             local dev server (uvicorn, hot reload)
   Dockerfile         python:3.11-slim; the image App Runner runs
   requirements.txt   fastapi + uvicorn — dependencies join with their features
-infra/
-  main.tf            ECR (+lifecycle policy), App Runner service (health-checked
-                     on /health, auto-deploys :latest), two IAM roles, and a
-                     resource group holding everything tagged Project=kivan
-  variables.tf       region, environment, App Runner cpu/memory — only what
-                     main.tf consumes
+infra/               one file per concern:
+  providers.tf       terraform + AWS provider (default_tags) + locals
+  ecr.tf             the registry + its lifecycle policy
+  apprunner.tf       the service (health-checked on /health, auto-deploys :latest)
+  iam.tf             the ECR-access and instance roles
+  resource-group.tf  the tag-based group holding everything Project=kivan
+  variables.tf       region, environment, App Runner cpu/memory
   outputs.tf         the service URL, ECR URL, service ARN, resource group
   terraform.tfvars.example   copy to terraform.tfvars (gitignored)
   scripts/deploy.sh  the amd64 build-push loop (see the gotcha below)

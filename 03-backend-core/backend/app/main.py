@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
+from app.routes import health
+
 app = FastAPI(
     title="Kivan API",
     description="Backend API for Kivan app",
@@ -20,6 +22,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Routers live in app/routes/, one domain per file; main.py only assembles
+app.include_router(health.router)
+
 
 @app.get("/")
 async def root():
@@ -28,8 +33,3 @@ async def root():
         "version": "1.0.0",
         "docs": "/docs"
     }
-
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy"}
