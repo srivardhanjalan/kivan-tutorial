@@ -1,9 +1,9 @@
 import Colors from './Colors';
 
 /**
- * Chrome text (header titles/actions, tab labels) caps Dynamic Type scaling
- * so oversized accessibility fonts don't break pill layouts. Content text
- * scales freely.
+ * Text inside fixed-height layouts (the header title row, CTA buttons) caps
+ * Dynamic Type scaling so oversized accessibility fonts don't break them.
+ * Free-flowing content text scales freely.
  * Usage: <Text maxFontSizeMultiplier={ChromeMaxFontSizeMultiplier} ...>
  */
 export const ChromeMaxFontSizeMultiplier = 1.2;

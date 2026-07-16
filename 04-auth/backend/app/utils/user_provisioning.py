@@ -77,7 +77,8 @@ def _fetch_clerk_profile(user_id: str) -> dict:
         logger.warning(f"Clerk has no user {user_id}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found in authentication service"
+            detail="User not found in authentication service",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     if response.status_code != 200:

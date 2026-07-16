@@ -92,6 +92,7 @@ def get_current_user_id(token_data: dict = Depends(verify_clerk_token)) -> str:
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token: user ID not found"
+            detail="Invalid token: user ID not found",
+            headers={"WWW-Authenticate": "Bearer"},
         )
     return user_id

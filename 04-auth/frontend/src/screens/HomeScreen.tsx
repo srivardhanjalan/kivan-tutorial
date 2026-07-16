@@ -8,7 +8,13 @@ import AsyncStatusLine from '../components/AsyncStatusLine';
 import EmptyStateView from '../components/EmptyStateView';
 import useFetchOnMount from '../hooks/useFetchOnMount';
 import { fetchCurrentUser } from '../services/api';
-import { getUserDisplayName } from '../utils/userHelpers';
+
+/** "First Last" → first → last → email — whatever the profile can offer. */
+const displayName = (user: ReturnType<typeof useUser>['user']): string => {
+  if (!user) return '';
+  if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
+  return user.firstName || user.lastName || user.emailAddresses[0]?.emailAddress || '';
+};
 
 /**
  * Home greets the signed-in user by name (from the Clerk profile) and shows
@@ -23,7 +29,7 @@ export default function HomeScreen() {
 
   return (
     <FloatingHeaderLayout
-      title={`Hi, ${getUserDisplayName(user)}`}
+      title={`Hi, ${displayName(user)}`}
       headerRight={
         <HeaderIconButton
           icon="log-out-outline"
