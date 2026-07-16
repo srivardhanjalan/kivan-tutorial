@@ -194,3 +194,6 @@ product-manager (more as the user adds them).
   the CLI is available).
 - Cache-bust raw.githubusercontent image URLs with the commit hash when
   rebuilding paste-HTML.
+- Every content PR that adds a post, mock page, or step also updates the
+  Pages site index (`index.md`) — it is hand-maintained and goes stale
+  silently otherwise.
