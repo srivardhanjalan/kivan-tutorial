@@ -1,14 +1,16 @@
-# It Worked on My Machine
+# Four Commands to a Live AWS Backend
 
-*Zero to Shipped · 03 — a FastAPI skeleton, real AWS infrastructure as code, and the two ways a Docker image passes every local test and still dies on deploy. (The API is never the problem.)*
+*Zero to Shipped · 03 — FastAPI + Terraform + App Runner, deployed for real — and the two invisible ways the deploy fails first.*
 
 ---
 
 ![Step 03 — the staged rollout and the app talking to AWS](../mocks/mocks-hero-03.png)
 
-This is step 03 of **Zero to Shipped**, a series where we build a real social product one deployable step at a time. New here? **[Start with the introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**. The code is the `03-backend-core/` folder, and [PR #12](https://github.com/srivardhanjalan/kivan-tutorial/pull/12/files) shows every line this step adds.
+While verifying this exact step, my deploy died like this: `terraform apply` waited three minutes on App Runner, returned `CREATE_FAILED`, and the service log group was **empty** — the container never produced a single line. The same image ran perfectly on my laptop. The API code was completely innocent. It took inspecting the pushed manifest to find the culprit, and it wasn't the one the internet warns you about.
 
-Today the app leaves the simulator: by the end, every tab of step 02's shell shows a live **Backend · healthy** line — first from a local FastAPI process, then from your own AWS infrastructure. And along the way we'll earn this post's title twice: deployments that fail on AWS with empty logs while the exact same code runs perfectly on the laptop — both times with the API itself completely innocent.
+That story — both versions of it — is the second half of this post. The first half is the payoff it interrupts: a FastAPI backend running on your own AWS, deployed with four commands, every resource tagged and grouped, torn down to zero with one.
+
+*(This is step 03 of **Zero to Shipped**, where we build a real social product one deployable step at a time. New here? **[Start with the introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**. The code is the `03-backend-core/` folder; [PR #12](https://github.com/srivardhanjalan/kivan-tutorial/pull/12/files) shows every line this step adds.)*
 
 ## The backend earns its dependencies
 
@@ -53,7 +55,7 @@ terraform apply                                       # 3. the service (~5 min)
 ./scripts/deploy.sh                                   # 4. instant re-run: tags the log groups
 ```
 
-Here's what this post is really about. **`CREATE_FAILED`, with empty logs** — the service dies before the first line of application output. There are two completely different causes with this identical symptom:
+And now the story from the top of the post. **`CREATE_FAILED`, with empty logs** — the service dies before the first line of application output. Two completely different causes share this identical symptom:
 
 1. **The wrong build path on Apple Silicon.** QEMU emulation and docker-container builders produce amd64 images that pass every local test and fail only on AWS. The fix is the Rosetta-backed Colima context that step 01's script configured (`docker context show` → `colima-rosetta`).
 2. **BuildKit's default attestations** — and this one we hit *while verifying this exact step*. Newer Docker attaches provenance/SBOM manifests to a push, turning it into an OCI image *index*. Updating an existing service tolerates it; **creating** one doesn't. Maddening to bisect, because the image itself is fine. `deploy.sh` passes `--provenance=false --sbom=false`.
@@ -86,7 +88,7 @@ In **step 04** the app gets real users: Clerk sign-in/up, JWKS verification on t
 - **00 · [Introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**
 - **01 · [One script to set up everything](https://medium.com/@srivardhanjalan/one-script-to-set-up-everything-ae8bcea2d649)**
 - **02 · The app with no features** *(link when published)*
-- **03 · It worked on my machine** *(this post)*
+- **03 · Four commands to a live AWS backend** *(this post)*
 - **04 · Auth & onboarding** *(coming soon)*
 
 *All code: [github.com/srivardhanjalan/kivan-tutorial](https://github.com/srivardhanjalan/kivan-tutorial)*
