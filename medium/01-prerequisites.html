@@ -6,7 +6,7 @@ img{max-width:100%}pre{background:#f5f5f5;padding:14px;overflow-x:auto;font-size
 <h1>One Script to Set Up Everything</h1>
 <p><em>Zero to Shipped · 01 — your machine, your accounts, and the Apple Silicon trap that eats evenings.</em></p>
 <hr>
-<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-01.png?v=6b1ef35" alt="Zero to Shipped 01 — one script, everything ready"></p>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-01.png?v=9f7c3f2" alt="Zero to Shipped 01 — one script, everything ready"></p>
 <p>This is step 01 of <strong>Zero to Shipped</strong>, a series where we build a real social product — iPhone, iPad, Android, and a live AWS backend — one deployable step at a time. New here? <strong><a href="https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9">Start with the introduction</a></strong> for what we&#39;re building and why the architecture is worth stealing. The code lives at <strong><a href="https://github.com/srivardhanjalan/kivan-tutorial">github.com/srivardhanjalan/kivan-tutorial</a></strong>; this post is the <code>01-prerequisites/</code> folder.</p>
 <p>By the end of this post your machine can build and deploy everything in the series, and you&#39;ll know exactly which accounts you need (and what they cost: about <strong>$5–10/month</strong> while deployed, and <code>terraform destroy</code> stops all charges).</p>
 <h2>One script does almost everything</h2>
@@ -17,9 +17,11 @@ img{max-width:100%}pre{background:#f5f5f5;padding:14px;overflow-x:auto;font-size
 <p>Want Android too? The script handles the entire toolchain — no Android Studio required:</p>
 <pre><code class="language-bash">./setup.sh --android
 </code></pre>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-01-android.png?v=9f7c3f2" alt="The full Android toolchain, scripted — real setup.sh output"></p>
 <p>That installs the JDK, the Android SDK, and creates a ready-to-boot Pixel 8 emulator named <code>kivan</code> (~2 GB). Then it&#39;s <code>emulator -avd kivan</code> and <code>npx expo run:android</code> in any step&#39;s <code>frontend/</code>. Nothing else in the series changes.</p>
 <p>When the script finishes, it prints exactly what&#39;s still yours to do. Which is this list:</p>
 <h2>The things a script can&#39;t do for you</h2>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-01-accounts.png?v=9f7c3f2" alt="The six accounts, their steps, and their costs at a glance"></p>
 <ol>
 <li><strong>Xcode + an iOS simulator</strong> <em>(needed at step 2)</em> — install <a href="https://apps.apple.com/app/xcode/id497799835">Xcode from the App Store</a>, open it once, then Settings ▸ Components ▸ install an iOS simulator runtime.</li>
 <li><strong>An AWS account + credentials</strong> <em>(step 3)</em> — <a href="https://aws.amazon.com">create an account</a>, create an IAM user with <code>AdministratorAccess</code> (fine for a tutorial account), create an access key, run <code>aws configure</code>. <strong>Cost while deployed: roughly $5–10/month</strong>, dominated by App Runner. Step 16 adds budgets and alarms, and <code>terraform destroy</code> stops all charges the moment you&#39;re done.</li>

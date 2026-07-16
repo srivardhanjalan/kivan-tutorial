@@ -1,0 +1,28 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="mocks.css">
+<style>
+  body{margin:0;background:#fff}
+  .wrap{width:1400px;height:660px;overflow:hidden;box-sizing:border-box;
+    background:linear-gradient(115deg,#FFE8EC 0%,#FDFFFF 42%,#E7F1F8 100%);padding:54px 90px}
+  h2{font-size:15px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--primary);margin:0 0 30px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px 28px}
+  .card{background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.07);border-radius:18px;
+    padding:18px 22px;box-shadow:0 8px 20px rgba(20,20,30,.06);display:flex;gap:16px;align-items:flex-start}
+  .em{font-size:30px;line-height:1}
+  .card b{display:block;font-size:17px;color:var(--dark);margin-bottom:3px}
+  .card p{font-size:14.5px;color:var(--text2);line-height:1.5;margin:0}
+  .pill2{display:inline-block;margin-left:8px;font-size:12px;font-weight:700;color:var(--primary);
+    background:rgba(255,56,92,.08);border-radius:999px;padding:3px 10px;vertical-align:2px}
+</style></head><body>
+<div class="wrap">
+  <h2>The six things no script can create for you</h2>
+  <div class="grid2">
+    <div class="card"><span class="em">🍎</span><div><b>Xcode + a simulator <span class="pill2">step 02</span></b><p>App Store → open once → install an iOS runtime</p></div></div>
+    <div class="card"><span class="em">☁️</span><div><b>AWS account <span class="pill2">step 03 · ≈$5–10/mo</span></b><p>IAM user → access key → aws configure. destroy = $0</p></div></div>
+    <div class="card"><span class="em">🔑</span><div><b>Clerk app <span class="pill2">step 04 · free</span></b><p>Email + Google on → two keys into two gitignored files</p></div></div>
+    <div class="card"><span class="em">🔥</span><div><b>Firecrawl key <span class="pill2">step 09</span></b><p>Powers the in-app store scraping</p></div></div>
+    <div class="card"><span class="em">✉️</span><div><b>Mailgun <span class="pill2">step 12 · optional</span></b><p>Sandbox domain is enough; skip it and all else works</p></div></div>
+    <div class="card"><span class="em">📱</span><div><b>Android <span class="pill2">optional · scripted!</span></b><p>./setup.sh --android — JDK, SDK, Pixel 8 emulator. No Android Studio.</p></div></div>
+  </div>
+</div>
+</body></html>

@@ -26,11 +26,15 @@ Want Android too? The script handles the entire toolchain — no Android Studio 
 ./setup.sh --android
 ```
 
+![The full Android toolchain, scripted — real setup.sh output](../mocks/mocks-01-android.png)
+
 That installs the JDK, the Android SDK, and creates a ready-to-boot Pixel 8 emulator named `kivan` (~2 GB). Then it's `emulator -avd kivan` and `npx expo run:android` in any step's `frontend/`. Nothing else in the series changes.
 
 When the script finishes, it prints exactly what's still yours to do. Which is this list:
 
 ## The things a script can't do for you
+
+![The six accounts, their steps, and their costs at a glance](../mocks/mocks-01-accounts.png)
 
 1. **Xcode + an iOS simulator** *(needed at step 2)* — install [Xcode from the App Store](https://apps.apple.com/app/xcode/id497799835), open it once, then Settings ▸ Components ▸ install an iOS simulator runtime.
 2. **An AWS account + credentials** *(step 3)* — [create an account](https://aws.amazon.com), create an IAM user with `AdministratorAccess` (fine for a tutorial account), create an access key, run `aws configure`. **Cost while deployed: roughly $5–10/month**, dominated by App Runner. Step 16 adds budgets and alarms, and `terraform destroy` stops all charges the moment you're done.
