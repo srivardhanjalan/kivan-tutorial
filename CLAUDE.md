@@ -59,6 +59,16 @@ product-manager (more as the user adds them).
 - [ ] **One PR = one readable story.** Step code and step content are
       separate PRs; a PR's Files-changed view must read as one pure delta.
       Never let an add-then-delete narrative into a single PR's history.
+- [ ] **A squash-merge severs ancestry — sync stacked children immediately.**
+      When a base branch (e.g. a step baseline) squash-merges, a child
+      branch's deletions can resurrect silently on its next merge from main:
+      git treats a file absent from the child but present in the squash as a
+      clean add, because deletes only conflict when the file exists in the
+      merge base. The moment the base merges: `git merge origin/main` into
+      the child, diff the result for resurrected files, and re-run the FULL
+      gate — a conflict resolution is a change round. (Step 04's merge
+      resurrected `KivanLoader.tsx`; tsc caught it only by luck of a renamed
+      token.)
 
 ## 2. Zero bloat — the codebase's constitution
 
