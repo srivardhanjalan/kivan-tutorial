@@ -15,6 +15,8 @@ and embedded in the root README and the Medium posts.
 | `img-01-cantdo.html` | `mocks-01-accounts.png` | post 01: the six-accounts card |
 | `img-01-android.html` | `mocks-01-android.png` | post 01: real --android terminal output |
 | — | `shot-02-home.png`, `shot-02-discover.png` | real simulator screenshots of the step-02 shell |
+| `hero-03.html` | `mocks-hero-03.png` | post 03 cover (real rollout terminal + live app screenshot) |
+| — | `shot-03-healthy.png` | real screenshot: Backend · healthy from the live API |
 
 Re-render after editing a page (adjust `--window-size` to the page):
 

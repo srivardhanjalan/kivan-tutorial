@@ -1,0 +1,18 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="mocks.css">
+<style>
+  body{margin:0;background:#fff}
+  .wrap{width:1400px;height:760px;position:relative;overflow:hidden;
+    background:linear-gradient(115deg,#FFE8EC 0%,#FDFFFF 42%,#E7F1F8 100%);
+    display:flex;align-items:flex-start;justify-content:center;gap:120px;padding-top:56px;box-sizing:border-box}
+  .col{display:flex;flex-direction:column;align-items:center;gap:18px}
+  .shot{width:296px;border-radius:32px;overflow:hidden;box-shadow:0 26px 60px rgba(20,20,30,.24);border:1px solid #e6e6ea}
+  .shot img{display:block;width:100%}
+  .lbl2{font-size:15px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+  .ok{color:#1FA455}.bad{color:#E24E64}
+</style></head><body>
+<div class="wrap">
+  <div class="col"><div class="shot"><img src="shot-03-healthy.png"></div><div class="lbl2 ok">backend up → green</div></div>
+  <div class="col"><div class="shot"><img src="shot-03-unreachable.png"></div><div class="lbl2 bad">backend killed → red, with the reason</div></div>
+</div>
+</body></html>
