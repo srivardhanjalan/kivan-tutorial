@@ -7,7 +7,7 @@ tutorial whose "seen it" flag lives on that record — ending with Home
 greeting you by name over a line item proving the backend knows you too.
 
 **The exact delta this step adds:**
-[PR #TBD — Files changed](https://github.com/srivardhanjalan/kivan-tutorial)
+[PR #22 — Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/22/files)
 
 ## Accounts first (5 minutes, once)
 
