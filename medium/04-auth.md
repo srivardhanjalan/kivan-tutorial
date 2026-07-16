@@ -1,10 +1,10 @@
-# The App Learns Your Name
+# Signed, Sealed, Delivered
 
-*Zero to Shipped · 04 — Clerk sign-in, JWKS-verified tokens, and a user record no client ever writes. Plus the third way a deploy dies with CREATE_FAILED and no logs.*
+*Zero to Shipped · 04 — the app learns your name: Clerk sign-in, JWKS-verified tokens, and a user record no client ever writes. Plus the third way a deploy dies with CREATE_FAILED and no logs.*
 
 ---
 
-![Zero to Shipped 04 hero — the app learns your name, with the terminal proof and the Home screen greeting Kivan Tester](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-04.png?v=74fb7ee)
+![Zero to Shipped 04 hero — signed, sealed, delivered: the 401s terminal and the Home screen greeting Kivan Tester by name](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-04.png?v=74fb7ee)
 
 While verifying this step, App Runner pulled my image, then printed: `Failed to deploy your application image.` The application log group didn't exist — the container had never started. If you read [step 03](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/03-backend-core), you know I have history with `CREATE_FAILED` and empty logs: a QEMU-corrupted image, then BuildKit's attestation manifests. Same symptom, two causes. This step found a third, and it wasn't the image at all.
 
@@ -85,7 +85,7 @@ Step 05 gives the account a past and a delete button: profile data, birthdays, S
 - **01 · [One script to set up everything](https://medium.com/@srivardhanjalan/one-script-to-set-up-everything-ae8bcea2d649)**
 - **02 · [Dressed to Ship](https://medium.com/@srivardhanjalan/dressed-to-ship-1e2591179d8a)**
 - **03 · Alive on Arrival** *(link when published)*
-- **04 · The App Learns Your Name** *(this post)*
+- **04 · Signed, Sealed, Delivered** *(this post)*
 - **05 · Profiles** *(coming soon)*
 
 *All code: [github.com/srivardhanjalan/kivan-tutorial](https://github.com/srivardhanjalan/kivan-tutorial)*
