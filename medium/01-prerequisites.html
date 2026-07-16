@@ -6,32 +6,35 @@ img{max-width:100%}pre{background:#f5f5f5;padding:14px;overflow-x:auto;font-size
 <h1>One Script to Set Up Everything</h1>
 <p><em>Zero to Shipped · 01 — your machine, your accounts, and the Apple Silicon trap that eats evenings.</em></p>
 <hr>
-<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-01.png?v=9f7c3f2" alt="Zero to Shipped 01 — one script, everything ready"></p>
-<p>This is step 01 of <strong>Zero to Shipped</strong>, a series where we build a real social product — iPhone, iPad, Android, and a live AWS backend — one deployable step at a time. New here? <strong><a href="https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9">Start with the introduction</a></strong> for what we&#39;re building and why the architecture is worth stealing. The code lives at <strong><a href="https://github.com/srivardhanjalan/kivan-tutorial">github.com/srivardhanjalan/kivan-tutorial</a></strong>; this post is the <code>01-prerequisites/</code> folder.</p>
-<p>By the end of this post your machine can build and deploy everything in the series, and you&#39;ll know exactly which accounts you need (and what they cost: about <strong>$5–10/month</strong> while deployed, and <code>terraform destroy</code> stops all charges).</p>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-01.png?v=cca8f4c" alt="Zero to Shipped 01 — one script, everything ready"></p>
+<p>Environment setup is where side projects go to die.</p>
+<p>Not at the hard parts — nobody abandons an app because DynamoDB pagination got tricky. They abandon it on night one, forty minutes into a version conflict between tools they didn&#39;t choose, solving problems that have nothing to do with the thing they wanted to build. So this step has one goal: get all of that out of the way in a single evening, most of it while you make tea.</p>
+<p>*(This is step 01 of <strong>Zero to Shipped</strong>, where we build a real social product — iPhone, iPad, Android, and a live AWS backend — one deployable step at a time. New here? <strong><a href="https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9">Start with the introduction</a></strong>. The code lives at <a href="https://github.com/srivardhanjalan/kivan-tutorial">github.com/srivardhanjalan/kivan-tutorial</a>; this post is the <code>01-prerequisites/</code> folder.)*</p>
+<p>By the end, your machine can build and deploy everything in the series, and you&#39;ll know exactly what the cloud side costs: about <strong>$5–10/month while deployed</strong>, and <code>terraform destroy</code> stops every charge the moment you&#39;re done. No surprises later.</p>
 <h2>One script does almost everything</h2>
 <pre><code class="language-bash">cd 01-prerequisites &amp;&amp; ./setup.sh
 </code></pre>
-<p>It&#39;s idempotent — it installs <strong>only what&#39;s missing</strong> and skips the rest, so it&#39;s safe to re-run any time. It covers Homebrew itself (if you&#39;ve never installed it), the Xcode command line tools, Node.js 20+, Python 3.12, Terraform, the AWS CLI (and verifies your credentials actually work), Docker + Colima + buildx + watchman, and — on Apple Silicon — Rosetta 2 with a correctly configured build profile.</p>
-<p>That last one deserves a sentence, because it will save someone a lost evening: <strong>AWS App Runner only runs amd64 images, and on Apple Silicon the obvious ways of building them are broken.</strong> QEMU emulation and docker-container builders produce images that build fine locally and then fail on AWS with <code>CREATE_FAILED</code> and no logs. The script configures the one path that works — a Rosetta-backed Colima profile with the plain docker driver — and step 03 explains the why.</p>
-<p>Want Android too? The script handles the entire toolchain — no Android Studio required:</p>
+<p>It&#39;s idempotent: it installs only what&#39;s missing and skips the rest, so you can re-run it any time. It covers Homebrew itself if you&#39;ve never installed it, the Xcode command line tools, Node 20+, Python 3.12, Terraform, the AWS CLI, and Docker with Colima and watchman. It also checks your AWS credentials actually work, because &quot;configured&quot; and &quot;working&quot; are different claims. And on Apple Silicon it handles one more thing, which deserves its own paragraph.</p>
+<p><strong>AWS App Runner only runs amd64 images, and on an M-series Mac the obvious ways of building them are broken.</strong> QEMU emulation and docker-container builders produce images that build fine, run fine locally, and then die on AWS with <code>CREATE_FAILED</code> and empty logs. Nothing tells you why. I lost an evening to this; the script configures the one path that works (a Rosetta-backed Colima profile with the plain docker driver) so you don&#39;t have to know it exists. Step 03 tells the full story — it gets worse before it gets better.</p>
+<p>Want Android too? One flag, no Android Studio:</p>
 <pre><code class="language-bash">./setup.sh --android
 </code></pre>
-<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-01-android.png?v=9f7c3f2" alt="The full Android toolchain, scripted — real setup.sh output"></p>
-<p>That installs the JDK, the Android SDK, and creates a ready-to-boot Pixel 8 emulator named <code>kivan</code> (~2 GB). Then it&#39;s <code>emulator -avd kivan</code> and <code>npx expo run:android</code> in any step&#39;s <code>frontend/</code>. Nothing else in the series changes.</p>
-<p>When the script finishes, it prints exactly what&#39;s still yours to do. Which is this list:</p>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-01-android.png?v=cca8f4c" alt="The full Android toolchain, scripted — real setup.sh output"></p>
+<p>That&#39;s the JDK, the Android SDK, and a ready-to-boot Pixel 8 emulator named <code>kivan</code> (~2 GB, the only slow part). Afterward it&#39;s <code>emulator -avd kivan</code> and <code>npx expo run:android</code>. Nothing else in the series changes — same code, second platform.</p>
+<p>When the script finishes, it prints exactly what&#39;s still yours to do. Which brings us to the honest part.</p>
 <h2>The things a script can&#39;t do for you</h2>
-<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-01-accounts.png?v=9f7c3f2" alt="The six accounts, their steps, and their costs at a glance"></p>
+<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-01-accounts.png?v=cca8f4c" alt="The six accounts, their steps, and their costs at a glance"></p>
+<p>Every tutorial has this list; most hide it. Six items, each with the exact clicks:</p>
 <ol>
-<li><strong>Xcode + an iOS simulator</strong> <em>(needed at step 2)</em> — install <a href="https://apps.apple.com/app/xcode/id497799835">Xcode from the App Store</a>, open it once, then Settings ▸ Components ▸ install an iOS simulator runtime.</li>
-<li><strong>An AWS account + credentials</strong> <em>(step 3)</em> — <a href="https://aws.amazon.com">create an account</a>, create an IAM user with <code>AdministratorAccess</code> (fine for a tutorial account), create an access key, run <code>aws configure</code>. <strong>Cost while deployed: roughly $5–10/month</strong>, dominated by App Runner. Step 16 adds budgets and alarms, and <code>terraform destroy</code> stops all charges the moment you&#39;re done.</li>
-<li><strong>A Clerk application</strong> <em>(step 4, free)</em> — this is the auth provider. Create an app at <a href="https://dashboard.clerk.com">dashboard.clerk.com</a>, toggle Email and Google on, and copy two keys into two gitignored files.</li>
-<li><strong>A Firecrawl API key</strong> <em>(step 9)</em> — <a href="https://firecrawl.dev">firecrawl.dev</a> powers the product scraping.</li>
-<li><strong><a href="https://www.mailgun.com">Mailgun</a></strong> <em>(step 12, optional)</em> — a sandbox domain is enough to see email notifications work; skip it entirely and everything else still runs.</li>
-<li><strong>Apple Sign-In</strong> <em>(step 4, optional)</em> — needs the paid <a href="https://developer.apple.com/programs/">Apple Developer Program</a>. Email + Google auth is complete without it.</li>
+<li><strong>Xcode + an iOS simulator</strong> <em>(needed at step 2)</em> — install <a href="https://apps.apple.com/app/xcode/id497799835">Xcode from the App Store</a>, open it once, then Settings ▸ Components ▸ install an iOS simulator runtime. Apple&#39;s download servers are the real prerequisite test.</li>
+<li><strong>An AWS account + credentials</strong> <em>(step 3)</em> — <a href="https://aws.amazon.com">create an account</a>, add an IAM user with <code>AdministratorAccess</code> (fine for a tutorial account, and we say so out loud instead of pretending you&#39;ll write scoped policies today), create an access key, run <code>aws configure</code>.</li>
+<li><strong>A Clerk application</strong> <em>(step 4, free)</em> — the auth provider. Create an app at <a href="https://dashboard.clerk.com">dashboard.clerk.com</a>, toggle Email and Google on, and copy two keys into two gitignored files.</li>
+<li><strong>A Firecrawl API key</strong> <em>(step 9)</em> — <a href="https://firecrawl.dev">firecrawl.dev</a> powers the in-app store scraping.</li>
+<li><strong><a href="https://www.mailgun.com">Mailgun</a></strong> <em>(step 12, optional)</em> — a sandbox domain is enough to watch email notifications work; skip it entirely and everything else still runs.</li>
+<li><strong>Apple Sign-In</strong> <em>(step 4, optional)</em> — needs the paid <a href="https://developer.apple.com/programs/">Apple Developer Program</a>. Email + Google auth is complete without it; give Apple $99 only when you mean it.</li>
 </ol>
 <h2>Secrets hygiene, from day one</h2>
-<p>Secrets live in exactly two gitignored files, never in code: <code>frontend/.env.local</code> (the Clerk publishable key and API URL) and <code>infra/terraform.tfvars</code> (the Clerk secret, Firecrawl, and Mailgun keys). Every step&#39;s README shows the exact entries it needs and nothing more.</p>
+<p>Secrets live in exactly two gitignored files and nowhere else: <code>frontend/.env.local</code> (the Clerk publishable key and API URL) and <code>infra/terraform.tfvars</code> (the Clerk secret, Firecrawl, and Mailgun keys). Every step&#39;s README shows the exact entries it needs and nothing more. Boring, and boring is the entire point of secrets handling.</p>
 <h2>You&#39;re done when</h2>
 <ul>
 <li><code>./setup.sh</code> shows a green ✓ for every tool — the only items it leaves you are the accounts above</li>
@@ -40,14 +43,14 @@ img{max-width:100%}pre{background:#f5f5f5;padding:14px;overflow-x:auto;font-size
 <li>Your Clerk keys exist (Firecrawl and Mailgun can wait until their steps)</li>
 </ul>
 <h2>What&#39;s next</h2>
-<p>In <strong>step 02</strong>, we build the app shell and design system — the config files that name the product, the design tokens every screen draws from, and the shared components that make eleven screens feel like one app. It runs standalone, with no backend at all, and it&#39;s where the jigsaw principle starts paying rent: by the end of it, renaming Kivan to your own product is a one-file change.</p>
+<p>In <strong>step 02</strong> we build the app shell and design system — a fully themed app with zero features, on purpose. It runs standalone with no backend at all, and it&#39;s where the series&#39; central trick first pays rent: by the end of it, renaming the whole app to your own product is a config edit.</p>
 <p><strong>Following along?</strong> ⭐ <a href="https://github.com/srivardhanjalan/kivan-tutorial">Star the repo</a> and follow me here so step 02 lands in your feed.</p>
 <hr>
 <p><strong>Zero to Shipped — the series</strong></p>
 <ul>
 <li><strong>00 · <a href="https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9">Introduction</a></strong></li>
-<li><strong>01 · Prerequisites: one script to set up everything</strong> <em>(this post)</em></li>
-<li><strong>02 · App shell &amp; design system</strong> <em>(coming soon)</em></li>
+<li><strong>01 · One script to set up everything</strong> <em>(this post)</em></li>
+<li><strong>02 · Dressed to Ship</strong> <em>(coming soon)</em></li>
 </ul>
 <p><em>All code: <a href="https://github.com/srivardhanjalan/kivan-tutorial">github.com/srivardhanjalan/kivan-tutorial</a></em></p>
 </body></html>
