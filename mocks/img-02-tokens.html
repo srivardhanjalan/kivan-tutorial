@@ -1,0 +1,44 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="mocks.css">
+<style>
+  body{margin:0;background:#fff}
+  .wrap{width:1400px;height:700px;position:relative;overflow:hidden;box-sizing:border-box;
+    background:linear-gradient(115deg,#FFE8EC 0%,#FDFFFF 42%,#E7F1F8 100%);padding:56px 90px}
+  h2{font-size:15px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--primary);margin:0 0 26px}
+  .row{display:flex;gap:22px;margin-bottom:34px}
+  .sw{width:120px}
+  .chipbox{height:76px;border-radius:18px;border:1px solid rgba(0,0,0,.07);box-shadow:0 8px 20px rgba(20,20,30,.08)}
+  .sw p{font-family:"SF Mono",Menlo,monospace;font-size:12.5px;color:var(--text2);margin:8px 2px 0;line-height:1.5}
+  .sw b{display:block;font-family:-apple-system,sans-serif;font-size:13.5px;color:var(--dark)}
+  .type{display:flex;gap:56px;align-items:baseline}
+  .type .t1{font-size:30px;font-weight:700;letter-spacing:-.5px;color:var(--dark)}
+  .type .t2{font-size:20px;font-weight:700;color:var(--dark)}
+  .type p{font-family:"SF Mono",Menlo,monospace;font-size:12.5px;color:var(--text2);margin-top:6px}
+  .metrics{display:flex;gap:14px;margin-top:8px}
+  .m{height:40px;border-radius:999px;background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.07);
+    display:flex;align-items:center;padding:0 18px;font-family:"SF Mono",Menlo,monospace;font-size:14px;font-weight:600;color:var(--dark)}
+  .foot{position:absolute;left:90px;bottom:40px;font-size:15px;font-weight:700;color:var(--text2)}
+</style></head><body>
+<div class="wrap">
+  <h2>Colors.ts — every color the app is allowed to have</h2>
+  <div class="row">
+    <div class="sw"><div class="chipbox" style="background:#FF385C"></div><p><b>primary</b>#FF385C</p></div>
+    <div class="sw"><div class="chipbox" style="background:#1A1A1A"></div><p><b>dark</b>#1A1A1A</p></div>
+    <div class="sw"><div class="chipbox" style="background:#FDFFFF"></div><p><b>background</b>#FDFFFF</p></div>
+    <div class="sw"><div class="chipbox" style="background:#6E6E73"></div><p><b>textSecondary</b>#6E6E73</p></div>
+    <div class="sw"><div class="chipbox" style="background:#E0E0E0"></div><p><b>lightGrey</b>#E0E0E0</p></div>
+    <div class="sw"><div class="chipbox" style="background:rgba(0,0,0,.08);border-style:dashed"></div><p><b>pressedFill</b>rgba(0,0,0,.08)</p></div>
+  </div>
+  <h2>Typography.ts — both of them</h2>
+  <div class="type">
+    <div><div class="t1">Large title</div><p>30 / 700 / −0.5</p></div>
+    <div><div class="t2">Section title</div><p>20 / 700</p></div>
+  </div>
+  <h2 style="margin-top:34px">ScreenStyles.ts — the chrome, in numbers</h2>
+  <div class="metrics">
+    <span class="m">contentHorizontal 12</span><span class="m">chromePillHeight 60</span>
+    <span class="m">tabIconSize 34</span><span class="m">touchTarget 44</span><span class="m">headerClearance 72</span>
+  </div>
+  <div class="foot">the entire visual language — a token joins only when a screen first needs it</div>
+</div>
+</body></html>

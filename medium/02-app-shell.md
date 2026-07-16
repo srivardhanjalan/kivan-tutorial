@@ -34,6 +34,8 @@ No backend, no accounts, no API keys — it runs standalone in Expo Go.
 
 `src/constants/` is the whole visual language: `Colors.ts` (the `#FF385C` primary, surface tiers, text tiers), `Typography.ts` (the 30pt/700/-0.5 large title and the section title — the only two text styles this step uses), `ScreenStyles.ts` (the app-wide 12pt content edge, the 60pt chrome pill height, the 34pt tab icons), plus exactly one radius and one shadow recipe — because that's all the shell references. Even the pressed-state grey is a named token (`Colors.pressedFill`), the centering idiom is one shared style instead of seven copies — and the whole step passes a five-gate audit (types, dead code, clone detection, color literals, and an AI semantic-duplication reviewer) run to a fixed point. **A token joins these files when a screen first needs it, never in advance.** That rule holds for the whole series: every step carries only code with a caller, so every file you read is load-bearing.
 
+![The entire design system on one card — real token values](../mocks/mocks-02-tokens.png)
+
 ### The chrome
 
 Two signature moves you saw in the mocks:
@@ -65,6 +67,8 @@ The point of config-driven identity is that *renaming the product is a data chan
 1. `app.json` — change `name` and `scheme` (the single identity source at this step)
 2. `src/config/app.ts` — point `branding.spinnerLogo` at your own mark; the animated loader rebrands itself
 3. `src/config/tabs.ts` — retitle the tabs: `Notes`, `Notebooks`, `Shared`…
+
+![Rename the app in one config edit — same shell, your app](../mocks/mocks-02-rename.png)
 
 Reload. Your app, your name, your tabs — and not one component file touched. Hold that thought for step 07, when the same trick swaps whole feature modules.
 
