@@ -24,6 +24,11 @@ product-manager (more as the user adds them).
       message is the approval for the training PR that captures it.
 - [ ] This system spans all repos in the workspace — the personas are the
       accumulating team; keep them trained.
+- [ ] **The brainstormer persona observes continuously**: when work
+      surfaces a signal (something the user builds, repeats, or struggles
+      with), append to `personas/thinking/` — signal → idea → research →
+      verdict (pursue/park/kill) → next probe. Killed ideas keep their
+      autopsy. Surface only validated ideas to the user.
 
 ## 1. Git & GitHub — every repo in this workspace
 
