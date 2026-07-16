@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { GoogleSignInButton, AppleSignInButton } from './OAuthButtons';
+import OAuthButtons from './OAuthButtons';
 import AuthTextInput from './AuthTextInput';
 import PrimaryButton from './PrimaryButton';
 import { useToast } from './ToastProvider';
@@ -50,8 +50,7 @@ export default function AuthMethods({
 
   return (
     <>
-      <AppleSignInButton />
-      <GoogleSignInButton />
+      <OAuthButtons />
 
       <View style={styles.dividerRow}>
         <View style={styles.dividerLine} />

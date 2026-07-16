@@ -12,13 +12,20 @@ import useAuthAction from '../hooks/useAuthAction';
 // Completes the pending browser session when the OAuth redirect returns
 WebBrowser.maybeCompleteAuthSession();
 
-interface OAuthButtonProps {
-  strategy: 'oauth_google' | 'oauth_apple';
+interface OAuthProvider {
+  strategy: 'oauth_apple' | 'oauth_google';
   label: string;
-  icon: React.ReactNode;
+  icon: keyof typeof Ionicons.glyphMap;
 }
 
-function OAuthButton({ strategy, label, icon }: OAuthButtonProps) {
+// Adding a provider is one line here (plus enabling it in the Clerk
+// dashboard) — the same config-as-data idiom as config/tabs.ts
+const PROVIDERS: readonly OAuthProvider[] = [
+  { strategy: 'oauth_apple', label: 'Continue with Apple', icon: 'logo-apple' },
+  { strategy: 'oauth_google', label: 'Continue with Google', icon: 'logo-google' },
+];
+
+function OAuthButton({ strategy, label, icon }: OAuthProvider) {
   const { startOAuthFlow } = useOAuth({ strategy });
   const { loading, run } = useAuthAction();
 
@@ -47,7 +54,7 @@ function OAuthButton({ strategy, label, icon }: OAuthButtonProps) {
         <ActivityIndicator color={Colors.textSecondary} />
       ) : (
         <View style={styles.buttonContent}>
-          <View style={styles.icon}>{icon}</View>
+          <Ionicons name={icon} size={20} color={Colors.dark} style={styles.icon} />
           <Text style={styles.buttonText}>{label}</Text>
         </View>
       )}
@@ -55,23 +62,14 @@ function OAuthButton({ strategy, label, icon }: OAuthButtonProps) {
   );
 }
 
-export function GoogleSignInButton() {
+/** One button per configured OAuth provider, in PROVIDERS order. */
+export default function OAuthButtons() {
   return (
-    <OAuthButton
-      strategy="oauth_google"
-      label="Continue with Google"
-      icon={<Ionicons name="logo-google" size={20} color={Colors.dark} />}
-    />
-  );
-}
-
-export function AppleSignInButton() {
-  return (
-    <OAuthButton
-      strategy="oauth_apple"
-      label="Continue with Apple"
-      icon={<Ionicons name="logo-apple" size={20} color={Colors.dark} />}
-    />
+    <>
+      {PROVIDERS.map((provider) => (
+        <OAuthButton key={provider.strategy} {...provider} />
+      ))}
+    </>
   );
 }
 
