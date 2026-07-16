@@ -13,11 +13,10 @@ app = FastAPI(
 # Gzip compression middleware (70-90% payload reduction)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-# CORS middleware. The wildcard origin is safe for THIS api: nothing is
-# cookie-authenticated (auth arrives in step 04 as a Bearer header), so
-# there are no credentials to leak — which is also why allow_credentials
-# is absent (with it, Starlette would mirror every Origin as a
-# credentialed one).
+# CORS middleware. The wildcard origin is safe for THIS api: auth is a
+# Bearer header, not a cookie, so there are no credentials to leak — which
+# is also why allow_credentials is absent (with it, Starlette would mirror
+# every Origin as a credentialed one).
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
