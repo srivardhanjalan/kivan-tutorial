@@ -3,8 +3,9 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     """
-    Runtime configuration, read from the environment (App Runner env vars in
-    the cloud, your shell or a local .env when running `python run.py`).
+    Runtime configuration, read from environment variables only (App Runner
+    env vars in the cloud, your shell when running `python run.py`) — no
+    .env file, so secrets keep exactly the homes the repo sanctions.
     Entries join when the backend first reads them, never in advance.
     """
     aws_region: str = "us-east-1"
