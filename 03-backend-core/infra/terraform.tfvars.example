@@ -1,0 +1,3 @@
+# Copy to terraform.tfvars (gitignored). This step needs no secrets.
+aws_region  = "us-east-1"
+environment = "production"

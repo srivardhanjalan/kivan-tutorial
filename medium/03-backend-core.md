@@ -10,7 +10,7 @@ While verifying this exact step, my deploy died like this: `terraform apply` wai
 
 That story — both versions of it — is the second half of this post. The first half is the payoff it interrupts: a FastAPI backend running on your own AWS, deployed with four commands, every resource tagged and grouped, torn down to zero with one.
 
-*(This is step 03 of **Zero to Shipped**, where we build a real social product one deployable step at a time. New here? **[Start with the introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**. The code is the `03-backend-core/` folder; [PR #12](https://github.com/srivardhanjalan/kivan-tutorial/pull/12/files) shows every line this step adds.)*
+*(This is step 03 of **Zero to Shipped**, where we build a real social product one deployable step at a time. New here? **[Start with the introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**. The code is the `03-backend-core/` folder; [PR #16](https://github.com/srivardhanjalan/kivan-tutorial/pull/16/files) shows every line this step adds.)*
 
 ## The backend earns its dependencies
 
