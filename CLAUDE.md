@@ -148,6 +148,10 @@ memory — run the command/check each time.
       Boring-but-accurate fails (no pull); clever-but-opaque fails
       (misread); the target is both. Specifics and war stories live in the
       subtitle.
+- [ ] **Every article carries multiple images** — the cover plus a visual
+      for each major section (a real terminal, a token sheet, a before/after
+      panel, real screenshots), in the house style. A wall of prose is a
+      defect.
 - [ ] **Article imagery must depict the article's actual content.** A cover
       or in-post image is built from the subject itself — a setup post shows
       the script's real terminal output, a UI step shows real screenshots of
