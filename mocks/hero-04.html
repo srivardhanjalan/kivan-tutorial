@@ -1,0 +1,57 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Zero to Shipped 04 — hero</title>
+<link rel="stylesheet" href="mocks.css">
+<style>
+  body{margin:0;padding:0;background:#fff}
+  .hero{width:1500px;height:750px;overflow:hidden;position:relative;
+    background:linear-gradient(115deg,#FFE8EC 0%,#FDFFFF 42%,#E7F1F8 100%)}
+  .copy{position:absolute;left:96px;top:60px;max-width:620px}
+  .eyebrow{font-size:15px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--primary);margin-bottom:18px}
+  .title{font-size:66px;font-weight:800;letter-spacing:-2px;line-height:1.04;color:var(--dark)}
+  .sub{font-size:22px;color:var(--text2);line-height:1.45;margin-top:16px}
+  .chips{display:flex;gap:10px;margin-top:20px}
+  .chip{height:40px;border-radius:999px;background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.07);
+    display:flex;align-items:center;padding:0 18px;font-size:15.5px;font-weight:700;color:var(--dark);white-space:nowrap}
+  .chip.hot{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .term{position:absolute;left:96px;bottom:-16px;width:660px;border-radius:14px;
+    background:#1D1E24;box-shadow:0 30px 70px rgba(20,20,30,.28);overflow:hidden}
+  .tbar{height:38px;background:#2A2B33;display:flex;align-items:center;padding:0 16px;gap:8px}
+  .dot2{width:12px;height:12px;border-radius:6px}
+  .ttitle{flex:1;text-align:center;color:#8A8B94;font-size:13px;font-weight:600;font-family:"SF Mono",Menlo,monospace;margin-right:44px}
+  .tbody{padding:18px 24px 22px;font-family:"SF Mono",Menlo,monospace;font-size:14.5px;line-height:1.7;color:#D6D7DE}
+  .g{color:#4ADE80}.r{color:#FF6B6B}.p{color:#FF6B8A}.dim{color:#8A8B94}
+  .shot{position:absolute;right:84px;top:44px;width:300px;border-radius:34px;overflow:hidden;
+    box-shadow:0 30px 70px rgba(20,20,30,.26);border:1px solid #e6e6ea}
+  .shot img{display:block;width:100%}
+</style></head><body>
+<div class="hero">
+  <div class="copy">
+    <div class="eyebrow">Zero to Shipped · 04 — Auth &amp; Onboarding</div>
+    <div class="title">The app learns your&nbsp;name.</div>
+    <div class="sub">Clerk sign-in, JWKS-verified tokens, and a user record no client ever writes — created by your first authenticated request.</div>
+    <div class="chips">
+      <span class="chip hot">verified live</span><span class="chip">Clerk</span>
+      <span class="chip">JWKS</span><span class="chip">DynamoDB</span><span class="chip">JIT provisioning</span>
+    </div>
+  </div>
+  <div class="term">
+    <div class="tbar">
+      <span class="dot2" style="background:#FF5F57"></span>
+      <span class="dot2" style="background:#FEBC2E"></span>
+      <span class="dot2" style="background:#28C840"></span>
+      <span class="ttitle">04-auth — the record no client wrote</span>
+    </div>
+    <div class="tbody">
+<span class="dim">$</span> <span class="p">curl $API/users/me</span><br>
+{"detail":<span class="r">"No authentication credentials provided"</span>} <span class="dim">← 401</span><br>
+<span class="dim">$</span> <span class="p">curl -H "Authorization: Bearer garbage" $API/users/me</span><br>
+{"detail":<span class="r">"Invalid authentication token"</span>} <span class="dim">← 401</span><br>
+<span class="dim"># sign up in the app → its first authenticated request lands…</span><br>
+<span class="dim">$</span> <span class="p">aws dynamodb scan --table-name kivan-step04test-users</span><br>
+&nbsp;&nbsp;"email": <span class="g">"kivan.step04+clerk_test@example.com"</span><br>
+&nbsp;&nbsp;"onboarding_completed": <span class="g">true</span> <span class="dim">← written by no client</span>
+    </div>
+  </div>
+  <div class="shot"><img src="shot-04-home.png"></div>
+</div>
+</body></html>
