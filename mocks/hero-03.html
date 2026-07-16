@@ -1,0 +1,58 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Zero to Shipped 03 — hero</title>
+<link rel="stylesheet" href="mocks.css">
+<style>
+  body{margin:0;padding:0;background:#fff}
+  .hero{width:1500px;height:750px;overflow:hidden;position:relative;
+    background:linear-gradient(115deg,#FFE8EC 0%,#FDFFFF 42%,#E7F1F8 100%)}
+  .copy{position:absolute;left:96px;top:60px;max-width:600px}
+  .eyebrow{font-size:15px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--primary);margin-bottom:18px}
+  .title{font-size:66px;font-weight:800;letter-spacing:-2px;line-height:1.04;color:var(--dark)}
+  .sub{font-size:22px;color:var(--text2);line-height:1.45;margin-top:16px}
+  .chips{display:flex;gap:10px;margin-top:20px}
+  .chip{height:40px;border-radius:999px;background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.07);
+    display:flex;align-items:center;padding:0 18px;font-size:15.5px;font-weight:700;color:var(--dark);white-space:nowrap}
+  .chip.hot{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .term{position:absolute;left:96px;bottom:-16px;width:640px;border-radius:14px;
+    background:#1D1E24;box-shadow:0 30px 70px rgba(20,20,30,.28);overflow:hidden}
+  .tbar{height:38px;background:#2A2B33;display:flex;align-items:center;padding:0 16px;gap:8px}
+  .dot2{width:12px;height:12px;border-radius:6px}
+  .ttitle{flex:1;text-align:center;color:#8A8B94;font-size:13px;font-weight:600;font-family:"SF Mono",Menlo,monospace;margin-right:44px}
+  .tbody{padding:18px 24px 22px;font-family:"SF Mono",Menlo,monospace;font-size:14.5px;line-height:1.7;color:#D6D7DE}
+  .g{color:#4ADE80}.r{color:#FF6B6B}.p{color:#FF6B8A}.dim{color:#8A8B94}
+  .shot{position:absolute;right:84px;top:44px;width:300px;border-radius:34px;overflow:hidden;
+    box-shadow:0 30px 70px rgba(20,20,30,.26);border:1px solid #e6e6ea}
+  .shot img{display:block;width:100%}
+  .cap{position:absolute;right:84px;top:712px;width:300px;text-align:center;font-size:13px;font-weight:700;color:var(--text2)}
+</style></head><body>
+<div class="hero">
+  <div class="copy">
+    <div class="eyebrow">Zero to Shipped · 03 — Backend &amp; Infra Core</div>
+    <div class="title">The build that only fails in&nbsp;production.</div>
+    <div class="sub">FastAPI + Terraform + App Runner — and the two CREATE_FAILEDs we hit for real getting there.</div>
+    <div class="chips">
+      <span class="chip hot">verified live</span><span class="chip">FastAPI</span>
+      <span class="chip">Terraform</span><span class="chip">App Runner</span><span class="chip">ECR</span>
+    </div>
+  </div>
+  <div class="term">
+    <div class="tbar">
+      <span class="dot2" style="background:#FF5F57"></span>
+      <span class="dot2" style="background:#FEBC2E"></span>
+      <span class="dot2" style="background:#28C840"></span>
+      <span class="ttitle">03-backend-core/infra</span>
+    </div>
+    <div class="tbody">
+<span class="dim">$</span> <span class="p">terraform apply -target=aws_ecr_repository.backend</span><br>
+<span class="dim">$</span> <span class="p">./scripts/deploy.sh</span> <span class="dim"># build amd64 → push</span><br>
+<span class="dim">$</span> <span class="p">terraform apply</span><br>
+&nbsp;&nbsp;aws_apprunner_service: <span class="r">CREATE_FAILED</span> <span class="dim">← OCI index (BuildKit SBOM)</span><br>
+&nbsp;&nbsp;<span class="dim">fix: --provenance=false --sbom=false → repush</span><br>
+&nbsp;&nbsp;aws_apprunner_service: <span class="g">RUNNING</span> ✓<br>
+<span class="dim">$</span> <span class="p">curl https://…awsapprunner.com/health</span><br>
+{"status":<span class="g">"healthy"</span>}
+    </div>
+  </div>
+  <div class="shot"><img src="shot-03-healthy.png"></div>
+</div>
+</body></html>

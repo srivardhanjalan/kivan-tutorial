@@ -13,6 +13,8 @@ and embedded in the root README and the Medium posts.
 | `hero-01.html` | `mocks-hero-01.png` | post 01 cover (terminal) |
 | `hero-02.html` | `mocks-hero-02.png` | post 02 cover (real step-02 screenshots) |
 | — | `shot-02-home.png`, `shot-02-discover.png` | real simulator screenshots of the step-02 shell |
+| `hero-03.html` | `mocks-hero-03.png` | post 03 cover (real rollout terminal + live app screenshot) |
+| — | `shot-03-healthy.png` | real screenshot: Backend · healthy from the live API |
 
 Re-render after editing a page (adjust `--window-size` to the page):
 
