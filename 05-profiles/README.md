@@ -7,7 +7,7 @@ survives its own zero-padding history, and account deletion done properly —
 soft-deleted server-side, removed from Clerk, and locked out forever.
 
 **The exact delta this step adds:**
-[PR #TBD — Files changed](https://github.com/srivardhanjalan/kivan-tutorial)
+[PR #32 — Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/32/files)
 
 ## Run it locally
 
