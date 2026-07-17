@@ -32,6 +32,15 @@ interface OnboardingStep {
   gradient?: [string, string];
 }
 
+// The carousel's decorative pastels, named once — steps mix and match
+const PASTEL = {
+  pink: '#FBCFE8',
+  peach: '#FED7AA',
+  mint: '#A7F3D0',
+  sky: '#BAE6FD',
+  lilac: '#DDD6FE',
+} as const;
+
 const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: '1',
@@ -43,21 +52,21 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     title: 'Wishes from real stores',
     description: 'Browse storefronts and real store websites inside the app, in your currency',
     emoji: '🛍️',
-    gradient: ['#FBCFE8', '#FED7AA'],
+    gradient: [PASTEL.pink, PASTEL.peach],
   },
   {
     id: '3',
     title: 'Better together',
     description: 'Follow friends, plan events around wishlists, and never miss a moment',
     emoji: '🎉',
-    gradient: ['#A7F3D0', '#BAE6FD'],
+    gradient: [PASTEL.mint, PASTEL.sky],
   },
   {
     id: '4',
     title: 'Ready to begin?',
     description: 'Your account is live — the shelves fill up as the app grows around you',
     emoji: '🚀',
-    gradient: ['#DDD6FE', '#FBCFE8'],
+    gradient: [PASTEL.lilac, PASTEL.pink],
   },
 ];
 
