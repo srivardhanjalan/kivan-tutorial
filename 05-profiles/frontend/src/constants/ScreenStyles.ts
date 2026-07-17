@@ -52,7 +52,8 @@ export const CommonScreenStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  /** The auth form's raised outlined element — text fields and OAuth buttons */
+  /** The app-wide raised outlined surface — form fields, OAuth buttons,
+      prompt cards */
   outlinedSurface: {
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.md,

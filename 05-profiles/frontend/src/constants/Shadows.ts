@@ -28,8 +28,8 @@ export default {
     shadowRadius: 25,
     elevation: 8,
   },
-  /** Floating overlays (toasts, modals) */
-  modal: {
+  /** The floating toast pill */
+  toast: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.25,

@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 18,
     alignItems: 'center',
-    ...Shadows.modal,
+    ...Shadows.toast,
   },
   errorToast: {
     backgroundColor: Colors.danger,
