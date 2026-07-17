@@ -7,7 +7,7 @@ import Colors from '../constants/Colors';
 import Typography from '../constants/Typography';
 import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 import Opacity from '../constants/Opacity';
-import useAuthAction from '../hooks/useAuthAction';
+import useAsyncAction from '../hooks/useAsyncAction';
 
 // Completes the pending browser session when the OAuth redirect returns
 WebBrowser.maybeCompleteAuthSession();
@@ -27,7 +27,7 @@ const PROVIDERS: readonly OAuthProvider[] = [
 
 function OAuthButton({ strategy, label, icon }: OAuthProvider) {
   const { startOAuthFlow } = useOAuth({ strategy });
-  const { loading, run } = useAuthAction();
+  const { loading, run } = useAsyncAction();
 
   const onPress = () => {
     run(async () => {

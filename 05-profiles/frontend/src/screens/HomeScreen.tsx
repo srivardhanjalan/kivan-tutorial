@@ -12,13 +12,7 @@ import EmptyStateView from '../components/EmptyStateView';
 import useFetch from '../hooks/useFetch';
 import { fetchCurrentUser, updateProfile } from '../services/api';
 import type { RootStackParamList } from '../components/Navigation';
-
-/** "First Last" → first → last → email — whatever the profile can offer. */
-const displayName = (user: ReturnType<typeof useUser>['user']): string => {
-  if (!user) return '';
-  if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
-  return user.firstName || user.lastName || user.emailAddresses[0]?.emailAddress || '';
-};
+import { clerkFullName } from '../utils/clerkName';
 
 /**
  * Home greets the signed-in user by name (from the Clerk profile) and shows
@@ -50,7 +44,7 @@ export default function HomeScreen() {
 
   return (
     <FloatingHeaderLayout
-      title={`Hi, ${displayName(user)}`}
+      title={`Hi, ${clerkFullName(user) || user?.emailAddresses[0]?.emailAddress || ''}`}
       headerRight={
         <HeaderIconButton
           icon="settings-outline"

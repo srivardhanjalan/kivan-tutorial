@@ -9,10 +9,11 @@ import SectionHeader from '../components/SectionHeader';
 import FormInput from '../components/FormInput';
 import PrimaryButton from '../components/PrimaryButton';
 import OnboardingTutorial from '../components/OnboardingTutorial';
-import { useToast } from '../components/ToastProvider';
 import useFetch from '../hooks/useFetch';
+import useAsyncAction from '../hooks/useAsyncAction';
 import { deleteAccount, fetchCurrentUser, updateProfile } from '../services/api';
 import type { RootStackParamList } from '../components/Navigation';
+import { clerkFullName } from '../utils/clerkName';
 import Colors from '../constants/Colors';
 import BorderRadius from '../constants/BorderRadius';
 import Typography from '../constants/Typography';
@@ -24,7 +25,8 @@ import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 // selection (a real bug in this app's first life).
 const DAYS = Array.from({ length: 31 }, (_, i) => String(i + 1));
 const MONTHS = Array.from({ length: 12 }, (_, i) => String(i + 1));
-const YEARS = Array.from({ length: 100 }, (_, i) => String(2026 - i));
+const THIS_YEAR = new Date().getFullYear();
+const YEARS = Array.from({ length: 100 }, (_, i) => String(THIS_YEAR - i));
 
 /** One tappable settings row: label left, current value right. */
 const SettingsRow: React.FC<{
@@ -45,6 +47,22 @@ const SettingsRow: React.FC<{
   </TouchableOpacity>
 );
 
+/** The stacked confirm/cancel pair every edit block ends with. */
+const ConfirmCancel: React.FC<{
+  confirmTitle: string;
+  confirmVariant?: 'primary' | 'danger';
+  onConfirm: () => void;
+  loading: boolean;
+  cancelTitle?: string;
+  onCancel: () => void;
+}> = ({ confirmTitle, confirmVariant = 'primary', onConfirm, loading, cancelTitle = 'Cancel', onCancel }) => (
+  <>
+    <PrimaryButton title={confirmTitle} variant={confirmVariant} onPress={onConfirm} loading={loading} />
+    <View style={styles.buttonGap} />
+    <PrimaryButton title={cancelTitle} variant="secondary" onPress={onCancel} />
+  </>
+);
+
 /**
  * Settings: edit the profile (name to Clerk AND the backend record, so
  * neither goes stale; birthday to the backend), replay the tutorial, and
@@ -52,10 +70,10 @@ const SettingsRow: React.FC<{
  */
 export default function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const toast = useToast();
   const { user } = useUser();
   const { signOut } = useAuth();
   const { data: backendUser, loading } = useFetch(fetchCurrentUser);
+  const { loading: saving, run } = useAsyncAction();
 
   const [editingName, setEditingName] = useState(false);
   const [firstName, setFirstName] = useState('');
@@ -70,7 +88,6 @@ export default function SettingsScreen() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!backendUser) return;
@@ -91,45 +108,28 @@ export default function SettingsScreen() {
     setEditingName(true);
   };
 
-  const saveName = async () => {
-    setSaving(true);
-    try {
+  const saveName = () =>
+    run(async () => {
       // Both stores, on purpose: Clerk is what greets you; the backend
       // record is what the rest of the product reads
       await user?.update({ firstName, lastName });
       await updateProfile({ first_name: firstName, last_name: lastName });
       setEditingName(false);
-    } catch {
-      toast.show('Could not save your name', { type: 'error' });
-    } finally {
-      setSaving(false);
-    }
-  };
+    }, 'Could not save your name');
 
-  const saveBirthday = async () => {
-    setSaving(true);
-    try {
+  const saveBirthday = () =>
+    run(async () => {
       const iso = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
       const updated = await updateProfile({ birthday: iso });
       setBirthday(updated.birthday);
       setEditingBirthday(false);
-    } catch {
-      toast.show('Could not save your birthday', { type: 'error' });
-    } finally {
-      setSaving(false);
-    }
-  };
+    }, 'Could not save your birthday');
 
-  const confirmDelete = async () => {
-    setSaving(true);
-    try {
+  const confirmDelete = () =>
+    run(async () => {
       await deleteAccount(deleteConfirmation);
       await signOut();
-    } catch {
-      toast.show('Type DELETE exactly to confirm', { type: 'error' });
-      setSaving(false);
-    }
-  };
+    }, 'Type DELETE exactly to confirm');
 
   return (
     <FloatingHeaderLayout title="Settings" loading={loading} onBack={() => navigation.goBack()}>
@@ -139,14 +139,17 @@ export default function SettingsScreen() {
         <View style={styles.editBlock}>
           <FormInput value={firstName} placeholder="First name" onChangeText={setFirstName} />
           <FormInput value={lastName} placeholder="Last name" onChangeText={setLastName} />
-          <PrimaryButton title="Save Name" onPress={saveName} loading={saving} />
-          <View style={styles.buttonGap} />
-          <PrimaryButton title="Cancel" variant="secondary" onPress={() => setEditingName(false)} />
+          <ConfirmCancel
+            confirmTitle="Save Name"
+            onConfirm={saveName}
+            loading={saving}
+            onCancel={() => setEditingName(false)}
+          />
         </View>
       ) : (
         <SettingsRow
           label="Name"
-          value={[user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'Add'}
+          value={clerkFullName(user) || 'Add'}
           onPress={startNameEdit}
         />
       )}
@@ -172,12 +175,11 @@ export default function SettingsScreen() {
               ))}
             </Picker>
           </View>
-          <PrimaryButton title="Save Birthday" onPress={saveBirthday} loading={saving} />
-          <View style={styles.buttonGap} />
-          <PrimaryButton
-            title="Cancel"
-            variant="secondary"
-            onPress={() => setEditingBirthday(false)}
+          <ConfirmCancel
+            confirmTitle="Save Birthday"
+            onConfirm={saveBirthday}
+            loading={saving}
+            onCancel={() => setEditingBirthday(false)}
           />
         </View>
       ) : (
@@ -215,12 +217,13 @@ export default function SettingsScreen() {
               autoCorrect={false}
               onChangeText={setDeleteConfirmation}
             />
-            <PrimaryButton title="Delete Account" variant="danger" onPress={confirmDelete} loading={saving} />
-            <View style={styles.buttonGap} />
-            <PrimaryButton
-              title="Keep my account"
-              variant="secondary"
-              onPress={() => {
+            <ConfirmCancel
+              confirmTitle="Delete Account"
+              confirmVariant="danger"
+              onConfirm={confirmDelete}
+              loading={saving}
+              cancelTitle="Keep my account"
+              onCancel={() => {
                 setDeleteConfirmation('');
                 setShowDeleteModal(false);
               }}

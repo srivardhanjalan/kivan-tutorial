@@ -1,7 +1,6 @@
-from datetime import date
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, PastDate
 
 
 class User(BaseModel):
@@ -24,11 +23,11 @@ class User(BaseModel):
 
 class UserUpdate(BaseModel):
     """PUT /users/me body — every field optional; only the ones sent change.
-    `birthday` parses as a real date so garbage never reaches the table."""
+    `birthday` must parse as a real date in the past."""
 
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    birthday: Optional[date] = None
+    birthday: Optional[PastDate] = None
     birthday_prompt_dismissed: Optional[bool] = None
 
 
