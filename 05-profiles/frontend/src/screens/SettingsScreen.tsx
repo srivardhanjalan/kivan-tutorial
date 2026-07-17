@@ -13,7 +13,7 @@ import useFetch from '../hooks/useFetch';
 import useAsyncAction from '../hooks/useAsyncAction';
 import { deleteAccount, fetchCurrentUser, updateProfile } from '../services/api';
 import type { RootStackParamList } from '../components/Navigation';
-import { clerkFullName } from '../utils/clerkName';
+import { clerkFullName, clerkPrimaryEmail } from '../utils/clerkName';
 import Colors from '../constants/Colors';
 import BorderRadius from '../constants/BorderRadius';
 import Typography from '../constants/Typography';
@@ -169,7 +169,7 @@ export default function SettingsScreen() {
         />
       )}
 
-      <SettingsRow label="Email" value={user?.emailAddresses[0]?.emailAddress ?? ''} />
+      <SettingsRow label="Email" value={clerkPrimaryEmail(user)} />
 
       {editingBirthday ? (
         <View style={styles.editBlock}>

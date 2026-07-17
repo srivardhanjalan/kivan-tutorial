@@ -12,7 +12,7 @@ import EmptyStateView from '../components/EmptyStateView';
 import useFetch from '../hooks/useFetch';
 import { fetchCurrentUser, updateProfile } from '../services/api';
 import type { RootStackParamList } from '../components/Navigation';
-import { clerkFullName } from '../utils/clerkName';
+import { clerkFullName, clerkPrimaryEmail } from '../utils/clerkName';
 
 /**
  * Home greets the signed-in user by name (from the Clerk profile) and shows
@@ -44,7 +44,7 @@ export default function HomeScreen() {
 
   return (
     <FloatingHeaderLayout
-      title={`Hi, ${clerkFullName(user) || user?.emailAddresses[0]?.emailAddress || ''}`}
+      title={`Hi, ${clerkFullName(user) || clerkPrimaryEmail(user)}`}
       headerRight={
         <HeaderIconButton
           icon="settings-outline"
