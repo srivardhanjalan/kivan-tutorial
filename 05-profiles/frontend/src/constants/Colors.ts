@@ -21,8 +21,6 @@ export default {
   toastSurface: 'rgba(28, 28, 30, 0.96)',
   /** Near-opaque white stand-in for glass pills where BlurView is unavailable (Android) */
   glassFallback: 'rgba(255, 255, 255, 0.94)',
-  /** Primary body text (near-black) */
-  textPrimary: '#1D1D1F',
   /** Secondary text */
   textSecondary: '#6E6E73',
   /** The app-wide pressed/active fill on chrome buttons and tabs */

@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: Spacing.lg,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.lightGrey,
+    borderBottomColor: Colors.hairline,
   },
   rowLabel: {
     ...Typography.body,

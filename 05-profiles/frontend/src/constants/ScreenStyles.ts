@@ -30,10 +30,13 @@ export const Spacing = {
   tabIconSize: 34,        // bottom tab-bar icons
   chromeIconSize: 24,     // header action icons
   chromeTouchTarget: 44,  // minimum tap target for chrome buttons
-  /** Pulls the back button left so the chevron GLYPH (centered in its
-      44pt target) sits on the content edge like every title below it */
+  /** The chevron stroke starts ~7pt inside its glyph box */
+  chevronGlyphInset: 7,
+  /** Pulls the back button left so the chevron's VISIBLE TIP (glyph box
+      centering + the stroke's internal inset) lands on the content edge,
+      aligned with every section header below it */
   get backChevronPull() {
-    return -((this.chromeTouchTarget - this.chromeIconSize) / 2) - 2;
+    return -((this.chromeTouchTarget - this.chromeIconSize) / 2) - this.chevronGlyphInset;
   },
 
   /** Bottom padding for scrollable content (clears the floating tab bar) */

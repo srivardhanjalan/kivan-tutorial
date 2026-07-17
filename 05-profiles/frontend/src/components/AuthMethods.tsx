@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: Colors.lightGrey,
+    backgroundColor: Colors.hairline,
   },
   dividerLabel: {
     ...Typography.bodySecondary,
