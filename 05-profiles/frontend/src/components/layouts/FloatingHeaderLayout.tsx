@@ -1,9 +1,11 @@
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import FloatingHeader from '../FloatingHeader';
-import HeaderIconButton from '../HeaderIconButton';
 import LoadingView from '../LoadingView';
+import Colors from '../../constants/Colors';
+import Opacity from '../../constants/Opacity';
 import { CommonScreenStyles, Spacing } from '../../constants/ScreenStyles';
 
 interface FloatingHeaderLayoutProps {
@@ -53,9 +55,18 @@ const FloatingHeaderLayout: React.FC<FloatingHeaderLayoutProps> = ({
         title={title}
         leftContent={
           onBack ? (
-            <View style={styles.backPull}>
-              <HeaderIconButton icon="chevron-back" accessibilityLabel="Back" onPress={onBack} />
-            </View>
+            // Not a HeaderIconButton: pulled to the screen edge, its
+            // pressed-fill circle would clip off-screen — the back button
+            // keeps the full tap target but presses with opacity instead
+            <TouchableOpacity
+              onPress={onBack}
+              activeOpacity={Opacity.pressed}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+              style={[CommonScreenStyles.center, styles.backButton]}
+            >
+              <Ionicons name="chevron-back" size={Spacing.chromeIconSize} color={Colors.dark} />
+            </TouchableOpacity>
           ) : undefined
         }
         rightContent={headerRight}
@@ -68,7 +79,9 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
-  backPull: {
+  backButton: {
+    width: Spacing.chromeTouchTarget,
+    height: Spacing.chromeTouchTarget,
     marginLeft: Spacing.backChevronPull,
   },
   scrollContent: {
