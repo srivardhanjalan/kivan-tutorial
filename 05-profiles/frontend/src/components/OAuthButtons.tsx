@@ -1,6 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, View, ActivityIndicator } from 'react-native';
 import { useOAuth } from '@clerk/clerk-expo';
+import type { OAuthStrategy } from '@clerk/types';
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../constants/Colors';
@@ -13,7 +14,7 @@ import useAsyncAction from '../hooks/useAsyncAction';
 WebBrowser.maybeCompleteAuthSession();
 
 interface OAuthProvider {
-  strategy: 'oauth_apple' | 'oauth_google';
+  strategy: OAuthStrategy;
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
 }
