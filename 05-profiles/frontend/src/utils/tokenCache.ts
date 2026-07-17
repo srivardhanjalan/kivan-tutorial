@@ -1,33 +1,15 @@
 import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
-
-// Which storage backs the cache, chosen once: the device keychain on
-// native, sessionStorage on web.
-const store =
-  Platform.OS === 'web'
-    ? {
-        get: async (key: string) => sessionStorage.getItem(key),
-        set: async (key: string, value: string) => {
-          sessionStorage.setItem(key, value);
-        },
-        remove: async (key: string) => {
-          sessionStorage.removeItem(key);
-        },
-      }
-    : {
-        get: (key: string) => SecureStore.getItemAsync(key),
-        set: (key: string, value: string) => SecureStore.setItemAsync(key, value),
-        remove: (key: string) => SecureStore.deleteItemAsync(key),
-      };
 
 /**
- * Clerk's session token cache. Errors degrade to "no cached token" — Clerk
- * falls back to a fresh sign-in rather than crashing.
+ * Clerk's session token cache, backed by the device keychain. Errors
+ * degrade to "no cached token" — Clerk falls back to a fresh sign-in
+ * rather than crashing. (A web storage backend joins when a step actually
+ * makes the web target build.)
  */
 export const tokenCache = {
   async getToken(key: string) {
     try {
-      return await store.get(key);
+      return await SecureStore.getItemAsync(key);
     } catch (error) {
       console.error('Error getting token:', error);
       return null;
@@ -35,14 +17,14 @@ export const tokenCache = {
   },
   async saveToken(key: string, value: string) {
     try {
-      await store.set(key, value);
+      await SecureStore.setItemAsync(key, value);
     } catch (error) {
       console.error('Error saving token:', error);
     }
   },
   async deleteToken(key: string) {
     try {
-      await store.remove(key);
+      await SecureStore.deleteItemAsync(key);
     } catch (error) {
       console.error('Error deleting token:', error);
     }

@@ -78,4 +78,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default React.memo(FloatingHeader);
+export default FloatingHeader;
