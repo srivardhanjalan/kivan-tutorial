@@ -26,6 +26,12 @@ logger = logging.getLogger(__name__)
 _known_user_ids: set = set()
 
 
+def forget_user(user_id: str) -> None:
+    """Evict a user from the known-ids cache — account deletion calls this
+    so the very next request re-reads the record and hits the 403 guard."""
+    _known_user_ids.discard(user_id)
+
+
 def ensure_user_provisioned(token_claims: dict) -> None:
     """
     Guarantee a DynamoDB user record exists for the authenticated Clerk user.
@@ -50,6 +56,13 @@ def ensure_user_provisioned(token_claims: dict) -> None:
         raise
 
     if "Item" in response:
+        if response["Item"].get("is_deleted", False):
+            # Defense in depth: deletion removes the Clerk user, but a token
+            # minted before that (or a failed Clerk call) must still bounce
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This account has been deleted and cannot be restored."
+            )
         _known_user_ids.add(user_id)
         return
 
