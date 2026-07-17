@@ -194,6 +194,12 @@ product-manager (more as the user adds them).
 - [ ] **Mocks must match the end experience exactly** — when the app
       changes visually, regenerate the affected mock/hero images in the
       same round.
+- [ ] **Every post is the author's first-person story.** The series speaks
+      as Srivardhan's lived build journey: war stories, decisions, and
+      scars are narrated as "I" with a real arc (setup → struggle →
+      resolution) — never neutral documentation, never a detached narrator,
+      never phrasing that implies anyone else did the work. If a section
+      reads like a manual, rewrite it as the moment it was lived.
 - [ ] **Titles: wit that carries the meaning ("Zero to Shipped"), never
       wit that replaces it.** The test: at zero context, an uncharitable
       reader must still decode what the piece delivers AND want to click.
