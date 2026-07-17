@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import OAuthButtons from './OAuthButtons';
-import AuthTextInput from './AuthTextInput';
+import FormInput from './FormInput';
 import PrimaryButton from './PrimaryButton';
 import { useToast } from './ToastProvider';
 import Colors from '../constants/Colors';
@@ -58,14 +58,14 @@ export default function AuthMethods({
         <View style={styles.dividerLine} />
       </View>
 
-      <AuthTextInput
+      <FormInput
         autoCapitalize="none"
         value={emailAddress}
         placeholder="Email"
         onChangeText={setEmailAddress}
         keyboardType="email-address"
       />
-      <AuthTextInput
+      <FormInput
         value={password}
         placeholder="Password"
         secureTextEntry

@@ -6,29 +6,41 @@ import BorderRadius from '../constants/BorderRadius';
 import Shadows from '../constants/Shadows';
 import Opacity from '../constants/Opacity';
 
+type Variant = 'primary' | 'secondary' | 'danger';
+
 interface PrimaryButtonProps {
   /** Button label */
   title: string;
   onPress: () => void;
   /** Shows an ActivityIndicator instead of the label and disables presses */
   loading?: boolean;
+  /** primary: brand CTA · secondary: quiet grey · danger: destructive red */
+  variant?: Variant;
 }
 
 /**
- * The standard full-width CTA: brand-colored fill with a soft brand shadow.
- * Variants join when a screen first needs one.
+ * The standard full-width CTA. Settings brought the second and third
+ * variants: a quiet Cancel and a destructive Delete.
  */
-const PrimaryButton: React.FC<PrimaryButtonProps> = ({ title, onPress, loading = false }) => (
+const PrimaryButton: React.FC<PrimaryButtonProps> = ({
+  title,
+  onPress,
+  loading = false,
+  variant = 'primary',
+}) => (
   <TouchableOpacity
-    style={[styles.button, loading && styles.disabled]}
+    style={[styles.button, variantStyles[variant], loading && styles.disabled]}
     onPress={onPress}
     disabled={loading}
     activeOpacity={Opacity.pressed}
   >
     {loading ? (
-      <ActivityIndicator color={Colors.white} />
+      <ActivityIndicator color={variant === 'secondary' ? Colors.dark : Colors.white} />
     ) : (
-      <Text style={styles.text} maxFontSizeMultiplier={ChromeMaxFontSizeMultiplier}>
+      <Text
+        style={[styles.text, variant === 'secondary' && styles.secondaryText]}
+        maxFontSizeMultiplier={ChromeMaxFontSizeMultiplier}
+      >
         {title}
       </Text>
     )}
@@ -41,14 +53,29 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.primary,
-    ...Shadows.cta,
   },
   disabled: {
     opacity: Opacity.disabled,
   },
   text: {
     ...Typography.button,
+  },
+  secondaryText: {
+    color: Colors.dark,
+  },
+});
+
+const variantStyles = StyleSheet.create({
+  primary: {
+    backgroundColor: Colors.primary,
+    ...Shadows.cta,
+  },
+  secondary: {
+    backgroundColor: Colors.pressedFill,
+  },
+  danger: {
+    backgroundColor: Colors.danger,
+    ...Shadows.ctaDanger,
   },
 });
 

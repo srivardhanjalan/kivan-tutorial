@@ -12,9 +12,19 @@ export interface User {
   first_name: string | null;
   last_name: string | null;
   image_url: string | null;
+  birthday: string | null;
+  birthday_prompt_dismissed: boolean;
   onboarding_completed: boolean;
   created_at: string;
   updated_at: string;
+}
+
+/** The editable slice of the profile — send only what changed */
+export interface ProfileUpdate {
+  first_name?: string;
+  last_name?: string;
+  birthday?: string;
+  birthday_prompt_dismissed?: boolean;
 }
 
 // Navigation wires Clerk's getToken in here once at sign-in, so every
@@ -32,7 +42,10 @@ async function request(path: string, init?: RequestInit): Promise<Response> {
   const token = getAuthToken ? await getAuthToken() : null;
   const res = await fetch(`${BASE_URL}${path}`, {
     ...init,
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+    },
   });
   if (!res.ok) {
     throw new Error(`${path} failed: ${res.status}`);
@@ -63,4 +76,21 @@ export async function fetchOnboardingCompleted(): Promise<boolean> {
 
 export async function completeOnboarding(): Promise<void> {
   await request('/users/me/onboarding/complete', { method: 'POST' });
+}
+
+/** PUT the changed profile fields; returns the updated record. */
+export async function updateProfile(update: ProfileUpdate): Promise<User> {
+  const res = await request('/users/me', {
+    method: 'PUT',
+    body: JSON.stringify(update),
+  });
+  return res.json();
+}
+
+/** Soft-deletes the account server-side; the caller signs out after. */
+export async function deleteAccount(confirmationText: string): Promise<void> {
+  await request('/users/me', {
+    method: 'DELETE',
+    body: JSON.stringify({ confirmation_text: confirmationText }),
+  });
 }

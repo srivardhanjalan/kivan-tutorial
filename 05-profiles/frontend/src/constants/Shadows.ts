@@ -10,6 +10,14 @@ export default {
     shadowRadius: 12,
     elevation: 4,
   },
+  /** The same lift, danger-tinted — destructive CTAs */
+  ctaDanger: {
+    shadowColor: Colors.danger,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 4,
+  },
   /** The floating chrome pills (tab bar) */
   chrome: {
     shadowColor: '#000',
