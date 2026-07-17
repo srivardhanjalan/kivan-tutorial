@@ -8,7 +8,7 @@ import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 interface EmptyStateViewProps {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
-  subtitle?: string;
+  subtitle: string;
 }
 
 /** The standard empty state: soft icon disc, title, optional subtitle. */
@@ -18,7 +18,7 @@ const EmptyStateView: React.FC<EmptyStateViewProps> = ({ icon, title, subtitle }
       <Ionicons name={icon} size={48} color={Colors.grey} />
     </View>
     <Text style={styles.title}>{title}</Text>
-    {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+    <Text style={styles.subtitle}>{subtitle}</Text>
   </View>
 );
 

@@ -7,7 +7,7 @@ import LoadingView from '../LoadingView';
 import { CommonScreenStyles, Spacing } from '../../constants/ScreenStyles';
 
 interface FloatingHeaderLayoutProps {
-  title?: string;
+  title: string;
   /** Renders a back button before the title — pushed screens pass goBack */
   onBack?: () => void;
   /** Right header content (action buttons) */

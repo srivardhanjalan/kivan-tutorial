@@ -13,7 +13,7 @@ import Typography, { ChromeMaxFontSizeMultiplier } from '../constants/Typography
 const wash = (alpha: number) => `rgba(${Colors.backgroundRgb}, ${alpha})`;
 
 interface FloatingHeaderProps {
-  title?: string;
+  title: string;
   /** Content before the title — the back button on pushed screens */
   leftContent?: React.ReactNode;
   /** The right-side header action; its pressed-fill circle is the visible
