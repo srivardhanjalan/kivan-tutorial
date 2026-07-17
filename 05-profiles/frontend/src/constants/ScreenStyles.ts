@@ -28,7 +28,13 @@ export const Spacing = {
   tabBarBottomMargin: 16, // gap between the tab bar and the screen bottom
   tabBarContentGap: 22,   // breathing room between content end and tab bar
   tabIconSize: 34,        // bottom tab-bar icons
+  chromeIconSize: 24,     // header action icons
   chromeTouchTarget: 44,  // minimum tap target for chrome buttons
+  /** Pulls the back button left so the chevron GLYPH (centered in its
+      44pt target) sits on the content edge like every title below it */
+  get backChevronPull() {
+    return -((this.chromeTouchTarget - this.chromeIconSize) / 2) - 2;
+  },
 
   /** Bottom padding for scrollable content (clears the floating tab bar) */
   get scrollContentBottom() {

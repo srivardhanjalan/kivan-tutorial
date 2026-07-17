@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, ScrollView, StyleSheet } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -206,7 +206,12 @@ export default function SettingsScreen() {
       <OnboardingTutorial visible={showTutorial} onDismiss={() => setShowTutorial(false)} />
 
       <Modal visible={showDeleteModal} animationType="fade" transparent>
-        <View style={[CommonScreenStyles.center, styles.modalBackdrop]}>
+        {/* keyboardShouldPersistTaps: a destructive confirm must fire on the
+            FIRST tap, not spend it dismissing the keyboard */}
+        <ScrollView
+          contentContainerStyle={[CommonScreenStyles.center, styles.modalBackdrop]}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Delete your account?</Text>
             <Text style={styles.modalCopy}>
@@ -232,7 +237,7 @@ export default function SettingsScreen() {
               }}
             />
           </View>
-        </View>
+        </ScrollView>
       </Modal>
     </FloatingHeaderLayout>
   );
@@ -269,7 +274,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xxxl,
   },
   modalBackdrop: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: Colors.toastSurface,
     padding: Spacing.xxl,
   },

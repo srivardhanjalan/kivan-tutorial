@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import FloatingHeader from '../FloatingHeader';
 import HeaderIconButton from '../HeaderIconButton';
@@ -53,7 +53,9 @@ const FloatingHeaderLayout: React.FC<FloatingHeaderLayoutProps> = ({
         title={title}
         leftContent={
           onBack ? (
-            <HeaderIconButton icon="chevron-back" accessibilityLabel="Back" onPress={onBack} />
+            <View style={styles.backPull}>
+              <HeaderIconButton icon="chevron-back" accessibilityLabel="Back" onPress={onBack} />
+            </View>
           ) : undefined
         }
         rightContent={headerRight}
@@ -65,6 +67,9 @@ const FloatingHeaderLayout: React.FC<FloatingHeaderLayoutProps> = ({
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
+  },
+  backPull: {
+    marginLeft: Spacing.backChevronPull,
   },
   scrollContent: {
     paddingTop: Spacing.floatingHeaderContentPadding,

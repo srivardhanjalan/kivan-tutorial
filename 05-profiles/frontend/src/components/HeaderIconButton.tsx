@@ -24,7 +24,7 @@ const HeaderIconButton: React.FC<HeaderIconButtonProps> = ({ icon, accessibility
     accessibilityLabel={accessibilityLabel}
     style={({ pressed }) => [CommonScreenStyles.center, styles.button, pressed && styles.pressed]}
   >
-    <Ionicons name={icon} size={24} color={Colors.dark} />
+    <Ionicons name={icon} size={Spacing.chromeIconSize} color={Colors.dark} />
   </Pressable>
 );
 
