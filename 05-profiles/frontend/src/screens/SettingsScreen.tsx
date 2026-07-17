@@ -20,9 +20,6 @@ import Typography from '../constants/Typography';
 import Opacity from '../constants/Opacity';
 import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 
-// Picker VALUES stay unpadded ("1".."31") while LABELS are padded ("01") —
-// a padded value never matches an unpadded item and the wheel shows no
-// selection (a real bug in this app's first life).
 const DAYS = Array.from({ length: 31 }, (_, i) => String(i + 1));
 const MONTHS = Array.from({ length: 12 }, (_, i) => String(i + 1));
 const THIS_YEAR = new Date().getFullYear();
@@ -45,6 +42,24 @@ const SettingsRow: React.FC<{
     <Text style={styles.rowLabel}>{label}</Text>
     {value ? <Text style={styles.rowValue}>{value}</Text> : null}
   </TouchableOpacity>
+);
+
+/**
+ * One birthday wheel. VALUES stay unpadded ("1") — a padded value never
+ * matches an unpadded item and the wheel silently shows no selection (a
+ * real bug in this app's first life). Only LABELS get padding.
+ */
+const WheelColumn: React.FC<{
+  values: string[];
+  selected: string;
+  onChange: (value: string) => void;
+  padLabels?: boolean;
+}> = ({ values, selected, onChange, padLabels = false }) => (
+  <Picker style={styles.picker} selectedValue={selected} onValueChange={onChange}>
+    {values.map((v) => (
+      <Picker.Item key={v} label={padLabels ? v.padStart(2, '0') : v} value={v} />
+    ))}
+  </Picker>
 );
 
 /** The stacked confirm/cancel pair every edit block ends with. */
@@ -159,21 +174,9 @@ export default function SettingsScreen() {
       {editingBirthday ? (
         <View style={styles.editBlock}>
           <View style={styles.pickers}>
-            <Picker style={styles.picker} selectedValue={day} onValueChange={setDay}>
-              {DAYS.map((d) => (
-                <Picker.Item key={d} label={d.padStart(2, '0')} value={d} />
-              ))}
-            </Picker>
-            <Picker style={styles.picker} selectedValue={month} onValueChange={setMonth}>
-              {MONTHS.map((m) => (
-                <Picker.Item key={m} label={m.padStart(2, '0')} value={m} />
-              ))}
-            </Picker>
-            <Picker style={styles.picker} selectedValue={year} onValueChange={setYear}>
-              {YEARS.map((y) => (
-                <Picker.Item key={y} label={y} value={y} />
-              ))}
-            </Picker>
+            <WheelColumn values={DAYS} selected={day} onChange={setDay} padLabels />
+            <WheelColumn values={MONTHS} selected={month} onChange={setMonth} padLabels />
+            <WheelColumn values={YEARS} selected={year} onChange={setYear} />
           </View>
           <ConfirmCancel
             confirmTitle="Save Birthday"
