@@ -2,11 +2,14 @@ import React from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import FloatingHeader from '../FloatingHeader';
+import HeaderIconButton from '../HeaderIconButton';
 import LoadingView from '../LoadingView';
 import { CommonScreenStyles, Spacing } from '../../constants/ScreenStyles';
 
 interface FloatingHeaderLayoutProps {
   title?: string;
+  /** Renders a back button before the title — pushed screens pass goBack */
+  onBack?: () => void;
   /** Right header content (action buttons) */
   headerRight?: React.ReactNode;
   /** Replaces the screen with the standard branded loading state */
@@ -27,6 +30,7 @@ interface FloatingHeaderLayoutProps {
  */
 const FloatingHeaderLayout: React.FC<FloatingHeaderLayoutProps> = ({
   title,
+  onBack,
   headerRight,
   loading = false,
   children,
@@ -45,7 +49,15 @@ const FloatingHeaderLayout: React.FC<FloatingHeaderLayoutProps> = ({
         {children}
       </ScrollView>
 
-      <FloatingHeader title={title} rightContent={headerRight} />
+      <FloatingHeader
+        title={title}
+        leftContent={
+          onBack ? (
+            <HeaderIconButton icon="chevron-back" accessibilityLabel="Back" onPress={onBack} />
+          ) : undefined
+        }
+        rightContent={headerRight}
+      />
     </SafeAreaView>
   );
 };

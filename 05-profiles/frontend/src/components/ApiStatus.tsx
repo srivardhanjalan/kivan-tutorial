@@ -1,6 +1,6 @@
 import React from 'react';
 import AsyncStatusLine from './AsyncStatusLine';
-import useFetchOnMount from '../hooks/useFetchOnMount';
+import useFetch from '../hooks/useFetch';
 import { fetchHealth } from '../services/api';
 
 /**
@@ -8,7 +8,7 @@ import { fetchHealth } from '../services/api';
  * backend. Real screens replace this with real data in later steps.
  */
 const ApiStatus: React.FC = () => {
-  const { error, loading } = useFetchOnMount(fetchHealth);
+  const { error, loading } = useFetch(fetchHealth);
   return <AsyncStatusLine label="Backend" loading={loading} error={error} value="healthy" />;
 };
 

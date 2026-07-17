@@ -14,6 +14,8 @@ const wash = (alpha: number) => `rgba(${Colors.backgroundRgb}, ${alpha})`;
 
 interface FloatingHeaderProps {
   title?: string;
+  /** Content before the title — the back button on pushed screens */
+  leftContent?: React.ReactNode;
   /** Content on the right — header action buttons */
   rightContent?: React.ReactNode;
 }
@@ -26,7 +28,7 @@ interface FloatingHeaderProps {
  * The title lands on the left content edge; the right buttons' pressed
  * fill ends on the right content edge.
  */
-const FloatingHeader: React.FC<FloatingHeaderProps> = ({ title, rightContent }) => {
+const FloatingHeader: React.FC<FloatingHeaderProps> = ({ title, leftContent, rightContent }) => {
   const insets = useSafeAreaInsets();
 
   return (
@@ -39,6 +41,7 @@ const FloatingHeader: React.FC<FloatingHeaderProps> = ({ title, rightContent }) 
       />
 
       <View style={[styles.row, { marginTop: insets.top }]}>
+        {leftContent}
         <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={ChromeMaxFontSizeMultiplier}>
           {title}
         </Text>
