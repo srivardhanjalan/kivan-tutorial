@@ -27,8 +27,8 @@ export interface ProfileUpdate {
   birthday_prompt_dismissed?: boolean;
 }
 
-// Navigation wires Clerk's getToken in here once at sign-in, so every
-// request picks up a fresh session JWT without screens handling tokens.
+// Navigation wires Clerk's getToken in here, so every request picks up a
+// fresh session JWT without screens handling tokens.
 let getAuthToken: (() => Promise<string | null>) | null = null;
 
 export function setAuthTokenGetter(getter: () => Promise<string | null>): void {
