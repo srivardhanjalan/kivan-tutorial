@@ -11,7 +11,7 @@ interface EmptyStateViewProps {
   subtitle: string;
 }
 
-/** The standard empty state: soft icon disc, title, optional subtitle. */
+/** The standard empty state: soft icon disc, title, subtitle. */
 const EmptyStateView: React.FC<EmptyStateViewProps> = ({ icon, title, subtitle }) => (
   <View style={styles.container}>
     <View style={[CommonScreenStyles.center, styles.iconCircle]}>
