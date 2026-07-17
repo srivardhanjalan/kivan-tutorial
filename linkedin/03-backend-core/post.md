@@ -4,23 +4,25 @@
 
 My deploy died three minutes into terraform apply. CREATE_FAILED — and the log group was completely empty.
 
-On my laptop, the exact same image ran fine. The API code was innocent.
+Not an error. Not a stack trace. The container never produced a single line.
 
-Step 03 of Zero to Shipped is everything that story kept getting in the way of:
+The same image ran perfectly on my laptop. So I did what everyone does first: re-read my own code.
 
-A FastAPI backend running on AWS you own — four commands up, torn back down until a tag search finds nothing.
+Two lines of requirements.txt, one router, a /health endpoint. Innocent.
 
-→ the backend earns its dependencies: requirements.txt is two lines, and there's no database, auth, or queue until a step actually consumes them
-→ one console page shows the whole stack — and the empty page after teardown is the receipt
-→ the frontend delta is ~60 lines and owns the diagnosis: kill the backend, cold-restart, and the status line tells you what to check
+The logs had nothing left to say. The only witness was the pushed image itself.
 
-And the autopsy: two unrelated causes, one identical empty-log symptom.
+And there it was: newer Docker had quietly attached attestations to my push, turning it into an OCI image index.
 
-One is the Apple Silicon build path everyone warns you about.
+Updating a service tolerates that. Creating one doesn't.
 
-The other found me while verifying this exact step — newer Docker quietly attaches attestations that turn your push into an OCI image index. Updating a service tolerates that; creating one doesn't.
+The maddening part? This isn't even the famous way to die like this.
 
-Both fixes now live in one deploy script.
+The Apple Silicon build path everyone warns you about kills deploys with the same empty-log symptom.
+
+Two unrelated causes, one identical death. Both fixes now live in one deploy script.
+
+Step 03 of Zero to Shipped is the whole story: a FastAPI backend running on AWS you own — four commands up, torn back down until a tag search finds nothing.
 
 Swipe for the short version — the complete write-up is free 👇
 
