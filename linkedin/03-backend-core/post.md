@@ -2,27 +2,21 @@
 
 ## Post body (carousel PDF attached, NO link in post)
 
-My deploy died three minutes into terraform apply. CREATE_FAILED — and the log group was completely empty.
+My app talked to a real AWS backend for the first time this week.
 
-Not an error. Not a stack trace. The container never produced a single line.
+Until now it was a shell — five tabs, design tokens, everything local. This week it got a pulse: FastAPI, Docker, Terraform, App Runner. My own account.
 
-The same image ran perfectly on my laptop. So I did what everyone does first: re-read my own code.
+The whole deploy is four commands. The whole backend is two dependencies and one router — nothing joins until something actually needs it.
 
-Two lines of requirements.txt, one router, a /health endpoint. Innocent.
+And when I tear it down, a tag search across the account finds nothing. The stack is provably gone.
 
-The logs had nothing left to say. The only witness was the pushed image itself.
+Then a deploy died at the three-minute mark while I was verifying the step. CREATE_FAILED, and the log group was completely empty.
 
-And there it was: newer Docker had quietly attached attestations to my push, turning it into an OCI image index.
+The same image ran fine on my laptop.
 
-Updating a service tolerates that. Creating one doesn't.
+Turns out newer Docker quietly attaches attestations that turn a push into an OCI image index. App Runner will update a service from one of those — it just won't create one.
 
-The maddening part? This isn't even the famous way to die like this.
-
-The Apple Silicon build path everyone warns you about kills deploys with the same empty-log symptom.
-
-Two unrelated causes, one identical death. Both fixes now live in one deploy script.
-
-Step 03 of Zero to Shipped is the whole story: a FastAPI backend running on AWS you own — four commands up, torn back down until a tag search finds nothing.
+That fix and the Apple Silicon build trap now live in one deploy script.
 
 Swipe for the short version — the complete write-up is free 👇
 
@@ -44,8 +38,8 @@ https://github.com/srivardhanjalan/kivan-tutorial
 ## Posting notes
 
 - Upload `alive-on-arrival-carousel.pdf` as a document post; LinkedIn renders it as a swipeable carousel.
-- Document title (renders as a header on the doc; keep <60 chars): "Alive on Arrival — four commands to a live AWS backend". Cover headline ("The deploy died…"), post hook ("My deploy died…"), and doc title all vary the claim — checked, no verbatim tripling.
-- Fold budget: mobile truncates at ~140 chars, desktop ~210. Hook must be complete inside ~140 — current draft passes (first sentence = 50 chars; sentence two completes the mystery at ~106).
+- Document title (renders as a header on the doc; keep <60 chars): "Alive on Arrival — four commands to a live AWS backend". Cover headline ("My app has a real backend now."), post hook ("My app talked to a real AWS backend…"), and doc title all vary the claim — checked, no verbatim tripling.
+- Fold budget: mobile truncates at ~140 chars, desktop ~210. Hook must be complete inside ~140 — current draft passes (the hook sentence is ~64 chars and self-sufficient).
 - Hashtags: 3 relevant tags, end of post. Hashtag feeds were deprecated (late 2024); tags no longer drive reach — they're light topical metadata, nothing more.
 - Proof before posting. Typo fixes are safe only in the first ~10 minutes; substantive edits inside the 60–90-min momentum window measurably cut impressions (30–50% in creator data; LinkedIn documents no penalty — it's momentum interruption).
 - Post the first comment immediately (the CTA slide and body point to it). Self-comments don't hurt reach. Article link ALONE in comment #1; series intro + repo as a reply to it.

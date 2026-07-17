@@ -82,11 +82,11 @@
 <!-- 1 · HOOK — one claim + one visual -->
 <section class="slide" id="s1">
   <div class="eyebrow">Zero to Shipped · Step 03</div>
-  <h1 style="margin-top:48px;">The deploy died. The logs were <span class="accent">empty.</span></h1>
-  <div class="lede" style="max-width:520px;">Same image. Flawless on my laptop.</div>
-  <div class="lede" style="margin-top:90px; font-weight:800; color:#FF385C; letter-spacing:.12em; text-transform:uppercase; font-size:28px;">swipe →</div>
-  <div class="crop" style="position:absolute; right:80px; bottom:210px; width:620px; height:262px;">
-    <img src="../../mocks/mocks-03-doa.png" alt="attempt 1 — CREATE_FAILED, empty logs (real deploy output)" style="width:1385px; margin:-237px 0 0 -84px;">
+  <h1 style="margin-top:48px; font-size:96px; max-width:560px;">My app has a real backend <span class="accent">now.</span></h1>
+  <div class="lede" style="max-width:470px;">On my own AWS. Four commands. One ugly surprise on the way.</div>
+  <div class="lede" style="margin-top:70px; font-weight:800; color:#FF385C; letter-spacing:.12em; text-transform:uppercase; font-size:28px;">swipe →</div>
+  <div style="position:absolute; right:70px; bottom:80px; width:360px;">
+    <div class="phone"><img src="../../mocks/shot-03-healthy.png" alt="Backend healthy — real simulator screenshot"></div>
   </div>
   <div style="position:absolute; left:90px; bottom:70px;">
     <div style="font-size:38px; font-weight:800; letter-spacing:-0.01em; color:#1A1A1A;">Alive on Arrival<span class="accent">.</span></div>
@@ -96,8 +96,8 @@
 
 <!-- 2 · THE PAYOFF — the four commands -->
 <section class="slide" id="s2" style="justify-content:center;">
-  <div class="eyebrow">What I was shipping when it died</div>
-  <h2>A FastAPI backend on my own AWS — in <span class="accent">four commands.</span></h2>
+  <div class="eyebrow">The whole deploy</div>
+  <h2>Start to finish: <span class="accent">four commands.</span></h2>
   <div class="term" style="margin-top:80px; font-size:24px; line-height:1.72;">
     <span class="cm"># 1 · the registry first</span><br>
     <span class="cmd">$ terraform apply -target=aws_ecr_repository.backend</span><br>
@@ -113,36 +113,45 @@
 
 <!-- 3 · THE RULE — stat row -->
 <section class="slide" id="s3" style="justify-content:center;">
-  <div class="eyebrow">The rule I build by</div>
-  <h2>Nothing joins before its <span class="accent">first caller.</span></h2>
+  <div class="eyebrow">The backend</div>
+  <h2>The backend <span class="accent">earns</span> its dependencies.</h2>
   <div class="stats">
     <div class="stat"><div class="n">2</div><div class="l">lines in requirements.txt</div></div>
     <div class="stat"><div class="n">1</div><div class="l">router: health.py</div></div>
     <div class="stat"><div class="n">0</div><div class="l">databases, queues, auth</div></div>
   </div>
-  <div class="lede" style="margin-top:80px;">They arrive with the steps that consume them.</div>
+  <div class="lede" style="margin-top:80px;">Each piece arrives with its first consumer.</div>
   <div class="footer"><span>Alive on Arrival</span><span>3 / 8</span></div>
 </section>
 
 <!-- 4 · THE DISCIPLINE — text only -->
 <section class="slide" id="s4" style="justify-content:center;">
-  <div class="eyebrow">And when I tear it down</div>
-  <h2>Every resource tagged, grouped, and <span class="accent">provably gone.</span></h2>
-  <div class="lede" style="max-width:800px;">Destroy, sweep, tag-search: nothing remains.</div>
+  <div class="eyebrow">The infrastructure</div>
+  <h2>Every piece of AWS, <span class="accent">written down.</span></h2>
+  <div class="term" style="margin-top:64px; font-size:24px; line-height:1.72;">
+    <span class="cmd">infra/</span><br>
+    &nbsp;&nbsp;providers.tf <span class="cm">&nbsp;· default_tags — every resource stamped</span><br>
+    &nbsp;&nbsp;ecr.tf <span class="cm">&nbsp;· the registry, keep-last-10 lifecycle</span><br>
+    &nbsp;&nbsp;apprunner.tf <span class="cm">&nbsp;· the service, health-checked</span><br>
+    &nbsp;&nbsp;iam.tf <span class="cm">&nbsp;· the two roles App Runner needs</span><br>
+    &nbsp;&nbsp;resource-group.tf <span class="cm">&nbsp;· the whole stack, by tag</span><br>
+    &nbsp;&nbsp;variables.tf · outputs.tf · scripts/deploy.sh
+  </div>
   <div class="footer"><span>Alive on Arrival</span><span>4 / 8</span></div>
 </section>
 
 <!-- 5 · THE QUOTE -->
 <section class="slide" id="s5" style="justify-content:center;">
-  <div class="eyebrow">The bet I’m making</div>
-  <h2 style="font-size:76px; line-height:1.16;">“The structure that will hold <span class="accent">fifteen routers</span> is already the structure that holds <span class="accent">one</span>.”</h2>
+  <div class="eyebrow">And when I’m done</div>
+  <h2>It all disappears. <span class="accent">Provably.</span></h2>
+  <div class="lede" style="max-width:760px;">Destroy, sweep, search: zero resources left in the account.</div>
   <div class="footer"><span>Alive on Arrival</span><span>5 / 8</span></div>
 </section>
 
 <!-- 6 · DEAD VS ALIVE — restacked real terminals -->
 <section class="slide" id="s6" style="justify-content:center;">
-  <div class="eyebrow">What the manifest confessed</div>
-  <h2 style="font-size:72px;">Dead on arrival vs <span class="accent">alive on arrival.</span></h2>
+  <div class="eyebrow">The ugly surprise, three minutes in</div>
+  <h2 style="font-size:72px;">Dead — with completely <span class="accent">empty logs.</span></h2>
   <div style="margin-top:32px;">
     <div class="tag" style="color:#e5484d;">Dead on arrival</div>
     <div class="crop" style="width:680px; height:284px; margin-top:14px;">
@@ -153,25 +162,25 @@
       <img src="../../mocks/mocks-03-doa.png" alt="Attempt 2 — attestation-free push, RUNNING" style="width:1500px; margin:-257px 0 0 -780px;">
     </div>
   </div>
-  <div class="lede" style="margin-top:26px; font-size:30px;">The wrong build context, and default attestations. My deploy script now prevents both.</div>
+  <div class="lede" style="margin-top:26px; font-size:30px;">Docker had quietly changed what I pushed. My script now prevents it — and the Apple Silicon trap too.</div>
   <div class="footer"><span>Alive on Arrival</span><span>6 / 8</span></div>
 </section>
 
 <!-- 7 · PROOF OF LIFE — the truth phones -->
 <section class="slide" id="s7" style="justify-content:center;">
-  <div class="eyebrow">The proof of life</div>
-  <h2>The app tells the <span class="accent">truth.</span></h2>
+  <div class="eyebrow">And now, on every tab</div>
+  <h2>The app reports its backend, <span class="accent">honestly.</span></h2>
   <div class="crop" style="width:820px; height:655px; margin:56px auto 0; border-radius:32px;">
     <img src="../../mocks/mocks-03-truth.png" alt="Backend healthy vs unreachable — real screenshots" style="width:1375px; margin:-84px 0 0 -275px;">
   </div>
-  <div class="lede" style="margin-top:44px; font-size:34px;">Green when healthy. Red — pointing at the likely culprit — when it isn't.</div>
+  <div class="lede" style="margin-top:44px; font-size:34px;">Green means alive. Red comes with a hint.</div>
   <div class="footer"><span>Alive on Arrival</span><span>7 / 8</span></div>
 </section>
 
 <!-- 8 · CTA -->
 <section class="slide" id="s8" style="justify-content:center;">
   <div class="eyebrow">Zero to Shipped · Step 03</div>
-  <h2>Every step of it, written down — <span class="accent">free on Medium.</span></h2>
+  <h2>Every step of it, in full — <span class="accent">free on Medium.</span></h2>
   <div style="margin-top:80px;"><span class="chip">Link in the first comment ↓</span></div>
   <div class="lede" style="margin-top:90px; font-size:30px;"><strong>Zero to Shipped</strong><br><span class="mono" style="font-size:26px;">github.com/srivardhanjalan/kivan-tutorial</span></div>
   <div class="footer"><span>@srivardhanjalan</span><span>8 / 8</span></div>
