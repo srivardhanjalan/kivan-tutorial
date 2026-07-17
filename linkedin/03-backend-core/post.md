@@ -2,21 +2,21 @@
 
 ## Post body (carousel PDF attached, NO link in post)
 
-My app talked to a real AWS backend for the first time this week.
+My app went from localhost to real AWS this week — and the whole deploy is four commands.
 
-Until now it was a shell — five tabs, design tokens, everything local. This week it got a pulse: FastAPI, Docker, Terraform, App Runner. My own account.
+Until now it was a shell: five tabs, design tokens, everything local. Now it has a pulse. FastAPI in a container, Terraform, App Runner, my own account.
 
-The whole deploy is four commands. The whole backend is two dependencies and one router — nothing joins until something actually needs it.
+The backend itself is two dependencies and one router. Nothing joins until something actually needs it.
 
-And when I tear it down, a tag search across the account finds nothing. The stack is provably gone.
+And when I tear it down — destroy, plus one log-group sweep — a tag search across the account finds nothing.
 
-Then a deploy died at the three-minute mark while I was verifying the step. CREATE_FAILED, and the log group was completely empty.
+Then a deploy died at the three-minute mark while I was verifying the step. CREATE_FAILED, and the log group was empty.
 
 The same image ran fine on my laptop.
 
 Turns out newer Docker quietly attaches attestations that turn a push into an OCI image index. App Runner will update a service from one of those — it just won't create one.
 
-That fix and the Apple Silicon build trap now live in one deploy script.
+The fix is two flags on the push: --provenance=false --sbom=false. It lives in one deploy script now, next to the Apple Silicon build trap everyone warns you about.
 
 Swipe for the short version — the complete write-up is free 👇
 
@@ -38,8 +38,8 @@ https://github.com/srivardhanjalan/kivan-tutorial
 ## Posting notes
 
 - Upload `alive-on-arrival-carousel.pdf` as a document post; LinkedIn renders it as a swipeable carousel.
-- Document title (renders as a header on the doc; keep <60 chars): "Alive on Arrival — four commands to a live AWS backend". Cover headline ("My app has a real backend now."), post hook ("My app talked to a real AWS backend…"), and doc title all vary the claim — checked, no verbatim tripling.
-- Fold budget: mobile truncates at ~140 chars, desktop ~210. Hook must be complete inside ~140 — current draft passes (the hook sentence is ~64 chars and self-sufficient).
+- Document title (renders as a header on the doc; keep <60 chars): "Alive on Arrival — four commands to a live AWS backend". Cover headline ("My app has a real backend now."), post hook ("My app went from localhost to real AWS…"), and doc title all vary the claim — checked, no verbatim tripling.
+- Fold budget: mobile truncates at ~140 chars, desktop ~210. Hook must be complete inside ~140 — current draft passes (the hook sentence is ~89 chars and self-sufficient).
 - Hashtags: 3 relevant tags, end of post. Hashtag feeds were deprecated (late 2024); tags no longer drive reach — they're light topical metadata, nothing more.
 - Proof before posting. Typo fixes are safe only in the first ~10 minutes; substantive edits inside the 60–90-min momentum window measurably cut impressions (30–50% in creator data; LinkedIn documents no penalty — it's momentum interruption).
 - Post the first comment immediately (the CTA slide and body point to it). Self-comments don't hurt reach. Article link ALONE in comment #1; series intro + repo as a reply to it.
