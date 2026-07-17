@@ -15,6 +15,7 @@ from fastapi import HTTPException, status
 
 from app.config import settings
 from app.database import users_table
+from app.utils.clerk_api import CLERK_API, CLERK_TIMEOUT, clerk_headers
 from app.utils.timestamps import utc_now_iso
 
 logger = logging.getLogger(__name__)
@@ -73,11 +74,10 @@ def ensure_user_provisioned(token_claims: dict) -> None:
 
 def _fetch_clerk_profile(user_id: str) -> dict:
     """Fetch the user's profile from the Clerk Backend API."""
-    url = f"https://api.clerk.com/v1/users/{user_id}"
-    headers = {"Authorization": f"Bearer {settings.clerk_secret_key}"}
-
     try:
-        response = httpx.get(url, headers=headers, timeout=10.0)
+        response = httpx.get(
+            f"{CLERK_API}/users/{user_id}", headers=clerk_headers(), timeout=CLERK_TIMEOUT
+        )
     except httpx.HTTPError as e:
         logger.error(f"Clerk API unreachable while provisioning {user_id}: {e}")
         raise HTTPException(

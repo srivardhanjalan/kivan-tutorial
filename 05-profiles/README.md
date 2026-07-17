@@ -51,6 +51,7 @@ backend/
   app/models/users.py          + UserUpdate (birthday parses as a real date),
                                AccountDeletionRequest
   app/utils/user_provisioning.py  + the is_deleted 403 guard and forget_user()
+  app/utils/clerk_api.py       the one spelling of how we call Clerk
 frontend/                      step 04's app plus:
   src/components/Navigation.tsx     the stack navigator — Tabs at the root,
                                     Settings the first screen ever pushed

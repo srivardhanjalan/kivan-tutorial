@@ -5,7 +5,7 @@ import jwt as pyjwt
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.config import settings
+from app.utils.clerk_api import CLERK_API, clerk_headers
 from app.utils.user_provisioning import ensure_user_provisioned
 
 logger = logging.getLogger(__name__)
@@ -24,12 +24,9 @@ def _get_jwks_client() -> pyjwt.PyJWKClient:
     global _jwks_client
     if _jwks_client is None:
         _jwks_client = pyjwt.PyJWKClient(
-            "https://api.clerk.com/v1/jwks",
-            headers={
-                "Authorization": f"Bearer {settings.clerk_secret_key}",
-                # Clerk's CDN rejects urllib's default agent with 403
-                "User-Agent": "kivan-api/1.0",
-            },
+            f"{CLERK_API}/jwks",
+            # Clerk's CDN rejects urllib's default agent with 403
+            headers={**clerk_headers(), "User-Agent": "kivan-api/1.0"},
             lifespan=3600,
         )
     return _jwks_client

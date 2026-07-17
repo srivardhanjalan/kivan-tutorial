@@ -4,10 +4,10 @@ import httpx
 from botocore.exceptions import ClientError
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
-from app.config import settings
 from app.database import users_table
 from app.dependencies.auth import get_current_user_id
 from app.models.users import AccountDeletionRequest, OnboardingStatus, User, UserUpdate
+from app.utils.clerk_api import CLERK_API, CLERK_TIMEOUT, clerk_headers
 from app.utils.timestamps import utc_now_iso
 from app.utils.user_provisioning import forget_user
 
@@ -46,11 +46,9 @@ def _get_user_or_404(user_id: str) -> dict:
     return response["Item"]
 
 
-# Sync handlers on purpose: FastAPI threadpools them, keeping DynamoDB's
-# blocking I/O off the event loop.
-@router.get("/me", response_model=User)
-def get_current_user(user_id: str = Depends(get_current_user_id)):
-    """The current user's profile — the record JIT provisioning created."""
+def _get_active_user(user_id: str) -> dict:
+    """Every read goes through this: 404 if missing, 403 if deleted —
+    reads need the same deleted-account discipline as the guarded writes."""
     user_data = _get_user_or_404(user_id)
     if user_data.get("is_deleted", False):
         raise HTTPException(
@@ -58,6 +56,14 @@ def get_current_user(user_id: str = Depends(get_current_user_id)):
             detail="This account has been deleted."
         )
     return user_data
+
+
+# Sync handlers on purpose: FastAPI threadpools them, keeping DynamoDB's
+# blocking I/O off the event loop.
+@router.get("/me", response_model=User)
+def get_current_user(user_id: str = Depends(get_current_user_id)):
+    """The current user's profile — the record JIT provisioning created."""
+    return _get_active_user(user_id)
 
 
 @router.put("/me", response_model=User)
@@ -127,9 +133,7 @@ def delete_current_user(
     # succeeds the flow is retry-safe: a re-run sees Clerk 404 = done.
     try:
         response = httpx.delete(
-            f"https://api.clerk.com/v1/users/{user_id}",
-            headers={"Authorization": f"Bearer {settings.clerk_secret_key}"},
-            timeout=10.0,
+            f"{CLERK_API}/users/{user_id}", headers=clerk_headers(), timeout=CLERK_TIMEOUT
         )
     except httpx.HTTPError as e:
         logger.error(f"Clerk unreachable deleting {user_id}: {e}")
@@ -144,11 +148,12 @@ def delete_current_user(
             detail="Could not delete the account right now — try again"
         )
 
-    now = utc_now_iso()
+    # updated_at IS the deletion timestamp: the guarded writes freeze the
+    # record at this instant, so a separate deleted_at would never differ
     users_table.update_item(
         Key={"id": user_id},
-        UpdateExpression="SET is_deleted = :d, deleted_at = :at, updated_at = :at",
-        ExpressionAttributeValues={":d": True, ":at": now},
+        UpdateExpression="SET is_deleted = :d, updated_at = :at",
+        ExpressionAttributeValues={":d": True, ":at": utc_now_iso()},
     )
     # Without this, a deleted user cached as "known" skips the provisioning
     # guard until the process restarts (on this instance; writes are also
@@ -161,7 +166,7 @@ def delete_current_user(
 @router.get("/me/onboarding", response_model=OnboardingStatus)
 def get_onboarding_status(user_id: str = Depends(get_current_user_id)):
     """Whether the current user has completed the first-run tutorial."""
-    user_data = _get_user_or_404(user_id)
+    user_data = _get_active_user(user_id)
     return OnboardingStatus(
         onboarding_completed=user_data.get("onboarding_completed", False)
     )
