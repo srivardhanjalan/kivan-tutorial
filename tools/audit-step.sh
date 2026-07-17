@@ -78,7 +78,9 @@ BRIEF
       echo ""; echo "=== $f ==="; cat "$f"
     done
   } > "$PROMPT"
-  VERDICT=$(claude -p < "$PROMPT" 2>/dev/null)
+  # The reviewer runs on Fable (the workspace rule: Fable reviews,
+  # Opus/Sonnet execute) — override with AUDIT_REVIEWER_MODEL if needed
+  VERDICT=$(claude -p --model "${AUDIT_REVIEWER_MODEL:-claude-fable-5}" < "$PROMPT" 2>/dev/null)
   rm -f "$PROMPT"
   if echo "$VERDICT" | grep -q "NO_FINDINGS"; then
     echo "AI review: no semantic duplication meets the extraction bar"
