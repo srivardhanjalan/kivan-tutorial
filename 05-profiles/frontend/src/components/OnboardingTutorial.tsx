@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   FlatList,
   Modal,
   ViewToken,
-  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,10 +26,10 @@ interface OnboardingStep {
   id: string;
   title: string;
   description: string;
-  /** Emoji rendered in the gradient circle; the first step shows the logo */
+  /** Emoji steps render in a pastel-wash circle; without one, the step
+      shows the brand mark on a white disc */
   emoji?: string;
-  /** Pastel wash behind the step's mark — decorative, one per step */
-  gradient: [string, string];
+  gradient?: [string, string];
 }
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
@@ -38,7 +37,6 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     id: '1',
     title: 'Welcome to Kivan!',
     description: 'Wishlists for life’s moments — birthdays, weddings, festivals — all in one place',
-    gradient: ['#E9D5FF', '#DBEAFE'],
   },
   {
     id: '2',
@@ -79,19 +77,6 @@ export default function OnboardingTutorial({ visible, onDismiss }: OnboardingTut
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  // Re-run the entrance animation on every step change
-  useEffect(() => {
-    scaleAnim.setValue(0);
-    fadeAnim.setValue(0);
-    Animated.parallel([
-      Animated.spring(scaleAnim, { toValue: 1, tension: 50, friction: 7, useNativeDriver: true }),
-      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-    ]).start();
-  }, [currentIndex, scaleAnim, fadeAnim]);
-
   const isLastStep = currentIndex === ONBOARDING_STEPS.length - 1;
 
   const handleNext = () => {
@@ -110,27 +95,29 @@ export default function OnboardingTutorial({ visible, onDismiss }: OnboardingTut
 
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
 
+  // The carousel's own page slide is the transition — the steps themselves
+  // hold still (an entrance animation re-firing per swipe reads as noise)
   const renderStep = ({ item }: { item: OnboardingStep }) => (
     <View style={styles.stepContainer}>
-      <Animated.View style={{ transform: [{ scale: scaleAnim }], opacity: fadeAnim }}>
+      {item.emoji ? (
         <LinearGradient
-          colors={item.gradient}
+          colors={item.gradient!}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[CommonScreenStyles.center, styles.markCircle]}
         >
-          {item.emoji ? (
-            <Text style={styles.emoji}>{item.emoji}</Text>
-          ) : (
-            <BrandMark />
-          )}
+          <Text style={styles.emoji}>{item.emoji}</Text>
         </LinearGradient>
-      </Animated.View>
+      ) : (
+        // The mark's asset is white-backed — a white disc renders it clean
+        // (the loader's idiom), where a gradient would frame a white square
+        <View style={[CommonScreenStyles.center, styles.markCircle, styles.logoDisc]}>
+          <BrandMark />
+        </View>
+      )}
 
-      <Animated.Text style={[styles.title, { opacity: fadeAnim }]}>{item.title}</Animated.Text>
-      <Animated.Text style={[styles.description, { opacity: fadeAnim }]}>
-        {item.description}
-      </Animated.Text>
+      <Text style={styles.title}>{item.title}</Text>
+      <Text style={styles.description}>{item.description}</Text>
     </View>
   );
 
@@ -225,6 +212,9 @@ const styles = StyleSheet.create({
   },
   emoji: {
     fontSize: 80,
+  },
+  logoDisc: {
+    backgroundColor: Colors.white,
   },
   title: {
     ...Typography.largeTitle,
