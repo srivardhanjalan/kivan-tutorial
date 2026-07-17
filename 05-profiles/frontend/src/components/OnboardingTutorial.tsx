@@ -65,14 +65,14 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
 
 interface OnboardingTutorialProps {
   visible: boolean;
-  /** Fired for both "Get Started" and Skip — the tutorial never re-shows */
+  /** Fired for both "Get Started" and Skip */
   onDismiss: () => void;
 }
 
 /**
- * The first-run tutorial: a swipeable full-screen carousel shown once after
- * a user's first sign-in. Completion is persisted on the user's backend
- * record, so reinstalls and new devices don't replay it.
+ * The welcome carousel: a swipeable full-screen modal. What dismissal MEANS
+ * belongs to the caller — Navigation persists first-run completion on the
+ * backend record; Settings replays it with no persistence at all.
  */
 export default function OnboardingTutorial({ visible, onDismiss }: OnboardingTutorialProps) {
   const insets = useSafeAreaInsets();

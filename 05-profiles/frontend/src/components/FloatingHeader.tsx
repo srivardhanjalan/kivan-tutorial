@@ -16,7 +16,8 @@ interface FloatingHeaderProps {
   title?: string;
   /** Content before the title — the back button on pushed screens */
   leftContent?: React.ReactNode;
-  /** Content on the right — header action buttons */
+  /** The right-side header action; its pressed-fill circle is the visible
+      boundary, so the BUTTON edge (not the glyph) sits on the content edge */
   rightContent?: React.ReactNode;
 }
 
@@ -45,7 +46,7 @@ const FloatingHeader: React.FC<FloatingHeaderProps> = ({ title, leftContent, rig
         <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={ChromeMaxFontSizeMultiplier}>
           {title}
         </Text>
-        {rightContent && <View style={styles.rightActions}>{rightContent}</View>}
+        {rightContent}
       </View>
     </View>
   );
@@ -69,12 +70,6 @@ const styles = StyleSheet.create({
   title: {
     ...Typography.largeTitle,
     flex: 1,
-  },
-  rightActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    // The pressed fill circle is the visible boundary of these buttons, so
-    // the BUTTON edge (not the glyph) sits on the content edge
   },
 });
 

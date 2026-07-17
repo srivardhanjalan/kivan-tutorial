@@ -6,11 +6,8 @@ import Typography from '../constants/Typography';
 import Opacity from '../constants/Opacity';
 import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 
-/**
- * The one-time nudge to add a birthday. The dismissal persists on the
- * backend record — the original app dropped the flag server-side and
- * re-nagged forever; this step ships the version that remembers.
- */
+/** The nudge to add a birthday — fires callbacks; the caller decides what
+    dismissal persists (HomeScreen writes it to the backend record). */
 const BirthdayPrompt: React.FC<{
   onAdd: () => void;
   onDismiss: () => void;
