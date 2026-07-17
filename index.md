@@ -24,6 +24,7 @@ Code is best browsed [on GitHub](https://github.com/srivardhanjalan/kivan-tutori
 ## LinkedIn carousels (browser-rendered slides; PDF + post copy on GitHub)
 
 - [02 · Dressed to Ship — slides](linkedin/02-app-shell/carousel.html) · [PDF + post copy](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/linkedin/02-app-shell)
+- [03 · Alive on Arrival — slides](linkedin/03-backend-core/carousel.html) · [PDF + post copy](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/linkedin/03-backend-core)
 
 ## The code (on GitHub)
 

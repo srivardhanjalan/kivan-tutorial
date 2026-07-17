@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<!--
+  measure-bboxes.html — pixel bounding boxes for carousel image crops.
+
+  Usage (headless):
+    chrome --headless=new --allow-file-access-from-files --virtual-time-budget=3000 \
+      --dump-dom "file://$PWD/tools/measure-bboxes.html?img=../mocks/mocks-03-doa.png" \
+      | grep -o '{"size.*}'
+
+  Reports, in image pixel coordinates:
+    content — everything that differs from the corner background color
+    dark    — terminal/window regions (r,g,b < 80)
+    red     — house-accent regions (r>190, g<110)
+    green   — success regions (g>130, r<110)
+
+  First callers: linkedin/02-app-shell (slide-7 restack, measured ad hoc),
+  linkedin/03-backend-core (DOA + truth crops) — committed on the second.
+-->
+<html><body><pre id="out">measuring…</pre>
+<script>
+const img = new Image();
+const src = new URLSearchParams(location.search).get('img');
+img.onload = () => {
+  const W = img.naturalWidth, H = img.naturalHeight;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0);
+  const d = ctx.getImageData(0, 0, W, H).data;
+  const at = (x, y) => { const i = (y*W + x)*4; return [d[i], d[i+1], d[i+2]]; };
+  const scan = (test) => {
+    let minx = W, miny = H, maxx = 0, maxy = 0, found = false;
+    for (let y = 0; y < H; y += 2) for (let x = 0; x < W; x += 2) {
+      const [r, g, b] = at(x, y);
+      if (test(r, g, b)) { found = true;
+        if (x < minx) minx = x; if (x > maxx) maxx = x;
+        if (y < miny) miny = y; if (y > maxy) maxy = y; }
+    }
+    return found ? [minx, miny, maxx, maxy] : null;
+  };
+  const [br, bg, bb] = at(2, 2);
+  document.getElementById('out').textContent = JSON.stringify({
+    size: [W, H],
+    content: scan((r, g, b) => Math.abs(r-br) + Math.abs(g-bg) + Math.abs(b-bb) > 60),
+    dark:    scan((r, g, b) => r < 80 && g < 80 && b < 90),
+    red:     scan((r, g, b) => r > 190 && g < 110 && b < 130),
+    green:   scan((r, g, b) => g > 130 && r < 110 && b < 130),
+  });
+};
+img.src = src;
+</script></body></html>

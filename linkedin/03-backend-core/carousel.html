@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Alive on Arrival — LinkedIn carousel</title>
+<style>
+  @page { size: 1080px 1350px; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: -apple-system, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    color: #1A1A1A;
+  }
+  .slide {
+    width: 1080px; height: 1350px;
+    background: linear-gradient(135deg, #fdecef 0%, #fbfbfd 46%, #ecf2f8 100%);
+    padding: 100px 90px;
+    display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
+    page-break-after: always;
+  }
+  .eyebrow {
+    color: #FF385C; font-size: 27px; font-weight: 700;
+    letter-spacing: .2em; text-transform: uppercase;
+  }
+  h1 { font-size: 108px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.04; margin-top: 32px; }
+  h2 { font-size: 88px;  font-weight: 800; letter-spacing: -0.025em; line-height: 1.08; margin-top: 32px; }
+  .lede { font-size: 40px; line-height: 1.4; color: #6E6E73; margin-top: 40px; font-weight: 500; }
+  .lede strong { color: #1A1A1A; font-weight: 700; }
+  .accent { color: #FF385C; }
+
+  .chip {
+    display: inline-block; background: #FF385C; color: #fff;
+    border-radius: 999px; padding: 20px 38px;
+    font-family: "SF Mono", Menlo, monospace; font-size: 28px; font-weight: 600;
+    box-shadow: 0 6px 18px rgba(255,56,92,.25);
+  }
+
+  .footer {
+    position: absolute; bottom: 70px; left: 90px; right: 90px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 25px; font-weight: 700; letter-spacing: .14em;
+    text-transform: uppercase; color: #9a9aa0;
+  }
+
+  .card {
+    background: #fff; border-radius: 36px; box-shadow: 0 18px 50px rgba(26,26,26,.10);
+    overflow: hidden;
+  }
+
+  .stats { display: flex; gap: 24px; margin-top: 90px; }
+  .stat {
+    flex: 1; background: #fff; border-radius: 32px; padding: 52px 16px;
+    text-align: center; box-shadow: 0 10px 30px rgba(26,26,26,.07);
+  }
+  .stat .n { font-size: 76px; font-weight: 800; letter-spacing: -0.03em; color: #FF385C; }
+  .stat .l { font-size: 26px; color: #6E6E73; margin-top: 16px; font-weight: 600; line-height: 1.3; }
+
+  .phone {
+    width: 360px; border-radius: 52px; border: 10px solid #1A1A1A;
+    overflow: hidden; box-shadow: 0 30px 70px rgba(26,26,26,.18);
+    background: #fff;
+  }
+  .phone img { width: 100%; display: block; }
+  .mono { font-family: "SF Mono", Menlo, monospace; }
+
+  .term {
+    background: #1e2027; border-radius: 28px; padding: 46px 50px;
+    color: #e8e8ec; font-family: "SF Mono", Menlo, monospace;
+    font-size: 29px; line-height: 1.75;
+    box-shadow: 0 18px 50px rgba(26,26,26,.25);
+  }
+  .term .cmd { color: #ff6b81; }
+  .term .cm { color: #7f8496; }
+  .crop { overflow: hidden; }
+  .crop img { display: block; }
+  .tag { font-size: 26px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<!-- 1 · HOOK — one claim + one visual -->
+<section class="slide" id="s1">
+  <div class="eyebrow">Zero to Shipped · Step 03</div>
+  <h1 style="margin-top:48px;">The deploy died. The logs were <span class="accent">empty.</span></h1>
+  <div class="lede" style="max-width:520px;">The same image ran perfectly on my laptop.</div>
+  <div class="lede" style="margin-top:90px; font-weight:800; color:#FF385C; letter-spacing:.12em; text-transform:uppercase; font-size:28px;">swipe →</div>
+  <div class="crop" style="position:absolute; right:80px; bottom:210px; width:620px; height:262px;">
+    <img src="../../mocks/mocks-03-doa.png" alt="attempt 1 — CREATE_FAILED, empty logs (real deploy output)" style="width:1385px; margin:-237px 0 0 -84px;">
+  </div>
+  <div style="position:absolute; left:90px; bottom:70px;">
+    <div style="font-size:38px; font-weight:800; letter-spacing:-0.01em; color:#1A1A1A;">Alive on Arrival<span class="accent">.</span></div>
+    <div style="margin-top:12px; font-size:25px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#9a9aa0;">@srivardhanjalan</div>
+  </div>
+</section>
+
+<!-- 2 · THE PAYOFF — the four commands -->
+<section class="slide" id="s2" style="justify-content:center;">
+  <div class="eyebrow">The payoff that story interrupted</div>
+  <h2>A FastAPI backend on your own AWS — in <span class="accent">four commands.</span></h2>
+  <div class="term" style="margin-top:80px; font-size:24px; line-height:1.72;">
+    <span class="cm"># 1 · the registry first</span><br>
+    <span class="cmd">$ terraform apply -target=aws_ecr_repository.backend</span><br>
+    <span class="cm"># 2 · build amd64 → push</span><br>
+    <span class="cmd">$ ./scripts/deploy.sh</span><br>
+    <span class="cm"># 3 · the service (~5 min)</span><br>
+    <span class="cmd">$ terraform apply</span><br>
+    <span class="cm"># 4 · instant re-run: tags the log groups</span><br>
+    <span class="cmd">$ ./scripts/deploy.sh</span>
+  </div>
+  <div class="footer"><span>Alive on Arrival</span><span>2 / 8</span></div>
+</section>
+
+<!-- 3 · THE RULE — stat row -->
+<section class="slide" id="s3" style="justify-content:center;">
+  <div class="eyebrow">The rule</div>
+  <h2>Nothing joins before its <span class="accent">first caller.</span></h2>
+  <div class="stats">
+    <div class="stat"><div class="n">2</div><div class="l">lines in requirements.txt</div></div>
+    <div class="stat"><div class="n">1</div><div class="l">router: health.py</div></div>
+    <div class="stat"><div class="n">0</div><div class="l">databases, queues, auth</div></div>
+  </div>
+  <div class="lede" style="margin-top:80px;">They arrive with the steps that consume them.</div>
+  <div class="footer"><span>Alive on Arrival</span><span>3 / 8</span></div>
+</section>
+
+<!-- 4 · THE DISCIPLINE — text only -->
+<section class="slide" id="s4" style="justify-content:center;">
+  <div class="eyebrow">The discipline</div>
+  <h2>Every resource tagged, grouped, and <span class="accent">provably gone.</span></h2>
+  <div class="lede" style="max-width:800px;">Destroy, sweep, tag-search: nothing remains.</div>
+  <div class="footer"><span>Alive on Arrival</span><span>4 / 8</span></div>
+</section>
+
+<!-- 5 · THE QUOTE -->
+<section class="slide" id="s5" style="justify-content:center;">
+  <div class="eyebrow">CREATE_FAILED · empty logs</div>
+  <h2 style="font-size:84px; line-height:1.14;">“Two <span class="accent">completely different</span> causes share this <span class="accent">identical</span> symptom.”</h2>
+  <div class="footer"><span>Alive on Arrival</span><span>5 / 8</span></div>
+</section>
+
+<!-- 6 · DEAD VS ALIVE — restacked real terminals -->
+<section class="slide" id="s6" style="justify-content:center;">
+  <div class="eyebrow">Same code, different manifest</div>
+  <h2 style="font-size:72px;">Dead on arrival vs <span class="accent">alive on arrival.</span></h2>
+  <div style="margin-top:32px;">
+    <div class="tag" style="color:#e5484d;">Dead on arrival</div>
+    <div class="crop" style="width:680px; height:284px; margin-top:14px;">
+      <img src="../../mocks/mocks-03-doa.png" alt="Attempt 1 — CREATE_FAILED, empty logs" style="width:1500px; margin:-257px 0 0 -91px;">
+    </div>
+    <div class="tag" style="color:#2f9e44; margin-top:22px;">Alive on arrival</div>
+    <div class="crop" style="width:680px; height:284px; margin-top:14px;">
+      <img src="../../mocks/mocks-03-doa.png" alt="Attempt 2 — attestation-free push, RUNNING" style="width:1500px; margin:-257px 0 0 -780px;">
+    </div>
+  </div>
+  <div class="lede" style="margin-top:26px; font-size:30px;">The wrong build context, and default attestations. One script now prevents both.</div>
+  <div class="footer"><span>Alive on Arrival</span><span>6 / 8</span></div>
+</section>
+
+<!-- 7 · PROOF OF LIFE — the truth phones -->
+<section class="slide" id="s7" style="justify-content:center;">
+  <div class="eyebrow">The proof of life</div>
+  <h2>The app tells the <span class="accent">truth.</span></h2>
+  <div class="crop" style="width:820px; height:655px; margin:56px auto 0; border-radius:32px;">
+    <img src="../../mocks/mocks-03-truth.png" alt="Backend healthy vs unreachable — real screenshots" style="width:1375px; margin:-84px 0 0 -275px;">
+  </div>
+  <div class="lede" style="margin-top:44px; font-size:34px;">Green when healthy. Red — pointing at the likely culprit — when it isn't.</div>
+  <div class="footer"><span>Alive on Arrival</span><span>7 / 8</span></div>
+</section>
+
+<!-- 8 · CTA -->
+<section class="slide" id="s8" style="justify-content:center;">
+  <div class="eyebrow">Zero to Shipped · Step 03</div>
+  <h2>The full build, step by step, <span class="accent">free on Medium.</span></h2>
+  <div style="margin-top:80px;"><span class="chip">Link in the first comment ↓</span></div>
+  <div class="lede" style="margin-top:90px; font-size:30px;"><strong>Zero to Shipped</strong><br><span class="mono" style="font-size:26px;">github.com/srivardhanjalan/kivan-tutorial</span></div>
+  <div class="footer"><span>@srivardhanjalan</span><span>8 / 8</span></div>
+</section>
+
+<script>
+  // Preview mode: open with #s4 to show only that slide (used for per-slide verification screenshots)
+  if (location.hash) {
+    document.querySelectorAll('.slide').forEach(s => {
+      if ('#' + s.id !== location.hash) s.style.display = 'none';
+    });
+  }
+</script>
+</body>
+</html>
