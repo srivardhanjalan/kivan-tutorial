@@ -35,6 +35,8 @@ export function setAuthTokenGetter(getter: () => Promise<string | null>): void {
   getAuthToken = getter;
 }
 
+// Every error is a human-readable reason (missing env var, or which path
+// failed with what status) — callers own presentation, this owns diagnosis
 async function request(path: string, init?: RequestInit): Promise<Response> {
   if (!BASE_URL) {
     throw new Error('EXPO_PUBLIC_API_URL is not set (frontend/.env.local)');
@@ -53,10 +55,7 @@ async function request(path: string, init?: RequestInit): Promise<Response> {
   return res;
 }
 
-/**
- * Resolves when the backend answers /health, rejects with a human-readable
- * reason otherwise. Callers own presentation; this owns diagnosis.
- */
+/** Resolves when the backend answers /health. */
 export async function fetchHealth(): Promise<void> {
   await request('/health');
 }
