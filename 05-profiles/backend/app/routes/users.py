@@ -2,7 +2,7 @@ import logging
 
 import httpx
 from botocore.exceptions import ClientError
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.database import users_table
 from app.dependencies.auth import get_current_user_id
@@ -159,8 +159,6 @@ def delete_current_user(
     # guard until the process restarts (on this instance; writes are also
     # guarded at the table for every other instance)
     forget_user(user_id)
-
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/me/onboarding", response_model=OnboardingStatus)

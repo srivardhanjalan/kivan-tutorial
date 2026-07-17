@@ -14,7 +14,7 @@ class User(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     image_url: Optional[str] = None
-    birthday: Optional[str] = None  # ISO date, set from Settings
+    birthday: Optional[str] = None  # ISO date (YYYY-MM-DD)
     birthday_prompt_dismissed: bool = False
     onboarding_completed: bool = False
     created_at: str
