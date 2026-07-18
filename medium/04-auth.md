@@ -10,7 +10,7 @@ Who's allowed to create a user? I got it wrong first. By the end of this step yo
 
 *(Step 04 of **Zero to Shipped**, a production social-wishlist app on Expo, FastAPI, and AWS. New here? **[Start with the introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**. Code is the `04-auth/` folder; [PR #22](https://github.com/srivardhanjalan/kivan-tutorial/pull/22/files) is every line this step adds.)*
 
-## Who's allowed to create a user
+## Nobody creates their own user
 
 Here's the obvious design, the one I reached for first. The phone signs up with Clerk, then calls `POST /users/sync` with the name and email to give the backend a record. Clean, direct, wrong.
 
@@ -83,7 +83,8 @@ One last scar: the UI test could not tap the carousel's Next button. Its label s
 ## You're done when
 
 - `curl $API/users/me` → 401; with a garbage token → 401, generic detail
-- `curl -X POST $API/users/sync` → 404, because the sync endpoint doesn't exist; no client can write its own record
+- `curl -X POST $API/users/sync` → 404, the sync endpoint doesn't exist
+- A wrong `ENVIRONMENT` on an authed route → `503` naming the `terraform apply` fix, never a `401`
 - Sign up with a `+clerk_test` address, code `424242` → the first-run tutorial appears
 - Home greets you by name, and **Record** shows your email + provisioned date in green, read from DynamoDB, created by no client
 - Sign out → sign in → no tutorial replay (the flag survived on the backend record)
