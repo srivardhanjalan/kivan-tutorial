@@ -12,11 +12,11 @@ By the end of this step you sign up in the app, a code lands in your inbox, the 
 
 ## Who's allowed to create a user
 
-The obvious design, the one I reached for first: the phone signs up with Clerk, then calls `POST /users/sync` with the name and email so the backend has a record. Clean, direct, wrong.
+The obvious design, the one I reached for first: the phone signs up with Clerk, then calls `POST /users/sync` with the name and email to give the backend a record. Clean, direct, wrong.
 
-It hands the client a pen to fill in its own database row — so the client can claim any name, any email, any field I haven't invented yet. And it fails on its own terms: only sign-*up* syncs, so a rebuilt database 404s every returning user forever, and a signup interrupted mid-sync leaves half a user in the table.
+It hands the client a pen to fill in its own database row — any name, any email, any field I haven't invented yet, all of it attacker-controlled. And it fails on its own terms: only sign-*up* syncs — rebuild the database and every returning user 404s forever; interrupt a signup mid-sync and half a user sits in the table.
 
-So there's no sync endpoint. The backend writes the record itself — the first time the auth dependency sees a valid token for a user it doesn't know, it fetches that user's real profile from Clerk server-to-server and writes the row:
+This step has no sync endpoint. The backend writes the record itself — the first time the auth dependency sees a valid token for a user it doesn't know, it fetches that user's real profile from Clerk server-to-server and writes the row:
 
 ```python
 users_table.put_item(
@@ -27,13 +27,13 @@ users_table.put_item(
 
 The profile comes from Clerk, not from whatever the phone sent. The condition stops two racing requests from both creating. And a rebuilt database heals on the next sign-in, because provisioning now runs on every authenticated request instead of once.
 
-The record is eight fields — id, email, first and last name, avatar, the onboarding flag, two timestamps. No follower counts, no search keys, no roles: DynamoDB is schemaless, so each joins the step that first reads it, one line, no migration. The table under it is a hash key and nothing else.
+The record is eight fields — id, email, first and last name, avatar, the onboarding flag, two timestamps. No follower counts, no search keys, no roles: DynamoDB is schemaless — each joins the step that first reads it, one line, no migration. The table under it is a hash key and nothing else.
 
 ## Sign-in and sign-up are the same screen
 
 I built sign-in, started sign-up, and stopped ten lines in: same screen. Both are OAuth buttons, an "or" divider, email and password, a brand button, and a footer link to the other. Sign-up adds a verification step and nothing else.
 
-So it's one component, `AuthMethods`, with the verb plugged in. The OAuth buttons are a config array — same idiom as the step-02 tab bar — so adding Apple next to Google is a line in a list, not a new screen.
+That makes them one component, `AuthMethods`, with the verb plugged in. The OAuth buttons are a config array — same idiom as the step-02 tab bar — and adding Apple next to Google is a line in a list, not a new screen.
 
 ![Three real simulator screenshots: the sign-in screen, the first-run tutorial, and Home greeting Kivan Tester by name](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-learns.png?v=1d39c8c)
 
@@ -43,15 +43,15 @@ The best cleanup here wasn't in my draft; it was in my fix. Collapsing the logo'
 
 ## 401 means you, 503 means me
 
-Auth is where you lose the most hours to debugging, so the status codes do the pointing. Missing token, garbage token, made-up key ID — the caller's problem, all a flat `401 Invalid authentication token`. Clerk unreachable, secret key wrong, users table missing — my problem, each a `503` whose message names the fix; the missing-table one says to run `terraform apply` and set `ENVIRONMENT` to match. Get this wrong and a Clerk outage surfaces as a `401` with the library's error string attached — sending a valid user to debug a fine token, and leaking internals to anyone who asks.
+Auth is where you lose the most hours to debugging. Here the status codes point straight at the culprit. Missing token, garbage token, made-up key ID — the caller's problem, all a flat `401 Invalid authentication token`. Clerk unreachable, secret key wrong, users table missing — my problem, each a `503` whose message names the fix; the missing-table one says to run `terraform apply` and set `ENVIRONMENT` to match. Get this wrong and a Clerk outage surfaces as a `401` with the library's error string attached — sending a valid user to debug a fine token, and leaking internals to anyone who asks.
 
-Two sharper traps live in the verifier, both found only by reading PyJWT's source. Spam tokens with unknown key IDs and the library re-fetches Clerk's key set every request; I can't stop the refetch, but I can stop it looking like an outage. An unknown key is the caller's `401` at info level — never a `503`, never error-level — or the spam poses as a Clerk failure while it floods the logs. The second hides in a flag: `cache_keys=True` looks like the performance option, but it's an `lru_cache` with no expiry, so a key Clerk rotates or revokes stays trusted until the process restarts. Caching the key *set* for an hour gives the same networkless hot path and catches a rotation within the hour.
+Two sharper traps live in the verifier, both found only by reading PyJWT's source. Spam tokens with unknown key IDs and the library re-fetches Clerk's key set every request; I can't stop the refetch, but I can stop it looking like an outage. An unknown key is the caller's `401` at info level — never a `503`, never error-level — or the spam poses as a Clerk failure while it floods the logs. The second hides in a flag: `cache_keys=True` looks like the performance option, but it's an `lru_cache` with no expiry — a key Clerk rotates or revokes stays trusted until the process restarts. Caching the key *set* for an hour gives the same networkless hot path and catches a rotation within the hour.
 
 ## Keeping the secret key out of the console
 
 The backend needs Clerk's secret key. The lazy way is a plaintext App Runner env var — sitting in the console in the clear, readable by anyone with `apprunner:DescribeService`. Instead: the key lives in SSM as a **SecureString**, App Runner resolves it at instance start via `runtime_environment_secrets`, and the instance role can read that one parameter and nothing else.
 
-That last line broke my first rollout — `CREATE_FAILED`, no logs, the same empty failure step 03 hit twice, except this time the image was fine. App Runner checked its secret access *while Terraform was still attaching the SSM policy*: nothing tied the two together, so Terraform built them in parallel and the check lost the race. One line fixes it:
+That last line broke my first rollout — `CREATE_FAILED`, no logs, the same empty failure step 03 hit twice, except this time the image was fine. App Runner checked its secret access *while Terraform was still attaching the SSM policy*: nothing tied the two together; Terraform built them in parallel and the check lost the race. One line fixes it:
 
 ```hcl
 depends_on = [aws_iam_role_policy.apprunner_instance_ssm]
@@ -59,7 +59,7 @@ depends_on = [aws_iam_role_policy.apprunner_instance_ssm]
 
 ![Terminal: CREATE_FAILED with no logs, the missing IAM policy, the depends_on fix, and the service reaching RUNNING](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-race.png?v=1d39c8c)
 
-A `CREATE_FAILED` service won't heal itself, so it also takes a `terraform apply -replace` to rebuild the dead one with the policy in place. Same image, `RUNNING`.
+A `CREATE_FAILED` service won't heal itself. Fixing the cause isn't enough — you need a `terraform apply -replace` to tear down the dead one and rebuild it with the policy in place. Same image, `RUNNING`.
 
 ## A tutorial that survives a reinstall
 
