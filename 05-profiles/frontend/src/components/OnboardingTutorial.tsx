@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   FlatList,
   Modal,
   ViewToken,
-  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,70 +26,65 @@ interface OnboardingStep {
   id: string;
   title: string;
   description: string;
-  /** Emoji rendered in the gradient circle; the first step shows the logo */
+  /** Emoji steps render in a pastel-wash circle; without one, the step
+      shows the brand mark on a white disc */
   emoji?: string;
-  /** Pastel wash behind the step's mark — decorative, one per step */
-  gradient: [string, string];
+  gradient?: [string, string];
 }
+
+// The carousel's decorative pastels, named once — steps mix and match
+const PASTEL = {
+  pink: '#FBCFE8',
+  peach: '#FED7AA',
+  mint: '#A7F3D0',
+  sky: '#BAE6FD',
+  lilac: '#DDD6FE',
+} as const;
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: '1',
     title: 'Welcome to Kivan!',
     description: 'Wishlists for life’s moments — birthdays, weddings, festivals — all in one place',
-    gradient: ['#E9D5FF', '#DBEAFE'],
   },
   {
     id: '2',
     title: 'Wishes from real stores',
     description: 'Browse storefronts and real store websites inside the app, in your currency',
     emoji: '🛍️',
-    gradient: ['#FBCFE8', '#FED7AA'],
+    gradient: [PASTEL.pink, PASTEL.peach],
   },
   {
     id: '3',
     title: 'Better together',
     description: 'Follow friends, plan events around wishlists, and never miss a moment',
     emoji: '🎉',
-    gradient: ['#A7F3D0', '#BAE6FD'],
+    gradient: [PASTEL.mint, PASTEL.sky],
   },
   {
     id: '4',
     title: 'Ready to begin?',
     description: 'Your account is live — the shelves fill up as the app grows around you',
     emoji: '🚀',
-    gradient: ['#DDD6FE', '#FBCFE8'],
+    gradient: [PASTEL.lilac, PASTEL.pink],
   },
 ];
 
 interface OnboardingTutorialProps {
   visible: boolean;
-  /** Fired for both "Get Started" and Skip — the tutorial never re-shows */
+  /** Fired for both "Get Started" and Skip */
   onDismiss: () => void;
 }
 
 /**
- * The first-run tutorial: a swipeable full-screen carousel shown once after
- * a user's first sign-in. Completion is persisted on the user's backend
- * record, so reinstalls and new devices don't replay it.
+ * The welcome carousel: a swipeable full-screen modal. What dismissal MEANS
+ * belongs to the caller — Navigation persists first-run completion on the
+ * backend record; Settings replays it with no persistence at all.
  */
 export default function OnboardingTutorial({ visible, onDismiss }: OnboardingTutorialProps) {
   const insets = useSafeAreaInsets();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
-
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  // Re-run the entrance animation on every step change
-  useEffect(() => {
-    scaleAnim.setValue(0);
-    fadeAnim.setValue(0);
-    Animated.parallel([
-      Animated.spring(scaleAnim, { toValue: 1, tension: 50, friction: 7, useNativeDriver: true }),
-      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-    ]).start();
-  }, [currentIndex, scaleAnim, fadeAnim]);
 
   const isLastStep = currentIndex === ONBOARDING_STEPS.length - 1;
 
@@ -110,27 +104,29 @@ export default function OnboardingTutorial({ visible, onDismiss }: OnboardingTut
 
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
 
+  // The carousel's own page slide is the transition — the steps themselves
+  // hold still (an entrance animation re-firing per swipe reads as noise)
   const renderStep = ({ item }: { item: OnboardingStep }) => (
     <View style={styles.stepContainer}>
-      <Animated.View style={{ transform: [{ scale: scaleAnim }], opacity: fadeAnim }}>
+      {item.emoji ? (
         <LinearGradient
-          colors={item.gradient}
+          colors={item.gradient!}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[CommonScreenStyles.center, styles.markCircle]}
         >
-          {item.emoji ? (
-            <Text style={styles.emoji}>{item.emoji}</Text>
-          ) : (
-            <BrandMark />
-          )}
+          <Text style={styles.emoji}>{item.emoji}</Text>
         </LinearGradient>
-      </Animated.View>
+      ) : (
+        // The mark's asset is white-backed — a white disc renders it clean
+        // (the loader's idiom), where a gradient would frame a white square
+        <View style={[CommonScreenStyles.center, styles.markCircle, styles.logoDisc]}>
+          <BrandMark />
+        </View>
+      )}
 
-      <Animated.Text style={[styles.title, { opacity: fadeAnim }]}>{item.title}</Animated.Text>
-      <Animated.Text style={[styles.description, { opacity: fadeAnim }]}>
-        {item.description}
-      </Animated.Text>
+      <Text style={styles.title}>{item.title}</Text>
+      <Text style={styles.description}>{item.description}</Text>
     </View>
   );
 
@@ -225,6 +221,9 @@ const styles = StyleSheet.create({
   },
   emoji: {
     fontSize: 80,
+  },
+  logoDisc: {
+    backgroundColor: Colors.white,
   },
   title: {
     ...Typography.largeTitle,

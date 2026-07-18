@@ -1,12 +1,17 @@
 import React from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import FloatingHeader from '../FloatingHeader';
 import LoadingView from '../LoadingView';
+import Colors from '../../constants/Colors';
+import Opacity from '../../constants/Opacity';
 import { CommonScreenStyles, Spacing } from '../../constants/ScreenStyles';
 
 interface FloatingHeaderLayoutProps {
-  title?: string;
+  title: string;
+  /** Renders a back button before the title — pushed screens pass goBack */
+  onBack?: () => void;
   /** Right header content (action buttons) */
   headerRight?: React.ReactNode;
   /** Replaces the screen with the standard branded loading state */
@@ -27,6 +32,7 @@ interface FloatingHeaderLayoutProps {
  */
 const FloatingHeaderLayout: React.FC<FloatingHeaderLayoutProps> = ({
   title,
+  onBack,
   headerRight,
   loading = false,
   children,
@@ -45,7 +51,26 @@ const FloatingHeaderLayout: React.FC<FloatingHeaderLayoutProps> = ({
         {children}
       </ScrollView>
 
-      <FloatingHeader title={title} rightContent={headerRight} />
+      <FloatingHeader
+        title={title}
+        leftContent={
+          onBack ? (
+            // Not a HeaderIconButton: pulled to the screen edge, its
+            // pressed-fill circle would clip off-screen — the back button
+            // keeps the full tap target but presses with opacity instead
+            <TouchableOpacity
+              onPress={onBack}
+              activeOpacity={Opacity.pressed}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+              style={[CommonScreenStyles.center, styles.backButton]}
+            >
+              <Ionicons name="chevron-back" size={Spacing.chromeIconSize} color={Colors.dark} />
+            </TouchableOpacity>
+          ) : undefined
+        }
+        rightContent={headerRight}
+      />
     </SafeAreaView>
   );
 };
@@ -53,6 +78,11 @@ const FloatingHeaderLayout: React.FC<FloatingHeaderLayoutProps> = ({
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
+  },
+  backButton: {
+    width: Spacing.chromeTouchTarget,
+    height: Spacing.chromeTouchTarget,
+    marginLeft: Spacing.backChevronPull,
   },
   scrollContent: {
     paddingTop: Spacing.floatingHeaderContentPadding,

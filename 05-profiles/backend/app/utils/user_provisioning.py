@@ -15,6 +15,7 @@ from fastapi import HTTPException, status
 
 from app.config import settings
 from app.database import users_table
+from app.utils.clerk_api import CLERK_API, CLERK_TIMEOUT, clerk_headers
 from app.utils.timestamps import utc_now_iso
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,12 @@ logger = logging.getLogger(__name__)
 # interrupted signup self-heals on the next request, but a table rebuilt
 # UNDER a running backend needs that backend restarted.
 _known_user_ids: set = set()
+
+
+def forget_user(user_id: str) -> None:
+    """Evict a user from the known-ids cache — account deletion calls this
+    so the very next request re-reads the record and hits the 403 guard."""
+    _known_user_ids.discard(user_id)
 
 
 def ensure_user_provisioned(token_claims: dict) -> None:
@@ -50,6 +57,13 @@ def ensure_user_provisioned(token_claims: dict) -> None:
         raise
 
     if "Item" in response:
+        if response["Item"].get("is_deleted", False):
+            # Defense in depth: deletion removes the Clerk user, but a token
+            # minted before that (or a failed Clerk call) must still bounce
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This account has been deleted and cannot be restored."
+            )
         _known_user_ids.add(user_id)
         return
 
@@ -60,11 +74,10 @@ def ensure_user_provisioned(token_claims: dict) -> None:
 
 def _fetch_clerk_profile(user_id: str) -> dict:
     """Fetch the user's profile from the Clerk Backend API."""
-    url = f"https://api.clerk.com/v1/users/{user_id}"
-    headers = {"Authorization": f"Bearer {settings.clerk_secret_key}"}
-
     try:
-        response = httpx.get(url, headers=headers, timeout=10.0)
+        response = httpx.get(
+            f"{CLERK_API}/users/{user_id}", headers=clerk_headers(), timeout=CLERK_TIMEOUT
+        )
     except httpx.HTTPError as e:
         logger.error(f"Clerk API unreachable while provisioning {user_id}: {e}")
         raise HTTPException(

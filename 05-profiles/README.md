@@ -1,29 +1,19 @@
-# Step 04 — Auth & Onboarding
+# Step 05 — Profiles
 
-The app learns your name: Clerk sign-in/up (email + code, Google, Apple),
-JWKS-verified tokens on the backend, a DynamoDB user record created
-**just-in-time** by your first authenticated request, and a first-run
-tutorial whose "seen it" flag lives on that record — ending with Home
-greeting you by name over a line item proving the backend knows you too.
+The account gets a past and a delete button: a Settings screen pushed over
+the tabs (the app's first stack navigation), name edits that update Clerk
+AND the backend record so neither goes stale, a birthday picker that
+survives its own zero-padding history, and account deletion done properly —
+soft-deleted server-side, removed from Clerk, and locked out forever.
 
 **The exact delta this step adds:**
-[PR #22 — Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/22/files)
-
-## Accounts first (5 minutes, once)
-
-1. [dashboard.clerk.com](https://dashboard.clerk.com) → Create application →
-   enable **Email** (with password + email verification code), **Google**,
-   and **Apple**. Development instances ship with shared OAuth credentials —
-   no Google/Apple console work needed for this step.
-2. From **API keys**: the publishable key (`pk_test_…`) goes to
-   `frontend/.env.local`, the secret key (`sk_test_…`) to
-   `infra/terraform.tfvars` (both gitignored — they never enter the repo).
+[PR #32 — Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/32/files)
 
 ## Run it locally
 
-Terminal 1 — the backend now needs the Clerk secret and a users table.
-The table comes from Terraform (below); until it exists, authenticated
-routes answer 503 naming exactly what's missing:
+Same two terminals as step 04 — nothing new to configure; the profile
+fields ride the existing users table (DynamoDB is schemaless: no migration,
+no new infrastructure this step).
 
 ```bash
 cd backend
@@ -31,123 +21,90 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 CLERK_SECRET_KEY=sk_test_… ENVIRONMENT=production .venv/bin/python run.py
 ```
 
-Config is environment-variables-only, on purpose: a missing
-`CLERK_SECRET_KEY` fails at startup naming the variable, and secrets keep
-exactly two sanctioned homes (`.env.local`, `terraform.tfvars`) — no third
-`.env` file to leak.
-
-Terminal 2 — the app:
-
 ```bash
 cd frontend
-cp .env.example .env.local     # fill in EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
 npm install
 npm run ios
 ```
 
 ## Deploy it
 
-Same staged rollout as step 03, plus one secret. The Clerk key reaches the
-container as an SSM **SecureString** via App Runner's
-`runtime_environment_secrets` — never a plaintext env var readable in the
-console:
+Identical to step 04's rollout — `terraform apply` reports no changes if
+step 04's stack is up (this step adds no resources). Push the new image:
 
 ```bash
-cd infra
-cp terraform.tfvars.example terraform.tfvars    # + your sk_test_… key
-terraform init
-terraform apply -target=aws_ecr_repository.backend
-./scripts/deploy.sh
-terraform apply
-./scripts/deploy.sh                              # tags the log groups (instant)
-
-terraform output -raw apprunner_ecr_service_url  # → frontend/.env.local
+cd infra && ./scripts/deploy.sh    # App Runner redeploys :latest
 ```
 
-Restart the dev server after editing `.env.local`
-(`npx expo start -c --localhost` — `EXPO_PUBLIC_*` is inlined at bundle time).
-
-**Try it end to end:** sign up (Clerk dev instances accept test addresses —
-any `you+clerk_test@example.com` verifies with code `424242`), watch the
-first-run tutorial appear, and check Home: your name in the header, and a
-**Record** line showing the email + provisioned date read back from
-DynamoDB — a record no client ever wrote.
+**Try it end to end:** tap the gear on Home → rename yourself (watch Home
+greet the new name the moment you return — the record refetches on focus),
+set your birthday on the three wheels, then walk the danger zone: type
+`DELETE`, confirm, and try signing back in. The credentials are gone from
+Clerk, and even a still-warm token bounces off the 403 guards.
 
 ## What's here
 
 ```
 backend/
-  app/dependencies/auth.py     JWKS verification (FastAPI dependency, not
-                               middleware — routes opt in via Depends)
-  app/utils/user_provisioning.py   JIT user creation, create-only conditional write
-  app/utils/timestamps.py      one spelling of "now" for records
-  app/routes/users.py          /users/me + the onboarding flag endpoints
-  app/models/users.py          the user record, one domain per file
-  app/config.py                env-only settings; clerk_secret_key required
-  app/database.py              boto3 + the users table handle
-infra/                         step 03's stack plus:
-  dynamodb.tf                  the users table — hash key only; indexes join
-                               in step 10 with the features that query them
-  ssm.tf                       the Clerk secret as a SecureString
-  iam.tf                       + scoped ssm:GetParameters and DynamoDB
-                               get/put/update (delete arrives with step 05)
-frontend/                      step 03's shell plus:
-  src/components/Navigation.tsx     the auth gate + onboarding orchestration
-  src/screens/SignInScreen.tsx      both auth screens are AuthMethods
-  src/screens/SignUpScreen.tsx        with different verbs
-  src/components/AuthMethods.tsx    OAuth buttons + email form + switch row
-  src/components/OAuthButtons.tsx   providers as config data (one line to add one)
-  src/components/OnboardingTutorial.tsx  the first-run carousel
-  src/screens/HomeScreen.tsx        the greeting + the Record proof line
-  src/hooks/useAuthAction.ts        loading + toast-on-error, spelled once
-  src/utils/tokenCache.ts           Clerk sessions in the device keychain
+  app/routes/users.py          + PUT /me (names, birthday, prompt flag) and
+                               DELETE /me (soft-delete → cache evict → Clerk)
+  app/models/users.py          + UserUpdate (birthday parses as a real date),
+                               AccountDeletionRequest
+  app/utils/user_provisioning.py  + the is_deleted 403 guard and forget_user()
+  app/utils/clerk_api.py       the one spelling of how we call Clerk
+frontend/                      step 04's app plus:
+  src/components/Navigation.tsx     the stack navigator — Tabs at the root,
+                                    Settings the first screen ever pushed
+  src/screens/SettingsScreen.tsx    name / email / birthday / replay tutorial /
+                                    danger zone / sign out
+  src/components/BirthdayPrompt.tsx the nudge, with a dismissal that PERSISTS
+  src/components/FormInput.tsx      the text field (was AuthTextInput —
+                                    Settings is its second home)
+  src/components/PrimaryButton.tsx  + secondary and danger variants
+  src/hooks/useFetch.ts             (was useFetchOnMount) + refetchOnFocus —
+                                    Home re-reads the record after Settings
+  src/components/FloatingHeader.tsx + a left slot: pushed screens get a back
+                                    button in the same header language
 ```
 
 ## The ideas this step plants
 
-- **Never trust the client to create its own user.** There is no "sync me"
-  endpoint. The backend provisions the record server-side on the first
-  verified request, fetching the profile from Clerk directly — a client can
-  never assert someone else's name. Sign-in on a fresh database self-heals
-  the same way.
-- **The schema is as small as today's app.** The users table has a hash key
-  and nothing else; the record has eight fields. Follower counts, search
-  fields, roles — each lands in the step that reads it (DynamoDB is
-  schemaless; adding a field later costs one line, not a migration).
-- **401 means *your* fault, 503 means *ours*.** A forged token gets 401; an
-  unreachable Clerk or a missing table gets 503 with a message naming the
-  fix. Auth is where readers debug the most — status codes should point at
-  the right suspect.
+- **Write to every store that reads.** Names live in Clerk (it greets you)
+  and on the backend record (everything else reads it). The original app
+  wrote names to Clerk only — the record's copy went stale after the first
+  edit and nothing ever healed it. One extra call keeps both true.
+- **Deletion is a flag plus a lockout, not a purge.** The record stays
+  (later steps' data will reference it) but `is_deleted` 403s every future
+  request — including tokens still warm when the Clerk user vanished, and
+  including the in-process "known users" cache, which the delete evicts.
+- **Fields join the record when the user creates them.** No migration added
+  `birthday` — the first `PUT` did. The model's defaults absorb records
+  from before the field existed.
 
 ## Gotchas
 
-- **Expo Go pulls SDK-matched natives.** `@clerk/clerk-expo` transitively
-  wants a newer `expo-auth-session` than Expo Go 54 ships — the app crashes
-  at boot with `Cannot find native module 'ExpoCryptoAES'`. The fix is
-  pinning `expo-auth-session`/`expo-crypto` via `npx expo install` (already
-  in package.json) so npm dedupes Clerk onto the SDK-54 versions.
-- **`CREATE_FAILED` with no logs, cause #3: IAM propagation.** App Runner
-  validates its SSM secret while provisioning; Terraform doesn't know the
-  service depends on the instance role's SSM policy unless told. We lost
-  that race for real — hence the explicit `depends_on` in `apprunner.tf`.
-- **Text inside a BlurView is invisible to the accessibility tree.** The
-  onboarding's glass button carries `accessibilityRole`/`Label` on the
-  touchable for VoiceOver (and UI tests) to find it. Icon-only buttons
-  (sign-out) need labels for the same reason.
-- **`cache_keys=True` on PyJWKClient is a trap.** It's an `lru_cache` with
-  no TTL — a rotated Clerk signing key would stay trusted until restart.
-  The JWK-*set* cache (with `lifespan`) is the right one; we cache only that.
+- **Picker values must match exactly — padding is data.** The original
+  birthday wheels stored padded values against unpadded items, so the wheel
+  silently showed no selection. Values here are unpadded (`"1"`), labels
+  padded (`"01"`), and the load path strips zeros before it touches state.
+- **The dismissal that never persisted.** The original app sent
+  `birthday_prompt_dismissed` to a backend whose model didn't have the
+  field — Pydantic silently dropped it and the nag returned forever. If a
+  client sends a field, prove the server keeps it.
+- **Don't confirm destructive actions with system alerts.** The delete
+  confirmation is an in-app modal: system alerts live outside the app's
+  accessibility tree, where neither VoiceOver nor UI automation can follow.
 
 ## Done when
 
-- [ ] `curl $URL/users/me` → 401; with a garbage token → 401 (generic detail)
-- [ ] Sign up with a `+clerk_test` address, code `424242` → the first-run
-      tutorial appears
-- [ ] Home greets you by name; **Record** shows your email + provisioned
-      date (green) — read from DynamoDB, written by no client
-- [ ] Sign out → sign in again → no tutorial replay (the flag survived on
-      the backend record)
-- [ ] "Continue with Google" opens the browser consent sheet (Apple shares
-      the code path — verify it the same way once enabled in your Clerk app)
+- [ ] Rename yourself in Settings → back to Home → the greeting is the new
+      name without an app restart
+- [ ] Set a birthday → reopen Settings → the wheels show the saved date
+- [ ] Dismiss the birthday prompt → force-quit and relaunch → it stays gone
+- [ ] Type `DELETE` → the app signs out → signing in again fails (the
+      account no longer exists in Clerk)
+- [ ] `curl -X PUT $API/users/me` with no token → 401; with a birthday of
+      `"not-a-date"` and a valid token → 422
 
-Next: `05-profiles` — profile data, birthday, Settings, account deletion.
+Next: `06-media` — S3 photos with a backend-owned lifecycle: pending
+upload → claim on save → auto-expiry.

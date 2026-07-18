@@ -81,8 +81,8 @@ function CustomTabBar({ state, navigation }: any) {
 
 /**
  * The app shell: a bottom-tab navigator whose tabs come entirely from
- * config/tabs.ts. Every tab mounts a PlaceholderScreen for now — later
- * steps replace these with real screens without touching the chrome.
+ * config/tabs.ts. Tabs without a real screen yet mount a PlaceholderScreen —
+ * steps replace them one by one without touching the chrome.
  */
 export default function TabNavigation() {
   return (

@@ -28,7 +28,16 @@ export const Spacing = {
   tabBarBottomMargin: 16, // gap between the tab bar and the screen bottom
   tabBarContentGap: 22,   // breathing room between content end and tab bar
   tabIconSize: 34,        // bottom tab-bar icons
+  chromeIconSize: 24,     // header action icons
   chromeTouchTarget: 44,  // minimum tap target for chrome buttons
+  /** The chevron stroke starts ~7pt inside its glyph box */
+  chevronGlyphInset: 7,
+  /** Pulls the back button left so the chevron's VISIBLE TIP (glyph box
+      centering + the stroke's internal inset) lands on the content edge,
+      aligned with every section header below it */
+  get backChevronPull() {
+    return -((this.chromeTouchTarget - this.chromeIconSize) / 2) - this.chevronGlyphInset;
+  },
 
   /** Bottom padding for scrollable content (clears the floating tab bar) */
   get scrollContentBottom() {
@@ -52,7 +61,8 @@ export const CommonScreenStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  /** The auth form's raised outlined element — text fields and OAuth buttons */
+  /** The app-wide raised outlined surface — form fields, OAuth buttons,
+      prompt cards */
   outlinedSurface: {
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.md,

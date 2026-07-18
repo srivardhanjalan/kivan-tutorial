@@ -3,6 +3,10 @@
  * invent hex values. Tokens are added when a screen first needs them,
  * never in advance.
  */
+// The screen background's RGB triplet — the solid color AND the header
+// wash both derive from it, so they cannot drift apart
+const backgroundRgb = '253, 255, 255';
+
 export default {
   primary: '#FF385C',
   dark: '#1A1A1A',
@@ -10,15 +14,13 @@ export default {
   lightGrey: '#E0E0E0',
   white: '#fff',
   /** Default screen background */
-  background: '#FDFFFF',
-  /** background as an RGB triplet — for alpha washes derived from it */
-  backgroundRgb: '253, 255, 255',
+  background: `rgb(${backgroundRgb})`,
+  /** The triplet itself — for alpha washes */
+  backgroundRgb,
   /** The dark toast/overlay surface */
   toastSurface: 'rgba(28, 28, 30, 0.96)',
   /** Near-opaque white stand-in for glass pills where BlurView is unavailable (Android) */
   glassFallback: 'rgba(255, 255, 255, 0.94)',
-  /** Primary body text (near-black) */
-  textPrimary: '#1D1D1F',
   /** Secondary text */
   textSecondary: '#6E6E73',
   /** The app-wide pressed/active fill on chrome buttons and tabs */

@@ -20,7 +20,7 @@ export function useToast(): ToastContextValue {
 }
 
 /**
- * Bottom toasts: one dark pill that fades/slides in above the tab bar and
+ * Bottom toasts: one dark pill that fades in above the tab bar and
  * dismisses itself. Screens call useToast().show('...').
  */
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 18,
     alignItems: 'center',
-    ...Shadows.modal,
+    ...Shadows.toast,
   },
   errorToast: {
     backgroundColor: Colors.danger,

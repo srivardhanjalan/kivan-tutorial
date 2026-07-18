@@ -1,22 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '@clerk/clerk-expo';
 import TabNavigation from './TabNavigation';
 import OnboardingTutorial from './OnboardingTutorial';
 import LoadingView from './LoadingView';
 import SignInScreen from '../screens/SignInScreen';
 import SignUpScreen from '../screens/SignUpScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 import {
   setAuthTokenGetter,
   fetchOnboardingCompleted,
   completeOnboarding,
 } from '../services/api';
 
+/** The signed-in stack: the tab shell, plus every screen pushed over it */
+export type RootStackParamList = {
+  Tabs: undefined;
+  Settings: undefined;
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
 /**
  * The auth gate: signed out shows the sign-in/sign-up pair (a simple local
- * swap — a stack navigator joins when a later step first pushes a real
- * screen), signed in shows the tab shell, plus the one-time first-run
- * tutorial. Also wires Clerk session tokens into the API client.
+ * swap), signed in shows a stack — the tab shell at its root, Settings the
+ * first screen ever pushed over it. Also shows the one-time first-run
+ * tutorial and wires Clerk session tokens into the API client.
  */
 export default function Navigation() {
   const { isLoaded, isSignedIn, getToken } = useAuth();
@@ -69,7 +79,10 @@ export default function Navigation() {
   return (
     <>
       <NavigationContainer>
-        <TabNavigation />
+        <Stack.Navigator id={undefined} screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Tabs" component={TabNavigation} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
+        </Stack.Navigator>
       </NavigationContainer>
       <OnboardingTutorial visible={showOnboarding} onDismiss={handleOnboardingDismiss} />
     </>

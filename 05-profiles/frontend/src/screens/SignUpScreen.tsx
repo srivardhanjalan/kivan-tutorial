@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { useSignUp } from '@clerk/clerk-expo';
 import AuthFormLayout from '../components/layouts/AuthFormLayout';
 import AuthMethods from '../components/AuthMethods';
-import AuthTextInput from '../components/AuthTextInput';
+import FormInput from '../components/FormInput';
 import PrimaryButton from '../components/PrimaryButton';
-import useAuthAction from '../hooks/useAuthAction';
+import useAsyncAction from '../hooks/useAsyncAction';
 
 export default function SignUpScreen({ onSwitchToSignIn }: { onSwitchToSignIn: () => void }) {
   const { isLoaded, signUp, setActive } = useSignUp();
-  const { loading, run } = useAuthAction();
+  const { loading, run } = useAsyncAction();
 
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState('');
@@ -39,7 +39,7 @@ export default function SignUpScreen({ onSwitchToSignIn }: { onSwitchToSignIn: (
         title="Verify Email"
         subtitle={`We sent a verification code to ${signUp?.emailAddress ?? 'your email'}`}
       >
-        <AuthTextInput
+        <FormInput
           value={code}
           placeholder="Verification Code"
           onChangeText={setCode}

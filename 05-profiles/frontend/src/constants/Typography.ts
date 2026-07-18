@@ -31,7 +31,7 @@ export default {
   body: {
     fontSize: 17,
     lineHeight: 26,
-    color: Colors.textPrimary,
+    color: Colors.dark,
   },
   /** CTA button labels (17/600, on filled surfaces) */
   button: {

@@ -22,7 +22,10 @@ const styles = StyleSheet.create({
   title: {
     ...Typography.sectionTitle,
     letterSpacing: -0.3,
-    marginBottom: Spacing.lg,
+    // The section rhythm: a header hugs its own content and pushes away
+    // from the section above — separation must read larger than spacing
+    marginTop: Spacing.xxl,
+    marginBottom: Spacing.sm,
   },
   meta: {
     fontSize: 14,

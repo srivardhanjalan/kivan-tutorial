@@ -5,10 +5,11 @@ import Typography from '../constants/Typography';
 import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 
 /**
- * The auth forms' text field: the shared outlined surface with a muted
- * placeholder. A thin wrapper so every field looks identical.
+ * The standard text field: the shared outlined surface with a muted
+ * placeholder — auth forms and Settings alike. A thin wrapper so every
+ * field looks identical.
  */
-const AuthTextInput: React.FC<TextInputProps> = (props) => (
+const FormInput: React.FC<TextInputProps> = (props) => (
   <TextInput
     style={[CommonScreenStyles.outlinedSurface, styles.input]}
     placeholderTextColor={Colors.textMuted}
@@ -23,4 +24,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AuthTextInput;
+export default FormInput;

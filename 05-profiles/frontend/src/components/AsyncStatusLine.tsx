@@ -4,7 +4,7 @@ import Colors from '../constants/Colors';
 import { Spacing } from '../constants/ScreenStyles';
 
 /**
- * One-line "label · value" readout of a useFetchOnMount result: checking
+ * One-line "label · value" readout of a useFetch result: checking
  * while in flight, the error when it failed, the caller's value once
  * resolved. ApiStatus and the account proof on Home are both this.
  */

@@ -8,11 +8,10 @@ import { useToast } from '../components/ToastProvider';
 import type { TabConfig } from '../config/tabs';
 
 /**
- * Stand-in screen for every tab while the shell is domain-free. It exists
- * to exercise the design system end to end: the branded loading state (a
+ * Stand-in for tabs whose real screen hasn't landed yet. It exists to
+ * exercise the design system end to end: the branded loading state (a
  * brief simulated load on mount), the floating header with a working
- * action, section headers, empty states, and toasts. Later steps replace
- * it with real screens.
+ * action, section headers, empty states, and toasts.
  */
 export default function PlaceholderScreen({ tab }: { tab: TabConfig }) {
   const toast = useToast();
