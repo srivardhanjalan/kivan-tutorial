@@ -21,6 +21,10 @@ and embedded in the root README and the Medium posts.
 | `img-04-learns.html` | `mocks-04-learns.png` | post 04: sign-in → tutorial → named Home (real screenshots) |
 | `img-04-race.html` | `mocks-04-race.png` | post 04: the CREATE_FAILED IAM-race terminal |
 | — | `shot-04-signin.png`, `shot-04-verify.png`, `shot-04-onboarding.png`, `shot-04-home.png` | real simulator screenshots of the step-04 auth flow |
+| `hero-05.html` | `mocks-hero-05.png` | post 05 cover (the working Settings screen + the delete-for-good terminal) |
+| `img-05-account.html` | `mocks-05-account.png` | post 05: edit yourself / erase yourself (real Settings + delete modal) |
+| `img-05-delete.html` | `mocks-05-delete.png` | post 05: the three deletion decisions terminal |
+| — | `shot-05-settings.png`, `shot-05-delete.png`, `shot-05-birthday.png` | real simulator screenshots of the step-05 profile flow |
 
 Re-render after editing a page (adjust `--window-size` to the page):
 
