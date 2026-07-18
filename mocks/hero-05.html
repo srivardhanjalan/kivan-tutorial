@@ -1,0 +1,54 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Zero to Shipped 05 — hero</title>
+<link rel="stylesheet" href="mocks.css">
+<style>
+  body{margin:0;padding:0;background:#fff}
+  .hero{width:1500px;height:750px;overflow:hidden;position:relative;
+    background:linear-gradient(115deg,#FFE8EC 0%,#FDFFFF 42%,#E7F1F8 100%)}
+  .copy{position:absolute;left:96px;top:64px;max-width:660px}
+  .eyebrow{font-size:15px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--primary);margin-bottom:18px}
+  .title{font-size:66px;font-weight:800;letter-spacing:-2px;line-height:1.04;color:var(--dark)}
+  .sub{font-size:22px;color:var(--text2);line-height:1.45;margin-top:16px;max-width:600px}
+  .chips{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap;max-width:600px}
+  .chip{height:40px;border-radius:999px;background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.07);
+    display:flex;align-items:center;padding:0 18px;font-size:15.5px;font-weight:700;color:var(--dark);white-space:nowrap}
+  .chip.hot{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .term{position:absolute;left:96px;top:404px;width:820px;border-radius:14px;
+    background:#1D1E24;box-shadow:0 30px 70px rgba(20,20,30,.28);overflow:hidden}
+  .tbar{height:38px;background:#2A2B33;display:flex;align-items:center;padding:0 16px;gap:8px}
+  .dot2{width:12px;height:12px;border-radius:6px}
+  .ttitle{flex:1;text-align:center;color:#8A8B94;font-size:13px;font-weight:600;font-family:"SF Mono",Menlo,monospace;margin-right:44px}
+  .tbody{padding:18px 24px 20px;font-family:"SF Mono",Menlo,monospace;font-size:15px;line-height:1.72;color:#D6D7DE}
+  .g{color:#4ADE80}.r{color:#FF6B6B}.p{color:#FF6B8A}.dim{color:#8A8B94}
+  .shot{position:absolute;right:104px;top:70px;width:312px;border-radius:36px;overflow:hidden;
+    box-shadow:0 30px 70px rgba(20,20,30,.26);border:1px solid #e6e6ea}
+  .shot img{display:block;width:100%}
+</style></head><body>
+<div class="hero">
+  <div class="copy">
+    <div class="eyebrow">Zero to Shipped · 05 — Profiles</div>
+    <div class="title">Handle with&nbsp;care.</div>
+    <div class="sub">A Settings screen that edits you in two places at once — and deletes you for good — the part most apps get wrong.</div>
+    <div class="chips">
+      <span class="chip hot">verified live</span><span class="chip">Settings</span>
+      <span class="chip">write-both</span><span class="chip">soft-delete</span><span class="chip">DynamoDB</span>
+    </div>
+  </div>
+  <div class="term">
+    <div class="tbar">
+      <span class="dot2" style="background:#FF5F57"></span>
+      <span class="dot2" style="background:#FEBC2E"></span>
+      <span class="dot2" style="background:#28C840"></span>
+      <span class="ttitle">05-profiles — delete for good</span>
+    </div>
+    <div class="tbody">
+<span class="dim"># typed DELETE in the app, confirmed →</span><br>
+<span class="dim">$</span> <span class="p">aws dynamodb get-item --table-name kivan-…-users</span><br>
+&nbsp;&nbsp;"first_name": "Srivardhan",&nbsp;&nbsp;"is_deleted": <span class="g">true</span><br>
+<span class="dim">$</span> <span class="p"># sign back in with the same password →</span><br>
+&nbsp;&nbsp;<span class="r">Couldn't find your account.</span>
+    </div>
+  </div>
+  <div class="shot"><img src="shot-05-settings.png"></div>
+</div>
+</body></html>

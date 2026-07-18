@@ -10,6 +10,7 @@ Code is best browsed [on GitHub](https://github.com/srivardhanjalan/kivan-tutori
 - [02 · Dressed to Ship](medium/02-app-shell.html)
 - [03 · Alive on Arrival](medium/03-backend-core.html)
 - [04 · Signed, Sealed, Delivered](medium/04-auth.html)
+- [05 · Handle With Care](medium/05-profiles.html)
 
 ## The mocks (interactive — real design tokens)
 
@@ -19,7 +20,7 @@ Code is best browsed [on GitHub](https://github.com/srivardhanjalan/kivan-tutori
 
 ## The covers
 
-- [Series hero](mocks/hero.html) · [01](mocks/hero-01.html) · [02](mocks/hero-02.html) · [03](mocks/hero-03.html) · [04](mocks/hero-04.html)
+- [Series hero](mocks/hero.html) · [01](mocks/hero-01.html) · [02](mocks/hero-02.html) · [03](mocks/hero-03.html) · [04](mocks/hero-04.html) · [05](mocks/hero-05.html)
 
 ## LinkedIn carousels (browser-rendered slides; PDF + post copy on GitHub)
 
@@ -32,4 +33,5 @@ Code is best browsed [on GitHub](https://github.com/srivardhanjalan/kivan-tutori
 - [01-prerequisites](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/01-prerequisites) ·
   [02-app-shell](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/02-app-shell) ·
   [03-backend-core](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/03-backend-core) ·
-  [04-auth](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/04-auth)
+  [04-auth](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/04-auth) ·
+  [05-profiles](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/05-profiles)
