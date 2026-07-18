@@ -12,7 +12,7 @@ By the end of this step you sign up in the app, a code lands in your inbox, the 
 
 ## Who's allowed to create a user
 
-The obvious design, the one I reached for first: the phone signs up with Clerk, then calls `POST /users/sync` with the name and email to give the backend a record. Clean, direct, wrong.
+Here's the obvious design, the one I reached for first. The phone signs up with Clerk, then calls `POST /users/sync` with the name and email to give the backend a record. Clean, direct, wrong.
 
 It hands the client a pen to fill in its own database row. Any name, any email, any field I haven't invented yet, all attacker-controlled. And it fails on its own terms too. Only sign-*up* syncs, meaning a rebuilt database 404s every returning user forever, and a signup interrupted mid-sync leaves half a user in the table.
 
@@ -31,13 +31,13 @@ The record is eight fields: id, email, first and last name, avatar, the onboardi
 
 ## Sign-in and sign-up are the same screen
 
-I built sign-in, started sign-up, and stopped ten lines in: same screen. Both are OAuth buttons, an "or" divider, email and password, a brand button, and a footer link to the other. Sign-up adds a verification step and nothing else.
+I built sign-in, started sign-up, and stopped ten lines in. Same screen. Both are OAuth buttons, an "or" divider, email and password, a brand button, and a footer link to the other. Sign-up adds a verification step and nothing else.
 
 That makes them one component, `AuthMethods`, with the verb plugged in. The OAuth buttons are a config array, the same idiom as the step-02 tab bar, and adding Apple next to Google is a line in a list, not a new screen.
 
 ![Three real simulator screenshots: the sign-in screen, the first-run tutorial, and Home greeting Kivan Tester by name](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-learns.png?v=1d39c8c)
 
-Real screenshots from the verification run, not mockups. Clerk's dev instances let you sign up without an inbox: any `+clerk_test` address works, and the code is always `424242`. That's how an automated UI test drives the whole flow.
+Real screenshots from the verification run, not mockups. Clerk's dev instances let you sign up without an inbox. Any `+clerk_test` address works, and the code is always `424242`. That's how an automated UI test drives the whole flow.
 
 The best cleanup here wasn't in my draft; it was in my fix. Collapsing the logo's size behind one config value made two style blocks byte-identical, the clone detector caught that, and the real fix fell out: a shared `BrandMark`. A fix to duplication can be duplication, which is why the gate never trusts a single clean pass.
 
@@ -51,7 +51,7 @@ Two sharper traps live in the verifier, both found only by reading PyJWT's sourc
 
 The backend needs Clerk's secret key. The lazy way is a plaintext App Runner env var, sitting in the console in the clear, readable by anyone with `apprunner:DescribeService`. Instead, the key lives in SSM as a **SecureString**, App Runner resolves it at instance start via `runtime_environment_secrets`, and the instance role can read that one parameter and nothing else.
 
-That last line broke my first rollout: `CREATE_FAILED`, no logs, the same empty failure step 03 hit twice. This time the image was fine. App Runner checked its secret access *while Terraform was still attaching the SSM policy*. Nothing tied the two together, and Terraform built them in parallel, losing the race. One line fixes it:
+That last line broke my first rollout. `CREATE_FAILED`, no logs, the same empty failure step 03 hit twice. This time the image was fine. App Runner checked its secret access *while Terraform was still attaching the SSM policy*. Nothing tied the two together, and Terraform built them in parallel, losing the race. One line fixes it:
 
 ```hcl
 depends_on = [aws_iam_role_policy.apprunner_instance_ssm]
@@ -63,7 +63,7 @@ A `CREATE_FAILED` service won't heal itself, and fixing the cause isn't enough. 
 
 ## A tutorial that survives a reinstall
 
-First sign-in plays a swipeable welcome carousel. The whole feature is one bit of state, and the only decision is where it lives: `onboarding_completed` sits on the backend record, not the device. Reinstall the app, switch phones, clear the cache: the tutorial stays done, because the flag was never on the phone to lose.
+First sign-in plays a swipeable welcome carousel. The whole feature is one bit of state, and the only decision is where it lives: `onboarding_completed` sits on the backend record, not the device. Reinstall the app, switch phones, clear the cache. The tutorial stays done, because the flag was never on the phone to lose.
 
 "Get Started" flips it through an endpoint guarded by `ConditionExpression="attribute_exists(id)"`. DynamoDB's `update_item` is secretly an upsert. Call it on a missing id and it happily creates a half-formed user. The condition makes it refuse.
 
@@ -79,7 +79,7 @@ One last scar: the UI test could not tap the carousel's Next button. It's text i
 
 ## What's next
 
-Step 05 gives the account a past and a delete button. Profile data, birthdays, a Settings screen, account deletion: the first fields to join those eight, each with its first real caller.
+Step 05 gives the account a past and a delete button. Profile data, birthdays, a Settings screen, account deletion. These are the first fields to join those eight, each with its first real caller.
 
 **Following along?** ⭐ [Star the repo](https://github.com/srivardhanjalan/kivan-tutorial). Every step lands as a browsable pull request.
 
