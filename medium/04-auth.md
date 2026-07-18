@@ -4,7 +4,7 @@
 
 ---
 
-![Zero to Shipped 04 hero, signed, sealed, delivered: the 401s terminal and the Home screen greeting Kivan Tester by name](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-04.png?v=1d39c8c)
+![Zero to Shipped 04 hero, signed, sealed, delivered: Home greeting Kivan Tester by name, and the record the backend wrote itself](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-04.png?v=04rebal)
 
 Who's allowed to create a user? I got it wrong first. By the end of this step you sign up in the app, a code lands in your inbox, the first-run tutorial plays, and Home greets you by name above a record the backend wrote for you, not the phone.
 
@@ -29,6 +29,8 @@ The profile comes from Clerk, not from whatever the phone sent, and the write is
 
 The record is eight fields: id, email, first and last name, avatar, the onboarding flag, two timestamps. No follower counts, no roles yet. DynamoDB is schemaless, and each of those joins the step that first reads it, one line, no migration. The table under it is a hash key and nothing else.
 
+![Terminal: the eight-field user record read back from DynamoDB, every field written by the backend from Clerk — the client never sent one](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-record.png?v=04rebal)
+
 ## Sign-in and sign-up are the same screen
 
 I built sign-in, started sign-up, and stopped ten lines in. Same screen. Both are OAuth buttons, an "or" divider, email and password, a brand button, and a footer link to the other. Sign-up adds a verification step and nothing else.
@@ -47,6 +49,8 @@ Every request carries a Clerk session JWT as a Bearer token. The backend verifie
 
 The work is rejecting for the right reason. A missing token, a garbage token, a made-up key id are all the caller's problem, and each gets a flat `401 Invalid authentication token`. When the fault is mine instead (Clerk down, a wrong secret key, no users table), the answer is a `503` whose message names the fix; the missing-table one says to run `terraform apply` and set `ENVIRONMENT` to match, which only a caller with a valid token ever sees. Confuse the two and a Clerk outage surfaces as a `401` with the library's error string attached, which sends a valid user off to debug a fine token and leaks internals to anyone who asks.
 
+![Terminal: a missing token and a garbage token both return a flat 401, while a server-side fault returns a 503 whose message names the fix](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-status.png?v=04rebal)
+
 ```python
 except pyjwt.PyJWKClientConnectionError:   # JWKS unreachable: mine, 503
     raise HTTPException(503, "Authentication service temporarily unavailable")
@@ -62,15 +66,15 @@ The second trap is a tempting flag. `cache_keys=True` reads like the performance
 
 The backend makes two calls to Clerk (fetching the signing keys, and fetching a new user's profile), and both authorize with a Clerk secret key. The lazy way to hand that key to the container is a plaintext App Runner env var, sitting in the console, readable by anyone with `apprunner:DescribeService`. Instead, the key lives in SSM as a **SecureString**, App Runner resolves it at instance start via `runtime_environment_secrets`, and the instance role can read that one parameter and nothing else.
 
+![Terminal: describe-service shows the Clerk secret as an SSM SecureString reference (an ARN), never the plaintext value, readable by a scoped instance role](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-secret.png?v=04rebal)
+
 That last line broke my first rollout. `CREATE_FAILED`, no logs, the same empty failure step 03 hit twice. This time the image was fine. App Runner checked its secret access *while Terraform was still attaching the SSM policy*. Nothing tied the two together, and Terraform built them in parallel, losing the race. One line on the App Runner service resource fixes it:
 
 ```hcl
 depends_on = [aws_iam_role_policy.apprunner_instance_ssm]
 ```
 
-![Terminal: CREATE_FAILED with no logs, the missing IAM policy, the depends_on fix, and the service reaching RUNNING](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-race.png?v=1d39c8c)
-
-A `CREATE_FAILED` service won't heal itself, and fixing the cause isn't enough. You need a `terraform apply -replace` to tear down the dead one and rebuild it with the policy in place. Same image, `RUNNING`.
+One `terraform apply -replace` rebuilt the service I'd already broken; with the line shipped, every apply since has been clean — same image, `RUNNING`.
 
 ## A tutorial that survives a reinstall
 
@@ -78,7 +82,7 @@ First sign-in plays a swipeable welcome carousel. The whole feature is one bit o
 
 "Get Started" flips it through an endpoint guarded by `ConditionExpression="attribute_exists(id)"`. DynamoDB's `update_item` is secretly an upsert. Call it on a missing id and it happily creates a half-formed user. The condition makes it refuse, and the handler turns that refusal into a 404 rather than a phantom account.
 
-One last scar: the UI test could not tap the carousel's Next button. Its label sits behind a glass blur view, and the touchable wrapping it carried no `accessibilityLabel`. The automation was stranded exactly where a screen-reader user would be, and one label fixed both in the same commit.
+The UI test could not tap the carousel's Next button. Its label sits behind a glass blur view, and the touchable wrapping it carried no `accessibilityLabel`. The automation was stranded exactly where a screen-reader user would be, and one label fixed both in the same commit.
 
 ## You're done when
 

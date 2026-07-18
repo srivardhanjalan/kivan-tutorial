@@ -1,0 +1,36 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="mocks.css">
+<style>
+  body{margin:0;background:#fff}
+  .wrap{width:1400px;height:640px;position:relative;overflow:hidden;
+    background:linear-gradient(115deg,#FFE8EC 0%,#FDFFFF 42%,#E7F1F8 100%);
+    display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+  .term{width:1080px;border-radius:14px;background:#1D1E24;box-shadow:0 30px 70px rgba(20,20,30,.28);overflow:hidden}
+  .tbar{height:38px;background:#2A2B33;display:flex;align-items:center;padding:0 16px;gap:8px}
+  .dot2{width:12px;height:12px;border-radius:6px}
+  .ttitle{flex:1;text-align:center;color:#8A8B94;font-size:13px;font-weight:600;font-family:"SF Mono",Menlo,monospace;margin-right:44px}
+  .tbody{padding:20px 26px 24px;font-family:"SF Mono",Menlo,monospace;font-size:15px;line-height:1.85;color:#D6D7DE}
+  .g{color:#4ADE80}.r{color:#FF6B6B}.p{color:#FF6B8A}.dim{color:#8A8B94}.y{color:#FFD166}
+</style></head><body>
+<div class="wrap">
+  <div class="term">
+    <div class="tbar">
+      <span class="dot2" style="background:#FF5F57"></span>
+      <span class="dot2" style="background:#FEBC2E"></span>
+      <span class="dot2" style="background:#28C840"></span>
+      <span class="ttitle">401 means you · 503 means me</span>
+    </div>
+    <div class="tbody">
+<span class="dim"># your problem — missing, garbage, or forged token → one flat reply</span><br>
+<span class="dim">$</span> <span class="p">curl $API/users/me</span><br>
+{"detail": <span class="r">"Invalid authentication token"</span>}  <span class="dim">← 401</span><br>
+<span class="dim">$</span> <span class="p">curl -H "Authorization: Bearer garbage" $API/users/me</span><br>
+{"detail": <span class="r">"Invalid authentication token"</span>}  <span class="dim">← 401, same generic reply</span><br>
+<br>
+<span class="dim"># my problem — the missing-table 503 names its own fix</span><br>
+{"detail": <span class="y">"run terraform apply and set ENVIRONMENT to match"</span>}  <span class="dim">← 503</span><br>
+<span class="dim"># and only a caller with a valid token ever sees that 503 detail</span>
+    </div>
+  </div>
+</div>
+</body></html>
