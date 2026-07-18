@@ -49,7 +49,7 @@ https://github.com/srivardhanjalan/kivan-tutorial
 ## Posting notes
 
 - Upload `signed-sealed-delivered-carousel.pdf` as a document post; LinkedIn renders it as a swipeable carousel.
-- Document title (renders as a header on the doc; keep <60 chars): "Signed, Sealed, Delivered — real accounts, end to end". Cover headline ("My app knows your name now."), post hook ("My app started signing people up for real…"), and doc title all vary the claim — checked, no verbatim tripling.
+- Document title (renders as a header on the doc; keep <60 chars): "Signed, Sealed, Delivered — real accounts, end to end". Cover headline ("From nobody to a name."), post hook ("My app started signing people up for real…"), and doc title all vary the claim — checked, no verbatim tripling.
 - Fold budget: mobile truncates at ~140 chars, desktop ~210. Hook must be complete inside ~140 — current draft passes (the hook sentence is ~95 chars and self-sufficient).
 - Hashtags: 3 relevant tags, end of post. Hashtag feeds were deprecated (late 2024); tags no longer drive reach — they're light topical metadata, nothing more.
 - Proof before posting. Typo fixes are safe only in the first ~10 minutes; substantive edits inside the 60–90-min momentum window measurably cut impressions (30–50% in creator data; LinkedIn documents no penalty — it's momentum interruption).
