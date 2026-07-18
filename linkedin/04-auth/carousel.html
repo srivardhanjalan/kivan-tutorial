@@ -100,6 +100,17 @@
     display: flex; align-items: center; gap: 16px;
   }
   .barrier .x { font-size: 40px; }
+  .writepath { position:relative; width:820px; height:300px; margin:80px auto 0; align-self:center; }
+  .writepath .actor { position:absolute; left:0; font-size:46px; font-weight:700; color:#1A1A1A; }
+  .writepath .actor.client  { top:20px; }
+  .writepath .actor.backend { bottom:20px; }
+  .writepath .rec {
+    position:absolute; right:0; top:50%; transform:translateY(-50%);
+    background:#fff; border-radius:24px; border:3px solid #d8d8de;
+    box-shadow:0 12px 34px rgba(26,26,26,.10);
+    padding:30px 44px; font-size:44px; font-weight:700; color:#1A1A1A;
+  }
+  .writepath svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
 </style>
 </head>
 <body>
@@ -134,13 +145,22 @@
 <section class="slide" id="s3" style="justify-content:center;">
   <div class="eyebrow">The endpoint I refused to write</div>
   <h2>Nobody creates their <span class="accent">own user.</span></h2>
-  <div class="flow">
-    <div class="node">Client</div>
-    <div class="flowarrow"><span class="lbl">a valid token — no profile</span><span class="tip">▼</span></div>
-    <div class="node">Backend <span class="side">→ fetches you from Clerk, server&#8209;to&#8209;server</span></div>
-    <div class="flowarrow"><span class="lbl hot">create-only write · attribute_not_exists(id)</span><span class="tip">▼</span></div>
-    <div class="node record">users table <span class="side">your record</span></div>
-    <div class="barrier"><span class="x">✕</span> the client never touches the record</div>
+  <div class="writepath">
+    <span class="actor client">Client</span>
+    <span class="actor backend">Backend</span>
+    <div class="rec">your record</div>
+    <svg viewBox="0 0 820 300" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <marker id="head" markerWidth="11" markerHeight="9" refX="8.5" refY="4.5" orient="auto">
+          <path d="M0,0 L11,4.5 L0,9 Z" fill="#FF385C"/>
+        </marker>
+      </defs>
+      <path d="M215,250 C370,238 440,200 520,168" fill="none" stroke="#FF385C" stroke-width="5" marker-end="url(#head)"/>
+      <text x="330" y="222" fill="#FF385C" font-family="SF Mono, Menlo, monospace" font-size="27" font-weight="700">writes it</text>
+      <path d="M210,58 C300,80 356,96 402,110" fill="none" stroke="#c4c4cc" stroke-width="4" stroke-dasharray="4 10" stroke-linecap="round"/>
+      <text x="300" y="64" fill="#9a9aa0" font-size="27" font-weight="600">can't</text>
+      <text x="432" y="128" fill="#c4c4cc" font-size="42" font-weight="700" text-anchor="middle">✕</text>
+    </svg>
   </div>
   <div class="footer"><span>Signed, Sealed, Delivered</span><span>3 / 8</span></div>
 </section>
