@@ -104,6 +104,6 @@ In **step 03**, the app leaves the simulator: a FastAPI skeleton, Terraform for 
 - **00 · [Introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**
 - **01 · [One script to set up everything](https://medium.com/@srivardhanjalan/one-script-to-set-up-everything-ae8bcea2d649)**
 - **02 · Dressed to Ship** *(this post)*
-- **03 · Alive on Arrival** *(coming soon)*
+- **03 · [Alive on Arrival](https://medium.com/@srivardhanjalan/alive-on-arrival-cda0a351844f)**
 
 *All code: [github.com/srivardhanjalan/kivan-tutorial](https://github.com/srivardhanjalan/kivan-tutorial)*

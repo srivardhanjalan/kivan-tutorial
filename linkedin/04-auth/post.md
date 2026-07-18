@@ -22,14 +22,10 @@ Swipe for the short version — the full write-up is free 👇
 
 #Clerk #FastAPI #BuildInPublic
 
-## ⚠️ BEFORE POSTING — publish the article first
-
-Post 04 ("Signed, Sealed, Delivered") is NOT yet live on Medium (published series is 00–03). The CTA slide and post both point readers to a first comment that must contain a working link. Publish the article first, grab its URL, then paste it into comment #1 below. Do not post the carousel until the article is live.
-
 ## First comment (posted immediately after publishing — article link ALONE, it's the conversion target)
 
 Full article — Signed, Sealed, Delivered (Zero to Shipped · 04):
-[PASTE LIVE MEDIUM URL AFTER PUBLISHING]
+https://medium.com/@srivardhanjalan/signed-sealed-delivered-a481a02ac392
 
 ## Reply to your own first comment (secondary links live here, not in comment #1)
 
