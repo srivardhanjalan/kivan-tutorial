@@ -4,7 +4,7 @@
 
 ---
 
-![Zero to Shipped 04 hero, signed, sealed, delivered: Home greeting Kivan Tester by name, and the record the backend wrote itself](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-04.png?v=04rebal)
+![Zero to Shipped 04 hero, signed, sealed, delivered: Home greeting Kivan Tester by name, and the record the backend wrote itself](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-04.png?v=e31367e)
 
 Who's allowed to create a user? I got it wrong first. By the end of this step you sign up in the app, a code lands in your inbox, the first-run tutorial plays, and Home greets you by name above a record the backend wrote for you, not the phone.
 
@@ -29,7 +29,7 @@ The profile comes from Clerk, not from whatever the phone sent, and the write is
 
 The record is eight fields: id, email, first and last name, avatar, the onboarding flag, two timestamps. No follower counts, no roles yet. DynamoDB is schemaless, and each of those joins the step that first reads it, one line, no migration. The table under it is a hash key and nothing else.
 
-![Terminal: the eight-field user record read back from DynamoDB, every field written by the backend from Clerk — the client never sent one](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-record.png?v=04rebal)
+![Terminal: the eight-field user record read back from DynamoDB, every field written by the backend from Clerk — the client never sent one](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-record.png?v=e31367e)
 
 ## Sign-in and sign-up are the same screen
 
@@ -37,7 +37,7 @@ I built sign-in, started sign-up, and stopped ten lines in. Same screen. Both ar
 
 That makes them one component, `AuthMethods`, with the verb plugged in. The OAuth buttons are a config array, the same idiom as the step-02 tab bar, and adding Apple next to Google is a line in a list, not a new screen.
 
-![Three real simulator screenshots: the sign-in screen, the first-run tutorial, and Home greeting Kivan Tester by name](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-learns.png?v=1d39c8c)
+![Three real simulator screenshots: the sign-in screen, the first-run tutorial, and Home greeting Kivan Tester by name](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-learns.png?v=e31367e)
 
 Real screenshots from the verification run, not mockups. Clerk's dev instances let you sign up without an inbox. Any `+clerk_test` address works, and the code is always `424242`. That's how an automated UI test drives the whole flow.
 
@@ -49,7 +49,7 @@ Every request carries a Clerk session JWT as a Bearer token. The backend verifie
 
 The work is rejecting for the right reason. A missing token, a garbage token, a made-up key id are all the caller's problem, and each gets a flat `401 Invalid authentication token`. When the fault is mine instead (Clerk down, a wrong secret key, no users table), the answer is a `503` whose message names the fix; the missing-table one says to run `terraform apply` and set `ENVIRONMENT` to match, which only a caller with a valid token ever sees. Confuse the two and a Clerk outage surfaces as a `401` with the library's error string attached, which sends a valid user off to debug a fine token and leaks internals to anyone who asks.
 
-![Terminal: a missing token and a garbage token both return a flat 401, while a server-side fault returns a 503 whose message names the fix](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-status.png?v=04rebal)
+![Terminal: a missing token and a garbage token both return a flat 401, while a server-side fault returns a 503 whose message names the fix](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-status.png?v=e31367e)
 
 ```python
 except pyjwt.PyJWKClientConnectionError:   # JWKS unreachable: mine, 503
@@ -66,7 +66,7 @@ The second trap is a tempting flag. `cache_keys=True` reads like the performance
 
 The backend makes two calls to Clerk (fetching the signing keys, and fetching a new user's profile), and both authorize with a Clerk secret key. The lazy way to hand that key to the container is a plaintext App Runner env var, sitting in the console, readable by anyone with `apprunner:DescribeService`. Instead, the key lives in SSM as a **SecureString**, App Runner resolves it at instance start via `runtime_environment_secrets`, and the instance role can read that one parameter and nothing else.
 
-![Terminal: describe-service shows the Clerk secret as an SSM SecureString reference (an ARN), never the plaintext value, readable by a scoped instance role](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-secret.png?v=04rebal)
+![Terminal: describe-service shows the Clerk secret as an SSM SecureString reference (an ARN), never the plaintext value, readable by a scoped instance role](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-secret.png?v=e31367e)
 
 That last line broke my first rollout. `CREATE_FAILED`, no logs, the same empty failure step 03 hit twice. This time the image was fine. App Runner checked its secret access *while Terraform was still attaching the SSM policy*. Nothing tied the two together, and Terraform built them in parallel, losing the race. One line on the App Runner service resource fixes it:
 
