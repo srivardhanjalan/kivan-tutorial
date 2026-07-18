@@ -125,13 +125,15 @@ product-manager (more as the user adds them).
 
 ## 4. Verification & honesty
 
-- [ ] **Model roles: Fable directs and reviews; Opus/Sonnet execute.**
-      The main (Fable) loop does orchestration, direction, scoping, and
-      EVERY review verdict. Mechanical execution — builds, file sweeps,
-      E2E driving, ports — is delegated to Opus/Sonnet subagents with a
+- [ ] **Direct-loop reviews; delegated subagents execute.** The main
+      (directing) loop does orchestration, scoping, and EVERY review
+      verdict — whatever model it runs on. Mechanical execution — builds,
+      file sweeps, E2E driving, ports — is delegated to subagents with a
       precise brief and hard constraints (no git, evidence-only reports);
-      Fable reviews their evidence before anything ships. `claude -p`
-      reviewers run on Fable (`--model claude-fable-5` — the gate pins it).
+      the directing loop reviews their evidence before anything ships.
+      `claude -p` reviewers pin a model for consistency across runs
+      (`AUDIT_REVIEWER_MODEL`, default `claude-fable-5` in the gate) so a
+      verdict doesn't drift with whatever CLI default is current.
 - [ ] **Everything created gets an adversarial review before it ships.**
       After creating ANY artifact — code, README, Medium post, image, script,
       config, PR description — run an adversarial reviewer against it
