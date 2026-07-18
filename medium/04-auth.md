@@ -1,12 +1,12 @@
 # Signed, Sealed, Delivered
 
-*Zero to Shipped · 04. The app learns your name for real: Clerk sign-in, JWKS-verified tokens, and a user record the client is never allowed to create.*
+*Zero to Shipped · 04. The app learns who you are: Clerk sign-in, JWKS-verified tokens, and a user record the client is never allowed to create.*
 
 ---
 
 ![Zero to Shipped 04 hero, signed, sealed, delivered: the 401s terminal and the Home screen greeting Kivan Tester by name](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-04.png?v=1d39c8c)
 
-By the end of this step you sign up in the app, a code lands in your inbox, the first-run tutorial plays, and Home greets you by name above a record the backend wrote for you. Every interesting decision here comes back to one question: who's allowed to create a user? I got it wrong first.
+One question drives every decision in this step: who's allowed to create a user? I got it wrong first. By the end you sign up in the app, a code lands in your inbox, the first-run tutorial plays, and Home greets you by name above a record the backend wrote for you, not the phone.
 
 *(Step 04 of **Zero to Shipped**, a production social-wishlist app on Expo, FastAPI, and AWS. New here? **[Start with the introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**. Code is the `04-auth/` folder; [PR #22](https://github.com/srivardhanjalan/kivan-tutorial/pull/22/files) is every line this step adds.)*
 
@@ -25,9 +25,9 @@ users_table.put_item(
 )
 ```
 
-The profile comes from Clerk, not from whatever the phone sent. The condition stops two racing requests from both creating. And a rebuilt database heals on the next sign-in, because provisioning now runs on every authenticated request instead of once.
+The profile comes from Clerk, not from whatever the phone sent. The write is create-only. If two first-requests race, the loser is refused and caught, never clobbering the record. The check costs only the first request per user, because a confirmed id stays cached in memory for the life of the process. A fresh database or an abandoned signup heals the next time that user calls, though a table rebuilt under a live backend needs a restart to clear that cache.
 
-The record is eight fields: id, email, first and last name, avatar, the onboarding flag, two timestamps. No follower counts, no search keys, no roles. DynamoDB is schemaless, and each of those joins the step that first reads it, one line, no migration. The table under it is a hash key and nothing else.
+The record is eight fields: id, email, first and last name, avatar, the onboarding flag, two timestamps. No follower counts, no search keys, nothing for roles yet. DynamoDB is schemaless, and each of those joins the step that first reads it, one line, no migration. The table under it is a hash key and nothing else.
 
 ## Sign-in and sign-up are the same screen
 
@@ -39,19 +39,28 @@ That makes them one component, `AuthMethods`, with the verb plugged in. The OAut
 
 Real screenshots from the verification run, not mockups. Clerk's dev instances let you sign up without an inbox. Any `+clerk_test` address works, and the code is always `424242`. That's how an automated UI test drives the whole flow.
 
-The best cleanup here wasn't in my draft; it was in my fix. Collapsing the logo's size behind one config value made two style blocks byte-identical, the clone detector caught that, and the real fix fell out: a shared `BrandMark`. A fix to duplication can be duplication, which is why the gate never trusts a single clean pass.
+The best cleanup here came out of the fix, not the draft. Collapsing the logo's size behind one config value made two style blocks byte-identical, the clone detector caught that, and the real fix fell out: a shared `BrandMark`. A fix to duplication can be duplication, which is why the gate never trusts a single clean pass.
 
 ## 401 means you, 503 means me
 
-Auth is where you lose the most hours to debugging. Here the status codes point straight at the culprit. Missing token, garbage token, made-up key ID: the caller's problem, all a flat `401 Invalid authentication token`. Clerk unreachable, secret key wrong, users table missing: my problem, each a `503` whose message names the fix; the missing-table one says to run `terraform apply` and set `ENVIRONMENT` to match. Get this wrong and a Clerk outage surfaces as a `401` with the library's error string attached, sending a valid user to debug a fine token and leaking internals to anyone who asks.
+Every request carries a Clerk session JWT as a Bearer token. The backend verifies it locally. It fetches Clerk's public signing keys once from the JWKS endpoint (the JSON Web Key Set), caches them, and from then on checks each token's RS256 signature and expiry with no further network call. A token whose signature doesn't match, or whose key it can't find, is rejected.
 
-Two sharper traps live in the verifier, both found only by reading PyJWT's source. Spam tokens with unknown key IDs and the library re-fetches Clerk's key set every request; I can't stop the refetch, but I can stop it looking like an outage. An unknown key is the caller's `401` at info level, never a `503`, never error-level. Get that classification wrong and the spam poses as a Clerk failure while it floods the logs. The second trap hides in a flag. `cache_keys=True` looks like the performance option, but it's really an `lru_cache` with no expiry, and a key Clerk rotates or revokes stays trusted until the process restarts. Caching the key *set* for an hour gives the same networkless hot path and catches a rotation within the hour.
+The work is rejecting for the right reason. A missing token, a garbage token, a made-up key id are all the caller's problem, and each gets a flat `401 Invalid authentication token`. Clerk unreachable, the secret key wrong, the users table missing are all mine, and each gets a `503` whose message names the fix; the missing-table one says to run `terraform apply` and set `ENVIRONMENT` to match. Confuse the two and a Clerk outage surfaces as a `401` with the library's error string attached, which sends a valid user off to debug a fine token and leaks internals to anyone who asks.
+
+```python
+except pyjwt.PyJWKClientConnectionError:   # JWKS unreachable: mine, 503
+    raise HTTPException(503, "Authentication service temporarily unavailable")
+except pyjwt.PyJWTError:                    # forged or expired token: theirs, 401
+    raise HTTPException(401, "Invalid authentication token")
+```
+
+Two sharper traps hide in that verifier, both found only by reading PyJWT's source. Send tokens with unknown key ids and the library re-fetches Clerk's key set on every one. I can't stop the refetch, but I can stop it looking like an outage: an unknown key is the caller's `401` at info level, never a `503`, never error-level, or the spam masquerades as a Clerk failure while it floods the logs. The second trap is a tempting flag. `cache_keys=True` reads like the performance option, but it is really an `lru_cache` with no expiry, and a key Clerk rotates or revokes stays trusted until the process restarts. Caching the key *set* for an hour instead gives the same networkless hot path and catches a rotation within the hour.
 
 ## Keeping the secret key out of the console
 
-The backend needs Clerk's secret key. The lazy way is a plaintext App Runner env var, sitting in the console in the clear, readable by anyone with `apprunner:DescribeService`. Instead, the key lives in SSM as a **SecureString**, App Runner resolves it at instance start via `runtime_environment_secrets`, and the instance role can read that one parameter and nothing else.
+Both of those calls the backend makes to Clerk, fetching the signing keys and fetching a new user's profile, authorize with a Clerk secret key. The lazy way to hand that key to the container is a plaintext App Runner env var, sitting in the console in the clear, readable by anyone with `apprunner:DescribeService`. Instead, the key lives in SSM as a **SecureString**, App Runner resolves it at instance start via `runtime_environment_secrets`, and the instance role can read that one parameter and nothing else.
 
-That last line broke my first rollout. `CREATE_FAILED`, no logs, the same empty failure step 03 hit twice. This time the image was fine. App Runner checked its secret access *while Terraform was still attaching the SSM policy*. Nothing tied the two together, and Terraform built them in parallel, losing the race. One line fixes it:
+That last line broke my first rollout. `CREATE_FAILED`, no logs, the same empty failure step 03 hit twice. This time the image was fine. App Runner checked its secret access *while Terraform was still attaching the SSM policy*. Nothing tied the two together, and Terraform built them in parallel, losing the race. One line on the App Runner service resource fixes it:
 
 ```hcl
 depends_on = [aws_iam_role_policy.apprunner_instance_ssm]
@@ -65,9 +74,9 @@ A `CREATE_FAILED` service won't heal itself, and fixing the cause isn't enough. 
 
 First sign-in plays a swipeable welcome carousel. The whole feature is one bit of state, and the only decision is where it lives: `onboarding_completed` sits on the backend record, not the device. Reinstall the app, switch phones, clear the cache. The tutorial stays done, because the flag was never on the phone to lose.
 
-"Get Started" flips it through an endpoint guarded by `ConditionExpression="attribute_exists(id)"`. DynamoDB's `update_item` is secretly an upsert. Call it on a missing id and it happily creates a half-formed user. The condition makes it refuse.
+"Get Started" flips it through an endpoint guarded by `ConditionExpression="attribute_exists(id)"`. DynamoDB's `update_item` is secretly an upsert. Call it on a missing id and it happily creates a half-formed user. The condition makes it refuse, and the handler turns that refusal into a 404 rather than a phantom account.
 
-One last scar: the UI test could not tap the carousel's Next button. It's text inside a glass blur view, and unlabeled content in a `BlurView` never reaches the accessibility tree. The automation was stranded exactly where a VoiceOver user would be. One `accessibilityLabel` fixed the test and the screen reader in the same commit.
+One last scar: the UI test could not tap the carousel's Next button. It's a text touchable sitting inside a glass blur view, and with no `accessibilityLabel` it was invisible to the test and to VoiceOver alike. The automation was stranded exactly where a screen-reader user would be. One label fixed both in the same commit.
 
 ## You're done when
 
@@ -76,6 +85,7 @@ One last scar: the UI test could not tap the carousel's Next button. It's text i
 - Home greets you by name, and **Record** shows your email + provisioned date in green, read from DynamoDB, created by no client
 - Sign out → sign in → no tutorial replay (the flag survived on the backend record)
 - "Continue with Google" opens the browser consent sheet (Apple shares the code path; verify it the same way once enabled in your Clerk app)
+- `aws apprunner describe-service` shows the Clerk key as an SSM SecureString reference, never the plaintext value
 
 ## What's next
 
