@@ -125,6 +125,15 @@ product-manager (more as the user adds them).
 
 ## 4. Verification & honesty
 
+- [ ] **Direct-loop reviews; delegated subagents execute.** The main
+      (directing) loop does orchestration, scoping, and EVERY review
+      verdict — whatever model it runs on. Mechanical execution — builds,
+      file sweeps, E2E driving, ports — is delegated to subagents with a
+      precise brief and hard constraints (no git, evidence-only reports);
+      the directing loop reviews their evidence before anything ships.
+      `claude -p` reviewers pin a model for consistency across runs
+      (`AUDIT_REVIEWER_MODEL`, default `claude-fable-5` in the gate) so a
+      verdict doesn't drift with whatever CLI default is current.
 - [ ] **Everything created gets an adversarial review before it ships.**
       After creating ANY artifact — code, README, Medium post, image, script,
       config, PR description — run an adversarial reviewer against it
@@ -194,6 +203,17 @@ product-manager (more as the user adds them).
 - [ ] **Mocks must match the end experience exactly** — when the app
       changes visually, regenerate the affected mock/hero images in the
       same round.
+- [ ] **Every post is crisp, the author's story, and instructive — all
+      three, no trade-offs.** CRISP: zero bloat applies to prose exactly as
+      to code — every sentence is either the story or the lesson; cut
+      anything that is neither (throat-clearing, restated points, decorative
+      asides). STORY: the series speaks as Srivardhan's lived build journey
+      — "I", a real arc (setup → struggle → resolution), own decisions and
+      scars; never a detached narrator, never phrasing implying anyone else
+      did the work. INSTRUCTIVE: these are tutorial posts — a reader must
+      finish able to DO the step; the story carries the lesson, never
+      replaces it. If a section reads like a manual, rewrite it as the
+      moment it was lived; if it reads like a memoir, restore the lesson.
 - [ ] **Titles: wit that carries the meaning ("Zero to Shipped"), never
       wit that replaces it.** The test: at zero context, an uncharitable
       reader must still decode what the piece delivers AND want to click.
