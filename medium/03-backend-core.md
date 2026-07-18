@@ -91,8 +91,8 @@ In **step 04** the app gets real users: Clerk sign-in/up, JWKS verification on t
 
 - **00 · [Introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**
 - **01 · [One script to set up everything](https://medium.com/@srivardhanjalan/one-script-to-set-up-everything-ae8bcea2d649)**
-- **02 · Dressed to Ship** *(link when published)*
+- **02 · [Dressed to Ship](https://medium.com/@srivardhanjalan/dressed-to-ship-1e2591179d8a)**
 - **03 · Alive on Arrival** *(this post)*
-- **04 · Auth & onboarding** *(coming soon)*
+- **04 · [Signed, Sealed, Delivered](https://medium.com/@srivardhanjalan/signed-sealed-delivered-a481a02ac392)**
 
 *All code: [github.com/srivardhanjalan/kivan-tutorial](https://github.com/srivardhanjalan/kivan-tutorial)*

@@ -72,6 +72,6 @@ In **step 02** we build the app shell and design system — a fully themed app w
 
 - **00 · [Introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**
 - **01 · One script to set up everything** *(this post)*
-- **02 · Dressed to Ship** *(coming soon)*
+- **02 · [Dressed to Ship](https://medium.com/@srivardhanjalan/dressed-to-ship-1e2591179d8a)**
 
 *All code: [github.com/srivardhanjalan/kivan-tutorial](https://github.com/srivardhanjalan/kivan-tutorial)*
