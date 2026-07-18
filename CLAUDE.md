@@ -203,6 +203,17 @@ product-manager (more as the user adds them).
 - [ ] **Mocks must match the end experience exactly** — when the app
       changes visually, regenerate the affected mock/hero images in the
       same round.
+- [ ] **Every post is crisp, the author's story, and instructive — all
+      three, no trade-offs.** CRISP: zero bloat applies to prose exactly as
+      to code — every sentence is either the story or the lesson; cut
+      anything that is neither (throat-clearing, restated points, decorative
+      asides). STORY: the series speaks as Srivardhan's lived build journey
+      — "I", a real arc (setup → struggle → resolution), own decisions and
+      scars; never a detached narrator, never phrasing implying anyone else
+      did the work. INSTRUCTIVE: these are tutorial posts — a reader must
+      finish able to DO the step; the story carries the lesson, never
+      replaces it. If a section reads like a manual, rewrite it as the
+      moment it was lived; if it reads like a memoir, restore the lesson.
 - [ ] **Titles: wit that carries the meaning ("Zero to Shipped"), never
       wit that replaces it.** The test: at zero context, an uncharitable
       reader must still decode what the piece delivers AND want to click.
