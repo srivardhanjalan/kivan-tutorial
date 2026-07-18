@@ -25,7 +25,7 @@ users_table.put_item(
 )
 ```
 
-The profile comes from Clerk, not from whatever the phone sent, and the write is create-only. If two first-requests race, the loser is refused and caught, never clobbering the record. The check costs only the first request per user, because a confirmed id stays cached in memory for the life of the process. A fresh database or an abandoned signup heals the next time that user calls, though a table rebuilt under a live backend needs a restart to clear that cache.
+The profile comes from Clerk, not from whatever the phone sent, and the write is create-only. If two first-requests race, the loser is refused and caught, never clobbering the record. The check costs only the first request per user on a given instance, because a confirmed id stays cached in memory for the life of that process. A fresh database or an abandoned signup heals the next time that user calls, though a table rebuilt under a live backend needs a restart to clear that cache.
 
 The record is eight fields: id, email, first and last name, avatar, the onboarding flag, two timestamps. No follower counts, no roles yet. DynamoDB is schemaless, and each of those joins the step that first reads it, one line, no migration. The table under it is a hash key and nothing else.
 
@@ -45,7 +45,7 @@ The best cleanup here came out of the fix, not the draft. Collapsing the logo's 
 
 Every request carries a Clerk session JWT as a Bearer token. The backend verifies it locally. It fetches Clerk's public signing keys from the JWKS endpoint (the JSON Web Key Set) and caches the set, checking each token's RS256 signature and expiry against a key it already holds. A token whose signature doesn't match, or whose key it can't find, is rejected.
 
-The work is rejecting for the right reason. A missing token, a garbage token, a made-up key id are all the caller's problem, and each gets a flat `401 Invalid authentication token`. When the fault is mine instead (Clerk down, a wrong secret key, no users table), the answer is a `503` whose message names the fix; the missing-table one says to run `terraform apply` and set `ENVIRONMENT` to match. Confuse the two and a Clerk outage surfaces as a `401` with the library's error string attached, which sends a valid user off to debug a fine token and leaks internals to anyone who asks.
+The work is rejecting for the right reason. A missing token, a garbage token, a made-up key id are all the caller's problem, and each gets a flat `401 Invalid authentication token`. When the fault is mine instead (Clerk down, a wrong secret key, no users table), the answer is a `503` whose message names the fix; the missing-table one says to run `terraform apply` and set `ENVIRONMENT` to match, which only a caller with a valid token ever sees. Confuse the two and a Clerk outage surfaces as a `401` with the library's error string attached, which sends a valid user off to debug a fine token and leaks internals to anyone who asks.
 
 ```python
 except pyjwt.PyJWKClientConnectionError:   # JWKS unreachable: mine, 503
@@ -56,11 +56,11 @@ except pyjwt.PyJWTError:                    # forged or expired token: theirs, 4
 
 Two sharper traps hide in that verifier, both found only by reading PyJWT's source. Send tokens with unknown key ids and the library re-fetches Clerk's key set on every one. I can't stop the refetch, but I can stop it looking like an outage. An unknown key is the caller's `401` at info level, never a `503`, never error-level, or the spam masquerades as a Clerk failure while it floods the logs.
 
-The second trap is a tempting flag. `cache_keys=True` reads like the performance option, but it is really an `lru_cache` with no expiry, and a key Clerk rotates or revokes stays trusted until the process restarts. Caching the key *set* with a one-hour lifespan instead gives the same networkless hot path and catches a rotation within the hour.
+The second trap is a tempting flag. `cache_keys=True` reads like the performance option, but it is really an `lru_cache` with no expiry, and a key Clerk rotates or revokes stays trusted until the process restarts. Caching the key *set* with a one-hour lifespan instead keeps the networkless hot path and drops a revoked key within the hour, not never.
 
 ## Keeping the secret key out of the console
 
-The backend makes two calls to Clerk (fetching the signing keys, and fetching a new user's profile), and both authorize with a Clerk secret key. The lazy way to hand that key to the container is a plaintext App Runner env var, sitting in the console in the clear, readable by anyone with `apprunner:DescribeService`. Instead, the key lives in SSM as a **SecureString**, App Runner resolves it at instance start via `runtime_environment_secrets`, and the instance role can read that one parameter and nothing else.
+The backend makes two calls to Clerk (fetching the signing keys, and fetching a new user's profile), and both authorize with a Clerk secret key. The lazy way to hand that key to the container is a plaintext App Runner env var, sitting in the console, readable by anyone with `apprunner:DescribeService`. Instead, the key lives in SSM as a **SecureString**, App Runner resolves it at instance start via `runtime_environment_secrets`, and the instance role can read that one parameter and nothing else.
 
 That last line broke my first rollout. `CREATE_FAILED`, no logs, the same empty failure step 03 hit twice. This time the image was fine. App Runner checked its secret access *while Terraform was still attaching the SSM policy*. Nothing tied the two together, and Terraform built them in parallel, losing the race. One line on the App Runner service resource fixes it:
 
@@ -78,7 +78,7 @@ First sign-in plays a swipeable welcome carousel. The whole feature is one bit o
 
 "Get Started" flips it through an endpoint guarded by `ConditionExpression="attribute_exists(id)"`. DynamoDB's `update_item` is secretly an upsert. Call it on a missing id and it happily creates a half-formed user. The condition makes it refuse, and the handler turns that refusal into a 404 rather than a phantom account.
 
-One last scar: the UI test could not tap the carousel's Next button. Its label sits behind a glass blur view, and the touchable wrapping it carried no `accessibilityLabel`, leaving it invisible to the test and to VoiceOver alike. The automation was stranded exactly where a screen-reader user would be. One label fixed both in the same commit.
+One last scar: the UI test could not tap the carousel's Next button. Its label sits behind a glass blur view, and the touchable wrapping it carried no `accessibilityLabel`. The automation was stranded exactly where a screen-reader user would be, and one label fixed both in the same commit.
 
 ## You're done when
 
