@@ -236,6 +236,15 @@ product-manager (more as the user adds them).
 - Step folders: `NN-name`, self-contained, runnable; posts numbered to match.
 - Per step: baseline commit (copy of previous step, via PR) → code PR →
   content PR; step README and post deep-link the code PR's Files-changed.
+- **Every step ships a LinkedIn deliverable too** (user directive
+  2026-07-18): a step is content-complete only with BOTH the Medium article
+  AND a LinkedIn post+carousel at `linkedin/NN-name/` (`post.md` +
+  `carousel.html` + exported `<slug>-carousel.pdf`), landing as its own
+  `content/NN-linkedin-carousel` PR (separate from the step content PR). The
+  carousel clones the committed template and reuses that step's
+  mocks/screenshots; both post and carousel pass their review panel
+  (content-writer, social-media-manager, educator, graphic/content-designer)
+  before the PR opens. Owned by the social-media-manager persona.
 - `tools/audit-step.sh <step>` is the pre-PR gate. Semantic review runs as
   the AI reviewer inside the gate (never waived, never "attested away" when
   the CLI is available).
