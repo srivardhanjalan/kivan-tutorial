@@ -1,0 +1,39 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="mocks.css">
+<style>
+  body{margin:0;background:#fff}
+  .wrap{width:1400px;height:640px;position:relative;overflow:hidden;
+    background:linear-gradient(115deg,#FFE8EC 0%,#FDFFFF 42%,#E7F1F8 100%);
+    display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+  .term{width:1080px;border-radius:14px;background:#1D1E24;box-shadow:0 30px 70px rgba(20,20,30,.28);overflow:hidden}
+  .tbar{height:38px;background:#2A2B33;display:flex;align-items:center;padding:0 16px;gap:8px}
+  .dot2{width:12px;height:12px;border-radius:6px}
+  .ttitle{flex:1;text-align:center;color:#8A8B94;font-size:13px;font-weight:600;font-family:"SF Mono",Menlo,monospace;margin-right:44px}
+  .tbody{padding:20px 26px 24px;font-family:"SF Mono",Menlo,monospace;font-size:15px;line-height:1.75;color:#D6D7DE}
+  .g{color:#4ADE80}.r{color:#FF6B6B}.p{color:#FF6B8A}.dim{color:#8A8B94}.y{color:#FFD166}
+</style></head><body>
+<div class="wrap">
+  <div class="term">
+    <div class="tbar">
+      <span class="dot2" style="background:#FF5F57"></span>
+      <span class="dot2" style="background:#FEBC2E"></span>
+      <span class="dot2" style="background:#28C840"></span>
+      <span class="ttitle">the row the backend wrote itself — eight fields</span>
+    </div>
+    <div class="tbody">
+<span class="dim">$</span> <span class="p">aws dynamodb get-item --table-name kivan-step04test-users \</span><br>
+&nbsp;&nbsp;<span class="p">--key '{"id":{"S":"user_2aQ…"}}'</span><br>
+{<br>
+&nbsp;&nbsp;"id":            <span class="g">"user_2aQ…"</span>,      <span class="dim">← the Clerk user id, fetched server-to-server</span><br>
+&nbsp;&nbsp;"email":         <span class="g">"kivan.step04+clerk_test@example.com"</span>,<br>
+&nbsp;&nbsp;"first_name":    <span class="g">"Kivan"</span>,   "last_name": <span class="g">"Tester"</span>,<br>
+&nbsp;&nbsp;"image_url":     <span class="g">"https://img.clerk.com/…"</span>,<br>
+&nbsp;&nbsp;"onboarding_completed": <span class="g">true</span>,<br>
+&nbsp;&nbsp;"created_at":    <span class="g">"2026-07-16T09:12Z"</span>,  "updated_at": <span class="g">"2026-07-16T09:12Z"</span><br>
+}<br>
+<span class="dim"># no follower counts, no roles yet — each field joins the step that reads it</span><br>
+<span class="y"># the phone never sent one of these. the backend wrote every field.</span>
+    </div>
+  </div>
+</div>
+</body></html>
