@@ -4,9 +4,9 @@
 
 My app started signing people up for real this week — and I never wrote a "create user" endpoint.
 
-The obvious design is a sync endpoint: the client signs up, then POSTs its profile so the backend has a record. It's what this app shipped in its first life.
+The obvious design is a sync endpoint: the client signs up, then POSTs its profile so the backend has a record. It's the first design I reached for.
 
-It breaks four ways. The worst is a security hole: the client controls the payload, so any caller can assert any profile.
+It breaks in a few ways — the worst a security hole: the client controls the payload, so any caller can assert any profile.
 
 So there's no sync endpoint. The backend provisions you just in time.
 
@@ -14,11 +14,7 @@ The first request with a valid token for an unknown user makes the backend fetch
 
 ConditionExpression="attribute_not_exists(id)"
 
-A caller can't forge a profile it never sends. Two racing requests can't double-create. Sign in on a rebuilt database and it self-heals.
-
-Then the deploy died. CREATE_FAILED, no logs — the third time this series, and the first that wasn't the image.
-
-IAM lost a race: App Runner validated its secret access before Terraform finished attaching the read policy. One depends_on line fixed it, plus a forced -replace (a dead service won't heal itself).
+A caller can't forge a profile it never sends. Two racing requests can't double-create.
 
 Now you sign up inside the app, a code lands, the tutorial plays, and Home greets you by name, over a record the backend wrote for you.
 
