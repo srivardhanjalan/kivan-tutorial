@@ -124,8 +124,8 @@
 <!-- 1 · COVER — the win: greeted by name over a provisioned record -->
 <section class="slide" id="s1">
   <div class="eyebrow">Zero to Shipped · Step 04</div>
-  <h1 style="margin-top:48px; font-size:104px; max-width:600px;">From nobody to a <span class="accent">name.</span></h1>
-  <div class="lede" style="max-width:480px;">Real sign-up, a code, a real account — greeted by name.</div>
+  <h1 style="margin-top:48px; font-size:104px; max-width:600px;">Zero fake <span class="accent">accounts.</span></h1>
+  <div class="lede" style="max-width:520px;">The client never sends its own profile — so it can't fake one. The backend writes each account, then greets you by name.</div>
   <div class="lede" style="margin-top:70px; font-weight:800; color:#9a9aa0; letter-spacing:.12em; text-transform:uppercase; font-size:28px;">swipe →</div>
   <div style="position:absolute; right:70px; bottom:80px; width:360px;">
     <div class="phone"><img src="../../mocks/shot-04-home.png" alt="Home greeting Kivan Tester by name over a provisioned record — real simulator screenshot"></div>
@@ -138,9 +138,9 @@
 
 <!-- 2 · THE FLOW — sign up, verify, in -->
 <section class="slide" id="s2">
-  <div class="eyebrow">The whole flow</div>
-  <h2 style="max-width:560px;">Sign up, verify, and you're <span class="accent">in.</span></h2>
-  <div class="lede" style="max-width:470px;">Three ways in, then a real verification code.</div>
+  <div class="eyebrow">Getting in is the easy part</div>
+  <h2 style="max-width:560px;">Three ways in, then a real <span class="accent">code.</span></h2>
+  <div class="lede" style="max-width:490px;">Apple, Google, or email — then a code only you receive. The interesting part is what the backend does the first time it sees you.</div>
   <div style="position:absolute; right:70px; bottom:135px; width:360px;">
     <div class="phone"><img src="../../mocks/shot-04-signin.png" alt="Sign-in screen with Apple, Google, and email — real simulator screenshot"></div>
   </div>
@@ -172,17 +172,17 @@
   <div class="footer"><span>Signed, Sealed, Delivered</span><span>4 / 7</span></div>
 </section>
 
-<!-- 5 · 401 means you, 503 means me -->
+<!-- 5 · 401 is on the caller, 503 is on the server -->
 <section class="slide" id="s5" style="justify-content:center;">
   <div class="eyebrow">Whose fault is it?</div>
-  <h2>401 means <span class="accent">you.</span> 503 means <span class="accent">me.</span></h2>
+  <h2>401 is on the <span class="accent">caller.</span> 503 is on the <span class="accent">server.</span></h2>
   <div class="term" style="margin-top:56px;">
-    <span class="cm"># your bad, forged, or missing token</span><br>
+    <span class="cm"># the caller's bad, forged, or missing token</span><br>
     <span class="err">401</span> <span class="str">"Invalid authentication token"</span><br><br>
-    <span class="cm"># mine — each names its own fix. missing table:</span><br>
-    <span class="err">503</span> <span class="str">"run terraform apply and set ENVIRONMENT…"</span>
+    <span class="cm"># the server's problem — the real fix goes to its logs, not the response</span><br>
+    <span class="err">503</span> <span class="str">"Auth service unavailable — try again"</span>
   </div>
-  <div class="lede" style="max-width:820px; margin-top:48px;">A status code points at the right suspect. It never leaks my internals to you.</div>
+  <div class="lede" style="max-width:820px; margin-top:48px;">A status code names the suspect. It never leaks the server's internals to the caller.</div>
   <div class="footer"><span>Signed, Sealed, Delivered</span><span>5 / 7</span></div>
 </section>
 
@@ -202,7 +202,7 @@
   <div class="eyebrow">Zero to Shipped · Step 04</div>
   <h2>The full write-up — <span class="accent">free on Medium.</span></h2>
   <div style="margin-top:80px;"><span class="chip">Link in the first comment ↓</span></div>
-  <div class="lede" style="margin-top:90px; font-size:30px;"><strong>Zero to Shipped</strong><br><span class="mono" style="font-size:26px;">github.com/srivardhanjalan/kivan-tutorial</span></div>
+  <div class="lede" style="margin-top:90px; font-size:30px;"><strong>Zero to Shipped</strong></div>
   <div class="footer"><span>Signed, Sealed, Delivered</span><span>7 / 7</span></div>
 </section>
 
