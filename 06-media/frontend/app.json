@@ -15,7 +15,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.kivan.app"
+      "bundleIdentifier": "com.kivan.app",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Kivan needs access to your photos so you can set your profile and cover photo."
+      }
     },
     "android": {
       "package": "com.kivan.app",

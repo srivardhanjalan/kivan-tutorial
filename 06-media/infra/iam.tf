@@ -48,7 +48,7 @@ resource "aws_iam_role_policy" "apprunner_ecr_access" {
   })
 }
 
-# IAM Policy for App Runner to resolve runtime_environment_secrets from SSM
+# IAM Policy for the running backend to resolve its secret from SSM
 resource "aws_iam_role_policy" "apprunner_instance_ssm" {
   name = "${local.project_name}-apprunner-ssm-policy-${local.environment}"
   role = aws_iam_role.apprunner_instance.id
@@ -59,6 +59,15 @@ resource "aws_iam_role_policy" "apprunner_instance_ssm" {
         Effect   = "Allow"
         Action   = ["ssm:GetParameters"]
         Resource = aws_ssm_parameter.clerk_secret_key.arn
+      },
+      {
+        # The secret is a SecureString encrypted with our customer-managed key
+        # (kms.tf); App Runner decrypts it at instance start, which needs this
+        # grant. The default aws/ssm key blocks this decrypt via its policy —
+        # hence our own key.
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt"]
+        Resource = aws_kms_key.secrets.arn
       }
     ]
   })

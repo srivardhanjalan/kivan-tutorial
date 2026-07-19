@@ -12,6 +12,7 @@ export interface User {
   first_name: string | null;
   last_name: string | null;
   image_url: string | null;
+  cover_photo: string | null;
   birthday: string | null;
   birthday_prompt_dismissed: boolean;
   onboarding_completed: boolean;
@@ -25,6 +26,30 @@ export interface ProfileUpdate {
   last_name?: string;
   birthday?: string;
   birthday_prompt_dismissed?: boolean;
+  /** Permanent S3 URL of the profile photo, from an upload's photo_url */
+  image_url?: string;
+  /** Permanent S3 URL of the cover photo, from an upload's photo_url */
+  cover_photo?: string;
+}
+
+/** The two image slots this app uploads for — the S3 path is keyed on it */
+export type ResourceType = 'profile_photo' | 'cover_photo';
+
+/** Extensions the signed-url endpoint accepts (drives the S3 key + MIME) */
+export type FileExtension = 'jpeg' | 'png' | 'gif' | 'webp';
+
+/** POST /upload/signed-url body */
+export interface SignedUrlRequest {
+  resource_type: ResourceType;
+  file_extension: FileExtension;
+}
+
+/** POST /upload/signed-url response */
+export interface SignedUrlResponse {
+  /** Presigned PUT URL — the raw bytes go here */
+  upload_url: string;
+  /** Permanent URL to persist on the user record once claimed */
+  photo_url: string;
 }
 
 // Navigation wires Clerk's getToken in here, so every request picks up a
@@ -92,4 +117,39 @@ export async function deleteAccount(confirmationText: string): Promise<void> {
     method: 'DELETE',
     body: JSON.stringify({ confirmation_text: confirmationText }),
   });
+}
+
+/** Ask the backend for a presigned PUT URL and the permanent photo_url to
+    save once the upload lands. Auth-gated like every other /users call. */
+export async function getSignedUploadUrl(
+  body: SignedUrlRequest
+): Promise<SignedUrlResponse> {
+  const res = await request('/upload/signed-url', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+/** PUT the local file's raw bytes straight to S3 with its own presigned URL.
+    This one bypasses `request()` on purpose: it targets S3, not our API, so
+    it carries the image's Content-Type and NO Authorization header. */
+export async function uploadToS3(
+  uploadUrl: string,
+  fileUri: string,
+  contentType: string
+): Promise<void> {
+  const file = await fetch(fileUri);
+  if (!file.ok) {
+    throw new Error(`Could not read the selected image (${file.status})`);
+  }
+  const blob = await file.blob();
+  const res = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': contentType },
+    body: blob,
+  });
+  if (!res.ok) {
+    throw new Error(`S3 upload failed: ${res.status}`);
+  }
 }

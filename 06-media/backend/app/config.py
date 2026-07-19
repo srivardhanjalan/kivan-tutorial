@@ -15,6 +15,13 @@ class Settings(BaseSettings):
     # Required on purpose: a missing key should fail at startup naming the
     # variable, not as a 401/503 on every request
     clerk_secret_key: str
+    # The photos bucket name is global (S3 names are unique across all of
+    # AWS), so unlike the tables it can't be derived from `environment` — it
+    # carries an account-id suffix. infra/s3.tf owns the one true name and
+    # App Runner injects it here as PHOTOS_BUCKET_NAME (see apprunner.tf).
+    # Empty locally means every photo URL is treated as external and passes
+    # through the s3_helpers untouched, so the app still boots without S3.
+    photos_bucket_name: str = ""
 
     @property
     def users_table(self) -> str:

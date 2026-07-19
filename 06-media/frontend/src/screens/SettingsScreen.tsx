@@ -9,9 +9,12 @@ import SectionHeader from '../components/SectionHeader';
 import FormInput from '../components/FormInput';
 import PrimaryButton from '../components/PrimaryButton';
 import OnboardingTutorial from '../components/OnboardingTutorial';
+import ImageUploadField from '../components/ImageUploadField';
 import useFetch from '../hooks/useFetch';
 import useAsyncAction from '../hooks/useAsyncAction';
+import { usePendingImageUpload } from '../hooks/usePendingImageUpload';
 import { deleteAccount, fetchCurrentUser, updateProfile } from '../services/api';
+import type { ProfileUpdate } from '../services/api';
 import type { RootStackParamList } from '../components/Navigation';
 import { clerkFullName, clerkPrimaryEmail } from '../utils/clerkName';
 import Colors from '../constants/Colors';
@@ -100,6 +103,9 @@ export default function SettingsScreen() {
   const [year, setYear] = useState('2000');
   const [birthday, setBirthday] = useState<string | null>(null);
 
+  const profilePhoto = usePendingImageUpload('profile_photo', 'Could not upload your profile photo');
+  const coverPhoto = usePendingImageUpload('cover_photo', 'Could not upload your cover photo');
+
   const [showTutorial, setShowTutorial] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
@@ -107,6 +113,8 @@ export default function SettingsScreen() {
   useEffect(() => {
     if (!backendUser) return;
     setBirthday(backendUser.birthday);
+    if (backendUser.image_url) profilePhoto.setInitialImage(backendUser.image_url);
+    if (backendUser.cover_photo) coverPhoto.setInitialImage(backendUser.cover_photo);
     if (backendUser.birthday) {
       // Backend stores YYYY-MM-DD; strip zero-padding so each part matches
       // the unpadded picker values
@@ -139,6 +147,21 @@ export default function SettingsScreen() {
       setBirthday(updated.birthday);
       setEditingBirthday(false);
     }, 'Could not save your birthday');
+
+  // Claim whichever photos changed: send only the slots whose uploaded URL
+  // differs from what the record already holds. A no-op if nothing changed.
+  const savePhotos = () =>
+    run(async () => {
+      const update: ProfileUpdate = {};
+      if (profilePhoto.imageUrl && profilePhoto.imageUrl !== backendUser?.image_url) {
+        update.image_url = profilePhoto.imageUrl;
+      }
+      if (coverPhoto.imageUrl && coverPhoto.imageUrl !== backendUser?.cover_photo) {
+        update.cover_photo = coverPhoto.imageUrl;
+      }
+      if (Object.keys(update).length === 0) return;
+      await updateProfile(update);
+    }, 'Could not save your photos');
 
   const confirmDelete = () =>
     run(async () => {
@@ -192,6 +215,23 @@ export default function SettingsScreen() {
           onPress={() => setEditingBirthday(true)}
         />
       )}
+
+      <SectionHeader title="Photos" />
+      <View style={styles.editBlock}>
+        <ImageUploadField
+          label="Profile photo"
+          imagePreview={profilePhoto.imagePreview}
+          isUploading={profilePhoto.isUploading}
+          onUpload={profilePhoto.handleUpload}
+        />
+        <ImageUploadField
+          label="Cover photo"
+          imagePreview={coverPhoto.imagePreview}
+          isUploading={coverPhoto.isUploading}
+          onUpload={coverPhoto.handleUpload}
+        />
+        <PrimaryButton title="Save Photos" onPress={savePhotos} loading={saving} />
+      </View>
 
       <SectionHeader title="Help" />
       <SettingsRow label="Replay the tutorial" onPress={() => setShowTutorial(true)} />
