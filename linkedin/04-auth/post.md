@@ -2,25 +2,29 @@
 
 ## Post body (carousel PDF attached, NO link in post)
 
-My app started signing people up for real this week — and I never wrote a "create user" endpoint.
+My app greets you by name. The twist? It refuses to believe you about what that name is.
 
-The obvious design is a sync endpoint: the client signs up, then POSTs its profile so the backend has a record. It's the first design I reached for.
+Building it, I deleted the first piece of code I'd normally write.
 
-It breaks in a few ways — the worst a security hole: the client controls the payload, so any caller can assert any profile.
+The obvious version: someone signs up, the app tells my backend "here's who I am — save it." I started writing exactly that.
 
-So there's no sync endpoint. The backend provisions you just in time.
+Then it hit me: that code trusts whatever the app claims.
 
-The first request with a valid token for an unknown user makes the backend fetch your profile from Clerk's own API, server to server, and write the record itself. Create-only:
+Hand it any name. Any details. My backend writes them down as fact. It was taking the user's word for who they are.
 
-ConditionExpression="attribute_not_exists(id)"
+So I deleted it. My app now has zero ability to tell the backend who someone is.
 
-A caller can't forge a profile it never sends. Two racing requests can't double-create.
+Instead: the first time you show up, my backend asks the identity service directly — the one that actually watched you sign in — and records you from that.
 
-Now you sign up inside the app, a code lands, the tutorial plays, and Home greets you by name, over a record the backend wrote for you.
+You prove who you are. You don't get to describe yourself.
 
-Swipe for the short version — the full write-up is free 👇
+So when the app greets you by name? That name came from a source that verified it. Not from anything your phone sent along.
 
-#Clerk #FastAPI #BuildInPublic
+Never let the thing asking for access be the thing that defines it.
+
+What's the worst "it just believed whatever was sent" bug you've hit? Tell me in the comments. 👇
+
+#BuildInPublic #BackendDevelopment #AppSec
 
 ## First comment (posted immediately after publishing — article link ALONE, it's the conversion target)
 
@@ -41,11 +45,11 @@ https://github.com/srivardhanjalan/kivan-tutorial
 ## Posting notes
 
 - Upload `signed-sealed-delivered-carousel.pdf` as a document post; LinkedIn renders it as a swipeable carousel.
-- Document title (renders as a header on the doc; keep <60 chars): "Signed, Sealed, Delivered — real accounts, end to end". Cover headline ("From nobody to a name."), post hook ("My app started signing people up for real…"), and doc title all vary the claim — checked, no verbatim tripling.
-- Fold budget: mobile truncates at ~140 chars, desktop ~210. Hook must be complete inside ~140 — current draft passes (the hook sentence is ~95 chars and self-sufficient).
+- Document title (renders as a header on the doc; keep <60 chars): "Signed, Sealed, Delivered — real accounts, end to end". Cover headline ("Zero fake accounts."), post hook ("My app greets you by name. The twist?…"), and doc title all vary the claim — checked, no verbatim tripling.
+- Fold budget: mobile truncates at ~140 chars, desktop ~210. Hook must be complete inside ~140 — current draft passes (the opening line "My app greets you by name. The twist? It refuses to believe you about what that name is." is ~88 chars; the first sentence alone lands the paradox).
 - Hashtags: 3 relevant tags, end of post. Hashtag feeds were deprecated (late 2024); tags no longer drive reach — they're light topical metadata, nothing more.
 - Proof before posting. Typo fixes are safe only in the first ~10 minutes; substantive edits inside the 60–90-min momentum window measurably cut impressions (30–50% in creator data; LinkedIn documents no penalty — it's momentum interruption).
-- Post the first comment immediately (the CTA slide and body point to it). Self-comments don't hurt reach. Article link ALONE in comment #1; series intro + repo as a reply to it.
+- Post the first comment immediately (the carousel's final slide names it — "Link in the first comment ↓"; the body's one CTA is the closing question, so the link isn't restated in the body). Self-comments don't hurt reach. Article link ALONE in comment #1; series intro + repo as a reply to it.
 - Publish Tue–Thu, 10 a.m.–12 p.m. audience-primary timezone (Wed is peak comment day; Thu can beat Tue for US B2B). Block the next 60–90 min to reply to every comment — 2026's algorithm weights first-hour comment velocity harder than ever.
 - Formatting: 1–2 line paragraphs, → bullets and sparse emoji are fine; never Unicode "fancy font" bold/italic (breaks screen readers).
 
