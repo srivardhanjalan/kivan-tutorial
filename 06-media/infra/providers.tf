@@ -17,6 +17,10 @@ provider "aws" {
   }
 }
 
+# The current account id — shared by s3.tf (globally-unique bucket name) and
+# kms.tf; lives here so no one resource file owns a value another depends on.
+data "aws_caller_identity" "current" {}
+
 # Local values for common configuration
 locals {
   project_name = "kivan"

@@ -8,6 +8,13 @@ from app.database import users_table
 from app.dependencies.auth import get_current_user_id
 from app.models.users import AccountDeletionRequest, OnboardingStatus, User, UserUpdate
 from app.utils.clerk_api import CLERK_API, CLERK_TIMEOUT, clerk_headers
+from app.utils.s3_helpers import (
+    PENDING_PREFIX,
+    claim_pending_photo,
+    delete_photo_by_url,
+    permanent_url_for_key,
+    s3_key_from_url,
+)
 from app.utils.timestamps import utc_now_iso
 from app.utils.user_provisioning import forget_user
 
@@ -58,6 +65,37 @@ def _get_active_user(user_id: str) -> dict:
     return user_data
 
 
+def _plan_photo_update(new_url: str, old_url):
+    """Decide how a submitted photo URL changes the stored one.
+
+    Returns (value_to_store | None to leave the field untouched,
+    pending_url_to_claim | None, old_url_to_delete | None). The claim/delete
+    are S3 side-effects the caller runs AFTER the guarded write commits.
+
+    Comparison is by S3 key, never raw string: reads are served as signed
+    URLs, so a client resubmitting the current photo sends back
+    `.../key.jpg?X-Amz-Signature=…`. Keyed comparison sees that as no change,
+    so an unchanged save neither re-stores a soon-expired signed URL nor
+    deletes the very object it points at.
+    """
+    new_key = s3_key_from_url(new_url)
+    old_key = s3_key_from_url(old_url)
+
+    if new_key is not None and new_key == old_key:
+        return None, None, None  # the current object echoed back — nothing to do
+
+    delete = old_url if (old_url and old_key != new_key) else None
+
+    if new_key is not None and new_key.startswith(PENDING_PREFIX):
+        stored = permanent_url_for_key(new_key[len(PENDING_PREFIX):])
+        return stored, new_url, delete
+
+    # A different permanent object of ours, or an external (Clerk) URL: store
+    # the canonical form (never the signed variant) and sweep the replaced one.
+    stored = permanent_url_for_key(new_key) if new_key is not None else new_url
+    return stored, None, delete
+
+
 # Sync handlers on purpose: FastAPI threadpools them, keeping DynamoDB's
 # blocking I/O off the event loop.
 @router.get("/me", response_model=User)
@@ -74,6 +112,15 @@ def update_current_user(
     update_parts = ["updated_at = :updated"]
     values: dict = {":updated": utc_now_iso()}
 
+    # Only read the current record when a photo is changing — we need the old
+    # URL to clean it up, and the read (like the guarded write below) 403s a
+    # deleted account and 404s a missing one before anything is claimed.
+    current_data = (
+        _get_active_user(user_id)
+        if user_update.image_url is not None or user_update.cover_photo is not None
+        else None
+    )
+
     if user_update.first_name is not None:
         update_parts.append("first_name = :fn")
         values[":fn"] = user_update.first_name
@@ -86,6 +133,28 @@ def update_current_user(
     if user_update.birthday_prompt_dismissed is not None:
         update_parts.append("birthday_prompt_dismissed = :bpd")
         values[":bpd"] = user_update.birthday_prompt_dismissed
+    # Photos: plan the change now (store the permanent URL), then run the S3
+    # side-effects only AFTER the guarded write commits — so a rejected write
+    # (deleted account) never promotes or deletes an object it shouldn't.
+    to_claim: list[str] = []
+    to_delete: list[str] = []
+    for column, alias, new_url in (
+        ("image_url", ":img", user_update.image_url),
+        ("cover_photo", ":cp", user_update.cover_photo),
+    ):
+        if new_url is None:
+            continue
+        stored, claim_url, delete_url = _plan_photo_update(
+            new_url, (current_data or {}).get(column)
+        )
+        if stored is None:
+            continue  # the current object was echoed back — leave the field as-is
+        update_parts.append(f"{column} = {alias}")
+        values[alias] = stored
+        if claim_url:
+            to_claim.append(claim_url)
+        if delete_url:
+            to_delete.append(delete_url)
 
     values[":active"] = False
     try:
@@ -102,6 +171,15 @@ def update_current_user(
         if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
             raise _reject_write(user_id)
         raise
+
+    # The write committed — now promote the new upload and sweep the replaced
+    # object. Both are best-effort and logged: a failed promotion leaves the
+    # pending copy for the lifecycle rule to reap (the photo would need
+    # re-uploading), and a failed delete leaves at worst one stale object.
+    for url in to_claim:
+        claim_pending_photo(url)
+    for url in to_delete:
+        delete_photo_by_url(url)
     return result["Attributes"]
 
 
@@ -148,12 +226,18 @@ def delete_current_user(
             detail="Could not delete the account right now — try again"
         )
 
+    # The account is now unrecoverable (Clerk login gone), so its personal
+    # photos must not linger in S3: delete the objects (best-effort) and null
+    # the fields in the same write that flags the record.
+    delete_photo_by_url(user_data.get("image_url"))
+    delete_photo_by_url(user_data.get("cover_photo"))
+
     # updated_at IS the deletion timestamp: the guarded writes freeze the
     # record at this instant, so a separate deleted_at would never differ
     users_table.update_item(
         Key={"id": user_id},
-        UpdateExpression="SET is_deleted = :d, updated_at = :at",
-        ExpressionAttributeValues={":d": True, ":at": utc_now_iso()},
+        UpdateExpression="SET is_deleted = :d, updated_at = :at, image_url = :none, cover_photo = :none",
+        ExpressionAttributeValues={":d": True, ":at": utc_now_iso(), ":none": None},
     )
     # Without this, a deleted user cached as "known" skips the provisioning
     # guard until the process restarts (on this instance; writes are also
