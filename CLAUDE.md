@@ -141,8 +141,9 @@ product-manager (more as the user adds them).
       cases, misleading copy, broken commands). Then address EVERY finding:
       fix it, or record the explicit reason it stands. AI reviewers are
       samplers — a review loop ends only after **3 consecutive no-finding
-      passes on the unchanged artifact**, the middle pass with a different
-      attack lens; any finding resets the count. (The gate's semantic
+      passes on the unchanged artifact**, each pass under progressively more
+      scrutiny than the last (a deeper, more adversarial lens each round,
+      never the same pass re-run); any finding resets the count. (The gate's semantic
       reviewer covers step code; everything else gets its own adversarial
       pass.)
 - [ ] **Never say "verified/works/done" without having executed the thing
@@ -190,6 +191,12 @@ product-manager (more as the user adds them).
 
 ## 6. Working with the user
 
+- [ ] **Announce the plan before executing a multi-step task — then proceed,
+      no confirmation gate.** When a task needs breaking down, FIRST show a
+      labeled plan: how the task decomposes into sub-tasks and which
+      persona/team-member handles each. Then start immediately. This is a
+      heads-up for transparency, not an approval checkpoint — state the
+      breakdown and the cast, and go; only an explicit "wait" stops it.
 - [ ] **Design changes: propose before implementing.** Standing directive.
 - [ ] **"Why/what" questions get an answer and assessment first** — do not
       rush into action while a question is on the table.
