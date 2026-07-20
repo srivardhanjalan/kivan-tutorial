@@ -26,8 +26,9 @@ resource "aws_apprunner_service" "backend_ecr" {
           PHOTOS_BUCKET_NAME = aws_s3_bucket.photos.bucket
         }
 
-        # Secrets resolve from SSM at instance start; the instance role gets
-        # GetParameters + kms:Decrypt on our key (see iam.tf).
+        # Secrets resolve from SSM at instance start via the instance role's
+        # ssm:GetParameters grant (see iam.tf) — the default aws/ssm key needs
+        # no extra kms:Decrypt.
         runtime_environment_secrets = {
           CLERK_SECRET_KEY = aws_ssm_parameter.clerk_secret_key.arn
         }
