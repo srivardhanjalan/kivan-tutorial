@@ -59,15 +59,6 @@ resource "aws_iam_role_policy" "apprunner_instance_ssm" {
         Effect   = "Allow"
         Action   = ["ssm:GetParameters"]
         Resource = aws_ssm_parameter.clerk_secret_key.arn
-      },
-      {
-        # The secret is a SecureString encrypted with our customer-managed key
-        # (kms.tf); App Runner decrypts it at instance start, which needs this
-        # grant. The default aws/ssm key blocks this decrypt via its policy —
-        # hence our own key.
-        Effect   = "Allow"
-        Action   = ["kms:Decrypt"]
-        Resource = aws_kms_key.secrets.arn
       }
     ]
   })

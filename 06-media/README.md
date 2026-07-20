@@ -12,6 +12,10 @@ server-side, so the bucket can't accumulate junk you can't see.
 **The exact delta this step adds:**
 [PR #42 — Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/42/files)
 
+> Note: #42 also added a customer-managed KMS key for the SSM secret; a
+> follow-up removed it — the default `aws/ssm` key injects the secret fine, so
+> the current infra has no `kms.tf`. See the `CREATE_FAILED` gotcha below for why.
+
 ## Run it locally
 
 Same two terminals as step 05. The photo lifecycle needs a real bucket, so
@@ -33,20 +37,15 @@ npx expo start -c --localhost
 
 ## Deploy it
 
-Unlike step 05, this step **adds infrastructure** — the photos bucket and its
-lifecycle rules, a customer-managed KMS key, the Clerk secret re-encrypted onto
-that key, and the S3 + `kms:Decrypt` grants on the App Runner instance role. On
-a stack that's already up, `terraform apply` creates them, then the image
-redeploys:
+Unlike step 05, this step **adds infrastructure** — the photos bucket, its
+lifecycle rules, and the S3 grant on the App Runner instance role. On a stack
+that's already up, `terraform apply` creates them, then the image redeploys:
 
 ```bash
 cd infra
-terraform apply              # + bucket, lifecycle, KMS key, re-encrypted secret, grants
+terraform apply              # + the S3 bucket, lifecycle rules, IAM grant
 ./scripts/deploy.sh          # rebuild :latest so the backend can sign/claim
 ```
-
-The App Runner service must be replaced (not just redeployed) to pick up the
-new secret encryption — `terraform apply` handles that.
 
 Deploying fresh? Follow step 03's staged bootstrap (registry → push → apply),
 then the same line. The bucket name is derived once in `s3.tf`
@@ -79,11 +78,6 @@ infra/
                                  versioned, encrypted, CORS, three lifecycle
                                  rules (the pending/ 1-day expiry backstop), and
                                  an S3 grant scoped to this bucket's ARN
-  kms.tf                       + a customer-managed key for the secret — the
-                                 default aws/ssm key can't be decrypted by App
-                                 Runner at injection time
-  ssm.tf                       the Clerk secret, now encrypted with that key
-  iam.tf                       + the instance role's kms:Decrypt on that key
   apprunner.tf                 + PHOTOS_BUCKET_NAME from the bucket
 frontend/                      step 05's app plus:
   src/services/ImageUploadService.ts  pick → presigned URL → PUT bytes to S3
@@ -131,12 +125,21 @@ frontend/                      step 05's app plus:
   `NSPhotoLibraryUsageDescription` in `app.json` and the picker crashes on
   open. Install the package with `npx expo install`, never a hand-pinned
   version — it must match Expo Go's renderer.
-- **App Runner can't inject an SSM secret on the default key.** The managed
-  `aws/ssm` key only allows decryption *through the SSM service*, and App
-  Runner's secret injection doesn't qualify — so the SecureString is encrypted
-  with a customer-managed key (`kms.tf`) the instance role is granted
-  `kms:Decrypt` on. Miss this and the service dies with a bare `CREATE_FAILED`
-  and no logs, long before the container starts.
+- **`CREATE_FAILED` with no logs — two causes, same symptom.** Step 04
+  documented one: the instance role's `ssm:GetParameters` grant not being
+  *ordered* before the service, fixed with the `depends_on` in `apprunner.tf`
+  (which we keep — a real prerequisite). But it isn't the whole story. Even
+  with the role, its grant, and that `depends_on` all in place — and the secret
+  injecting off the **default `aws/ssm` key**, no customer key or `kms:Decrypt`
+  needed — a *fresh* `terraform apply` still intermittently dies with the *same*
+  bare `CREATE_FAILED` and no logs. We couldn't pin the exact mechanism (it
+  survives the `depends_on` and leaves no error behind), but AWS's
+  [create-failure docs](https://docs.aws.amazon.com/apprunner/latest/dg/troubleshooting-create-failure.html)
+  list "temporary issues with the underlying AWS services" among the causes —
+  and the cure is reliable: Terraform taints the failed service, so **re-running
+  `terraform apply` replaces it and it comes up `RUNNING`**, identical config,
+  no change. Verifying this step we saw it on 3 of 6 fresh creates; a plain
+  retry cleared it every time.
 - **Presigned URLs must be SigV4.** boto3 can still emit deprecated SigV2 URLs
   that only work in pre-2014 regions like `us-east-1`; the S3 client pins
   `signature_version=s3v4` so uploads and reads work in any region.
