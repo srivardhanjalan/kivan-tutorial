@@ -21,9 +21,9 @@ _UPLOAD_URL_TTL_SECONDS = 300
 
 class SignedUrlRequest(BaseModel):
     # Literal types make FastAPI reject anything else with a 422 before the
-    # handler runs — the only photo kinds this step knows are the user's own
-    # profile and cover images.
-    resource_type: Literal["profile_photo", "cover_photo"]
+    # handler runs — the photo kinds this step knows: a user's profile and
+    # cover images, plus a wishlist's and a wish's image.
+    resource_type: Literal["profile_photo", "cover_photo", "wishlist_photo", "wish_photo"]
     file_extension: Literal["jpeg", "png", "gif", "webp"]
 
 
@@ -39,8 +39,9 @@ def generate_signed_url(
     """
     Mint a presigned PUT URL so the client uploads a photo straight to S3,
     never through this API. The bytes land under `pending/` — an S3 lifecycle
-    rule expires them if the entity is never saved; PUT /users/me claims a
-    pending object into the permanent keyspace (see s3_helpers). Cleanup is
+    rule expires them if the entity is never saved; saving the record that
+    carries the URL claims the pending object into the permanent keyspace
+    (see s3_helpers — every create/update that stores a photo URL). Cleanup is
     entirely backend-owned, so there is deliberately no client delete route.
     """
     content_type = f"image/{request.file_extension}"

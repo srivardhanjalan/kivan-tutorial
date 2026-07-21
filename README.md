@@ -98,7 +98,7 @@ own. You're not just building Kivan; you're building a platform you can reuse.
 | `11-notifications` | In-app notifications — SQS → Lambda pipeline, notification screens, per-type mutes | get notified about social activity |
 | `12-email` | Email notifications — Mailgun delivery leg, per-user opt-in, delivery-time checks | receive email copies of notifications |
 | `13-events` | 🧩 Events — gatherings around wishlists: RSVP, hosts, guest invites (incl. email invites for non-users), multi-photo galleries | see the full delta of integrating a feature into notifications & media |
-| `14-sharing` | Sharing — `kivan://` deep links + the share-modal family | share wishlists, profiles, events |
+| `14-sharing` | Sharing — `kivan://` deep links + the share-modal family, co-owned wishlists | share wishlists, profiles, events |
 | `15-admin` | Admin — the user `role` field lands with its first readers (a safe default covers records provisioned earlier), role enforcement + an admin dashboard (brands, life events, storefronts & products, users) | operate the app's catalog |
 | `16-operations` | Operations — CloudWatch alarms & dashboards, cost management, CI/CD references | run it like production |
 | `final/` | The complete application | the finished product + `MODULES.md` |

@@ -44,6 +44,13 @@ export default {
     fontSize: 15,
     color: Colors.textSecondary,
   },
+  /** The name/label under a collection art tile (15/600, tight) */
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    letterSpacing: -0.2,
+    color: Colors.dark,
+  },
   /** Emphasized compact text (15/600) — inline links, outlined-button labels */
   bodySecondaryStrong: {
     fontSize: 15,

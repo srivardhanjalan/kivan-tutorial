@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import SectionHeader from '../components/SectionHeader';
 import FormInput from '../components/FormInput';
 import PrimaryButton from '../components/PrimaryButton';
+import ConfirmCancelButtons from '../components/ConfirmCancelButtons';
+import ModalCard from '../components/ModalCard';
 import OnboardingTutorial from '../components/OnboardingTutorial';
 import ImageUploadField from '../components/ImageUploadField';
 import useFetch from '../hooks/useFetch';
@@ -15,13 +15,11 @@ import useAsyncAction from '../hooks/useAsyncAction';
 import { usePendingImageUpload } from '../hooks/usePendingImageUpload';
 import { deleteAccount, fetchCurrentUser, updateProfile } from '../services/api';
 import type { ProfileUpdate } from '../services/api';
-import type { RootStackParamList } from '../components/Navigation';
 import { clerkFullName, clerkPrimaryEmail } from '../utils/clerkName';
 import Colors from '../constants/Colors';
-import BorderRadius from '../constants/BorderRadius';
 import Typography from '../constants/Typography';
 import Opacity from '../constants/Opacity';
-import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
+import { Spacing } from '../constants/ScreenStyles';
 
 const DAYS = Array.from({ length: 31 }, (_, i) => String(i + 1));
 const MONTHS = Array.from({ length: 12 }, (_, i) => String(i + 1));
@@ -65,29 +63,12 @@ const WheelColumn: React.FC<{
   </Picker>
 );
 
-/** The stacked confirm/cancel pair every edit block ends with. */
-const ConfirmCancel: React.FC<{
-  confirmTitle: string;
-  confirmVariant?: 'primary' | 'danger';
-  onConfirm: () => void;
-  loading: boolean;
-  cancelTitle?: string;
-  onCancel: () => void;
-}> = ({ confirmTitle, confirmVariant = 'primary', onConfirm, loading, cancelTitle = 'Cancel', onCancel }) => (
-  <>
-    <PrimaryButton title={confirmTitle} variant={confirmVariant} onPress={onConfirm} loading={loading} />
-    <View style={styles.buttonGap} />
-    <PrimaryButton title={cancelTitle} variant="secondary" onPress={onCancel} />
-  </>
-);
-
 /**
  * Settings: edit the profile (name to Clerk AND the backend record, so
  * neither goes stale; birthday to the backend), replay the tutorial, and
  * the danger zone — sign out, or delete the account for good.
  */
 export default function SettingsScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useUser();
   const { signOut } = useAuth();
   const { data: backendUser, loading } = useFetch(fetchCurrentUser);
@@ -148,16 +129,16 @@ export default function SettingsScreen() {
       setEditingBirthday(false);
     }, 'Could not save your birthday');
 
-  // Claim whichever photos changed: send only the slots whose uploaded URL
-  // differs from what the record already holds. A no-op if nothing changed.
+  // Claim whichever photos changed — the hook knows whether an upload
+  // replaced what it was seeded with. A no-op if nothing changed.
   const savePhotos = () =>
     run(async () => {
       const update: ProfileUpdate = {};
-      if (profilePhoto.imageUrl && profilePhoto.imageUrl !== backendUser?.image_url) {
-        update.image_url = profilePhoto.imageUrl;
+      if (profilePhoto.changedUrl) {
+        update.image_url = profilePhoto.changedUrl;
       }
-      if (coverPhoto.imageUrl && coverPhoto.imageUrl !== backendUser?.cover_photo) {
-        update.cover_photo = coverPhoto.imageUrl;
+      if (coverPhoto.changedUrl) {
+        update.cover_photo = coverPhoto.changedUrl;
       }
       if (Object.keys(update).length === 0) return;
       await updateProfile(update);
@@ -170,14 +151,14 @@ export default function SettingsScreen() {
     }, 'Type DELETE exactly to confirm');
 
   return (
-    <FloatingHeaderLayout title="Settings" loading={loading} onBack={() => navigation.goBack()}>
+    <FloatingHeaderLayout title="Settings" loading={loading} showBack>
       <SectionHeader title="Account" />
 
       {editingName ? (
         <View style={styles.editBlock}>
           <FormInput value={firstName} placeholder="First name" onChangeText={setFirstName} />
           <FormInput value={lastName} placeholder="Last name" onChangeText={setLastName} />
-          <ConfirmCancel
+          <ConfirmCancelButtons
             confirmTitle="Save Name"
             onConfirm={saveName}
             loading={saving}
@@ -201,7 +182,7 @@ export default function SettingsScreen() {
             <WheelColumn values={MONTHS} selected={month} onChange={setMonth} padLabels />
             <WheelColumn values={YEARS} selected={year} onChange={setYear} />
           </View>
-          <ConfirmCancel
+          <ConfirmCancelButtons
             confirmTitle="Save Birthday"
             onConfirm={saveBirthday}
             loading={saving}
@@ -218,18 +199,8 @@ export default function SettingsScreen() {
 
       <SectionHeader title="Photos" />
       <View style={styles.editBlock}>
-        <ImageUploadField
-          label="Profile photo"
-          imagePreview={profilePhoto.imagePreview}
-          isUploading={profilePhoto.isUploading}
-          onUpload={profilePhoto.handleUpload}
-        />
-        <ImageUploadField
-          label="Cover photo"
-          imagePreview={coverPhoto.imagePreview}
-          isUploading={coverPhoto.isUploading}
-          onUpload={coverPhoto.handleUpload}
-        />
+        <ImageUploadField label="Profile photo" upload={profilePhoto} />
+        <ImageUploadField label="Cover photo" upload={coverPhoto} />
         <PrimaryButton title="Save Photos" onPress={savePhotos} loading={saving} />
       </View>
 
@@ -245,40 +216,30 @@ export default function SettingsScreen() {
 
       <OnboardingTutorial visible={showTutorial} onDismiss={() => setShowTutorial(false)} />
 
-      <Modal visible={showDeleteModal} animationType="fade" transparent>
-        {/* keyboardShouldPersistTaps: a destructive confirm must fire on the
-            FIRST tap, not spend it dismissing the keyboard */}
-        <ScrollView
-          contentContainerStyle={[CommonScreenStyles.center, styles.modalBackdrop]}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Delete your account?</Text>
-            <Text style={styles.modalCopy}>
-              Your profile is removed and your sign-in stops working everywhere. This cannot be
-              undone. Type DELETE to confirm.
-            </Text>
-            <FormInput
-              value={deleteConfirmation}
-              placeholder="DELETE"
-              autoCapitalize="characters"
-              autoCorrect={false}
-              onChangeText={setDeleteConfirmation}
-            />
-            <ConfirmCancel
-              confirmTitle="Delete Account"
-              confirmVariant="danger"
-              onConfirm={confirmDelete}
-              loading={saving}
-              cancelTitle="Keep my account"
-              onCancel={() => {
-                setDeleteConfirmation('');
-                setShowDeleteModal(false);
-              }}
-            />
-          </View>
-        </ScrollView>
-      </Modal>
+      <ModalCard
+        visible={showDeleteModal}
+        title="Delete your account?"
+        message="Your profile is removed and your sign-in stops working everywhere. This cannot be undone. Type DELETE to confirm."
+      >
+        <FormInput
+          value={deleteConfirmation}
+          placeholder="DELETE"
+          autoCapitalize="characters"
+          autoCorrect={false}
+          onChangeText={setDeleteConfirmation}
+        />
+        <ConfirmCancelButtons
+          confirmTitle="Delete Account"
+          confirmVariant="danger"
+          onConfirm={confirmDelete}
+          loading={saving}
+          cancelTitle="Keep my account"
+          onCancel={() => {
+            setDeleteConfirmation('');
+            setShowDeleteModal(false);
+          }}
+        />
+      </ModalCard>
     </FloatingHeaderLayout>
   );
 }
@@ -307,29 +268,7 @@ const styles = StyleSheet.create({
   picker: {
     flex: 1,
   },
-  buttonGap: {
-    height: Spacing.md,
-  },
   signOut: {
     marginTop: Spacing.xxxl,
-  },
-  modalBackdrop: {
-    flexGrow: 1,
-    backgroundColor: Colors.toastSurface,
-    padding: Spacing.xxl,
-  },
-  modalCard: {
-    alignSelf: 'stretch',
-    backgroundColor: Colors.background,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.xxl,
-  },
-  modalTitle: {
-    ...Typography.sectionTitle,
-    marginBottom: Spacing.md,
-  },
-  modalCopy: {
-    ...Typography.bodySecondary,
-    marginBottom: Spacing.lg,
   },
 });
