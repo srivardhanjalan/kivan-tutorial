@@ -14,10 +14,13 @@ export interface ImageUploadResult {
   local_uri: string;
 }
 
-/** Profile photos crop square; covers crop to a wide banner. */
+/** Each slot crops to the shape its art block expects: profile and the
+    square wishlist/wish tiles crop square; covers crop to a wide banner. */
 const ASPECT_BY_TYPE: Record<ResourceType, [number, number]> = {
   profile_photo: [1, 1],
   cover_photo: [16, 9],
+  wishlist_photo: [1, 1],
+  wish_photo: [1, 1],
 };
 
 /**
@@ -35,7 +38,7 @@ export async function pickAndUploadImage(
   if (status !== 'granted') {
     Alert.alert(
       'Permission needed',
-      'Allow access to your photos to set your profile and cover photo.'
+      'Allow access to your photos to set your profile, cover, and wishlist images.'
     );
     return null;
   }

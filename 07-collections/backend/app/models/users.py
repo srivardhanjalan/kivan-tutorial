@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, PastDate, field_serializer
+from pydantic import BaseModel, Field, PastDate, field_serializer
 
 from app.utils.s3_helpers import get_signed_url_for_s3
 
@@ -36,10 +36,13 @@ class UserUpdate(BaseModel):
     `birthday` must parse as a real date in the past. image_url/cover_photo
     carry a `pending/` upload URL the route claims into permanent storage."""
 
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    image_url: Optional[str] = None
-    cover_photo: Optional[str] = None
+    # Length caps, same discipline as the wish/wishlist models: a validated
+    # body must never be able to blow past DynamoDB's 400 KB item limit and
+    # 500 in the serializer instead of 422-ing here.
+    first_name: Optional[str] = Field(default=None, max_length=200)
+    last_name: Optional[str] = Field(default=None, max_length=200)
+    image_url: Optional[str] = Field(default=None, max_length=2048)
+    cover_photo: Optional[str] = Field(default=None, max_length=2048)
     birthday: Optional[PastDate] = None
     birthday_prompt_dismissed: Optional[bool] = None
 

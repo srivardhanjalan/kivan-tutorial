@@ -8,3 +8,6 @@ from app.config import settings
 dynamodb = boto3.resource("dynamodb", region_name=settings.aws_region)
 
 users_table = dynamodb.Table(settings.users_table)
+wishlists_table = dynamodb.Table(settings.wishlists_table)
+wishes_table = dynamodb.Table(settings.wishes_table)
+life_events_table = dynamodb.Table(settings.life_events_table)

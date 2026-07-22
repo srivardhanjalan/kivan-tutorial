@@ -11,6 +11,10 @@ const AppConfig = {
     /** The mark's display size wherever it appears full-size */
     logoSize: 120,
   },
+  /** The single currency wishes are priced in. One symbol for the whole app
+      until step 09 brings per-user currency (a picker + conversion); every
+      cost adornment reads this so that swap has one place to land. */
+  currencySymbol: '₹',
 } as const;
 
 export default AppConfig;

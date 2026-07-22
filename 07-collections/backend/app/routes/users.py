@@ -1,22 +1,24 @@
 import logging
 
 import httpx
+from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.database import users_table
+from app.database import users_table, wishlists_table
 from app.dependencies.auth import get_current_user_id
 from app.models.users import AccountDeletionRequest, OnboardingStatus, User, UserUpdate
 from app.utils.clerk_api import CLERK_API, CLERK_TIMEOUT, clerk_headers
 from app.utils.s3_helpers import (
-    PENDING_PREFIX,
     claim_pending_photo,
     delete_photo_by_url,
-    permanent_url_for_key,
+    plan_photo_update,
     s3_key_from_url,
 )
+from app.utils.dynamo import get_item_or_404, query_all_pages
 from app.utils.timestamps import utc_now_iso
 from app.utils.user_provisioning import forget_user
+from app.utils.wishlist_access import delete_wishlist_and_contents
 
 logger = logging.getLogger(__name__)
 
@@ -43,14 +45,10 @@ def _reject_write(user_id: str) -> HTTPException:
 
 
 def _get_user_or_404(user_id: str) -> dict:
-    """Fetch the user's DynamoDB record; 404 if it doesn't exist."""
-    response = users_table.get_item(Key={"id": user_id})
-    if "Item" not in response:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User profile not found"
-        )
-    return response["Item"]
+    """Fetch the user's DynamoDB record; 404 if it doesn't exist. The id is a
+    Clerk-signed JWT sub, so the shared guard's empty/oversized check can
+    never fire here — it rides along for free with the one get-or-404."""
+    return get_item_or_404(users_table, user_id, "User profile not found")
 
 
 def _get_active_user(user_id: str) -> dict:
@@ -63,37 +61,6 @@ def _get_active_user(user_id: str) -> dict:
             detail="This account has been deleted."
         )
     return user_data
-
-
-def _plan_photo_update(new_url: str, old_url):
-    """Decide how a submitted photo URL changes the stored one.
-
-    Returns (value_to_store | None to leave the field untouched,
-    pending_url_to_claim | None, old_url_to_delete | None). The claim/delete
-    are S3 side-effects the caller runs AFTER the guarded write commits.
-
-    Comparison is by S3 key, never raw string: reads are served as signed
-    URLs, so a client resubmitting the current photo sends back
-    `.../key.jpg?X-Amz-Signature=…`. Keyed comparison sees that as no change,
-    so an unchanged save neither re-stores a soon-expired signed URL nor
-    deletes the very object it points at.
-    """
-    new_key = s3_key_from_url(new_url)
-    old_key = s3_key_from_url(old_url)
-
-    if new_key is not None and new_key == old_key:
-        return None, None, None  # the current object echoed back — nothing to do
-
-    delete = old_url if (old_url and old_key != new_key) else None
-
-    if new_key is not None and new_key.startswith(PENDING_PREFIX):
-        stored = permanent_url_for_key(new_key[len(PENDING_PREFIX):])
-        return stored, new_url, delete
-
-    # A different permanent object of ours, or an external (Clerk) URL: store
-    # the canonical form (never the signed variant) and sweep the replaced one.
-    stored = permanent_url_for_key(new_key) if new_key is not None else new_url
-    return stored, None, delete
 
 
 # Sync handlers on purpose: FastAPI threadpools them, keeping DynamoDB's
@@ -138,17 +105,32 @@ def update_current_user(
     # (deleted account) never promotes or deletes an object it shouldn't.
     to_claim: list[str] = []
     to_delete: list[str] = []
+    planned_keys: set[str] = set()
     for column, alias, new_url in (
         ("image_url", ":img", user_update.image_url),
         ("cover_photo", ":cp", user_update.cover_photo),
     ):
         if new_url is None:
             continue
-        stored, claim_url, delete_url = _plan_photo_update(
-            new_url, (current_data or {}).get(column)
+        stored, claim_url, delete_url = plan_photo_update(
+            new_url, (current_data or {}).get(column), user_id
         )
         if stored is None:
-            continue  # the current object was echoed back — leave the field as-is
+            # A no-op echo (current object, or a pending URL already claimed
+            # onto this field) — leave the field as-is
+            continue
+        stored_key = s3_key_from_url(stored)
+        if stored_key is not None:
+            # The same upload submitted for BOTH photo fields in one request:
+            # each field plans independently, so this is the one aliasing
+            # shape plan_photo_update can't see. One object, one field.
+            # (External URLs carry no aliasing hazard and may repeat.)
+            if stored_key in planned_keys:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Each photo field needs its own upload",
+                )
+            planned_keys.add(stored_key)
         update_parts.append(f"{column} = {alias}")
         values[alias] = stored
         if claim_url:
@@ -208,7 +190,9 @@ def delete_current_user(
     # Clerk FIRST: if this fails, nothing has changed and the user simply
     # retries. (Record-first would orphan a live Clerk account behind a
     # flagged record — deletable only from the dashboard.) Once Clerk
-    # succeeds the flow is retry-safe: a re-run sees Clerk 404 = done.
+    # succeeds a re-run sees Clerk 404 and proceeds — but only while the
+    # already-issued token lives (~1 min; no new one can be minted), so
+    # everything after this point is best-effort or last, never blocking.
     try:
         response = httpx.delete(
             f"{CLERK_API}/users/{user_id}", headers=clerk_headers(), timeout=CLERK_TIMEOUT
@@ -231,6 +215,27 @@ def delete_current_user(
     # the fields in the same write that flags the record.
     delete_photo_by_url(user_data.get("image_url"))
     delete_photo_by_url(user_data.get("cover_photo"))
+
+    # Tutorial-scoped: in this single-owner world a wishlist and its wishes
+    # belong to exactly one account and nothing else references them, so a
+    # deleted account's collections are swept outright — items and their
+    # photos. (The user record itself is only flagged, not removed, because
+    # later steps' data references it.) Step 14's co-ownership revisits what
+    # deletion must preserve when a wishlist can outlive one of its owners.
+    # Best-effort like the photo deletes above, and for the same reason: the
+    # Clerk account is already gone, so nothing may stop the flag write below
+    # from landing — a failed sweep leaves unreachable rows (no retry can
+    # ever run: no login, no new token), which is residue, not access.
+    try:
+        owned_wishlists = query_all_pages(
+            wishlists_table,
+            IndexName="CreatedByIndex",
+            KeyConditionExpression=Key("created_by").eq(user_id),
+        )
+        for wishlist in owned_wishlists:
+            delete_wishlist_and_contents(wishlist)
+    except Exception as e:
+        logger.error(f"Wishlist sweep failed deleting {user_id}: {e}")
 
     # updated_at IS the deletion timestamp: the guarded writes freeze the
     # record at this instant, so a separate deleted_at would never differ

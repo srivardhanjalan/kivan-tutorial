@@ -1,4 +1,5 @@
-# S3 bucket for user-uploaded photos (profile + cover images).
+# S3 bucket for user-uploaded photos (profile/cover images, wishlist and
+# wish art — every upload slot rides the same pending/claim lifecycle).
 # Fully private: clients never read or write it directly — the backend mints
 # short-lived presigned URLs (see backend/app/utils/s3_helpers.py). This file
 # owns the one true bucket name; apprunner.tf injects it into the container as

@@ -27,5 +27,19 @@ class Settings(BaseSettings):
     def users_table(self) -> str:
         return f"kivan-{self.environment}-users"
 
+    @property
+    def wishlists_table(self) -> str:
+        return f"kivan-{self.environment}-wishlists"
+
+    @property
+    def wishes_table(self) -> str:
+        return f"kivan-{self.environment}-wishes"
+
+    @property
+    def life_events_table(self) -> str:
+        # Dashed name (not underscored) matches infra/dynamodb.tf and the
+        # seed script — the table is reference data those two co-own
+        return f"kivan-{self.environment}-life-events"
+
 
 settings = Settings()
