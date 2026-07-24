@@ -1,19 +1,25 @@
 # Photos Without the Exposure
 
-*Zero to Shipped, step 6. Public buckets leak, private ones won't render, and abandoned uploads pile up forever. One S3 setup beats all three, and the photo never touches the backend.*
+*Zero to Shipped, step 6. Profile and cover photos that travel straight from the phone to S3, never touch the backend, and can't leak.*
 
 ![Zero to Shipped 06 hero: a profile screen with its profile and cover photos set, beside a terminal showing the private S3 bucket, the presigned upload into pending/, the claim on Save, and the one-day expiry](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-06.png?v=PLACEHOLDER)
 
-## What we build
+*Zero to Shipped, step 6 of a production social-wishlist app built one shippable step at a time on Expo, FastAPI, and AWS.*
 
-The app is about to hold two photos (a profile shot and a cover), both in Amazon S3. Drawing the screen is the easy part; the real work is everything around the file, because storing a user's photo safely is four problems at once:
+*[All the code](https://github.com/srivardhanjalan/kivan-tutorial) is on GitHub, every step a runnable folder.*
+
+## The problem
+
+The app is about to hold two photos, a profile shot and a cover, both in Amazon S3. Drawing the screen is the easy part; storing a user's photo safely is the work, because it is four problems at once:
 
 - **The bucket can't be public.** One leaked URL would expose every user's photos.
-- **The phone can't hold AWS credentials.** We never ship bucket keys inside a mobile app.
+- **The phone can't hold AWS credentials.** No mobile app can ship bucket keys.
 - **A private file still has to render on screen.** A locked-down object won't load from a plain URL.
 - **A photo nobody saved can't live forever.** Someone picks an image, backs out, and that storage piles up.
 
-One decision answers all four: the backend owns every file's whole life, but the photo bytes travel straight from the phone to S3 and never pass through it. That splits into three moves: hand out a short-lived upload link, sign every read so a private file still renders, and let an upload become permanent only on Save (anything abandoned expires about a day later). The sections below build them in that order.
+## What we build
+
+A private S3 pipeline that answers all four. The bucket is a sealed box, no public access ever, which closes the first problem at the door. The phone never holds a key: it asks the backend for a presigned upload, and the photo bytes travel straight from the phone to S3, never through the backend. Every read comes back as a freshly signed link, so a private file still renders on demand. And an upload lands in a holding area, becoming permanent only on Save, with anything abandoned expiring about a day later. The backend owns every file's whole life; only the bytes skip it. That work splits into the sections below, built in order.
 
 **What we need:** step 5 complete, an AWS account, and the step-3 deploy in place. Photos need a real bucket, so this step runs against a deployed backend.
 
@@ -115,15 +121,15 @@ This step adds infrastructure: the bucket, the lifecycle rules, and the S3 grant
 
 ## What bit me
 
-Four things cost me time on this step, worst first:
+Four things cost me time on this step, worst first.
 
-**`CREATE_FAILED` with no logs.** The first App Runner deploy died with a bare `CREATE_FAILED` and empty logs, nothing to fix. With the provided `deploy.sh`, which builds amd64 on colima-rosetta and turns off BuildKit's provenance attestations, the only cause left is AWS flakiness: Terraform taints the failed service, so `terraform apply` again brings it up `RUNNING` on identical config. A plain retry is the fix. Don't hunt for a bug that isn't there.
+**`CREATE_FAILED` with no logs.** My first App Runner deploy on this step died with a bare `CREATE_FAILED` and empty logs, nothing to fix. I build amd64 on colima-rosetta with BuildKit's provenance attestations off, so the only cause left was AWS flakiness: Terraform taints the failed service, and running `terraform apply` again brought it up `RUNNING` on identical config. A plain retry was the fix, and I stopped hunting for a bug that wasn't there.
 
-**A save that deleted the photo it was keeping.** Hitting Save with nothing changed deleted the current photo. Reads are served as *signed* URLs, so the client echoes back `.../key.jpg?X-Amz-Signature=…`, which doesn't string-match the stored URL: the cleanup saw a "new" photo and swept the "old" one, the same file. Compare by S3 *key*, never the raw string, and an unchanged save is a clean no-op.
+**A save that deleted the photo it was keeping.** I hit Save with nothing changed and it deleted the current photo. Reads come back as *signed* URLs, so the client echoes `.../key.jpg?X-Amz-Signature=…`, which never string-matches the stored URL: my cleanup read a "new" photo and swept the "old" one, the same file. I compared by S3 *key* instead of the raw string, and an unchanged save became a clean no-op.
 
-**A rejected write that still touched S3.** When the claim and delete ran inline with the update, a write that failed its guard (a deleted account) had already promoted or deleted an object. Every S3 side-effect now runs *after* the guarded DynamoDB write commits, so a rejected write never moves a byte.
+**A rejected write that still touched S3.** I ran the claim and delete inline with the update, so a write that failed its guard (a deleted account) had already promoted or deleted an object. I moved every S3 side-effect to run *after* the guarded DynamoDB write commits, so a rejected write never moves a byte.
 
-**The picker crashing on open.** `expo-image-picker` crashes the instant it opens if `app.json` is missing `NSPhotoLibraryUsageDescription`: no error, just a dead screen. Add the permission string before testing.
+**The picker crashing on open.** `expo-image-picker` crashed the instant it opened because `app.json` was missing `NSPhotoLibraryUsageDescription`: no error, just a dead screen. I added the permission string before testing.
 
 ## We're done when
 
@@ -136,3 +142,18 @@ Four things cost me time on this step, worst first:
 ## What's next
 
 Step 7, Collections: the wishlists and wishes the whole app exists for. Photos ride this exact lifecycle.
+
+---
+
+**Zero to Shipped: the series**
+
+- **00 · [Introduction](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9)**
+- **01 · [One script to set up everything](https://medium.com/@srivardhanjalan/one-script-to-set-up-everything-ae8bcea2d649)**
+- **02 · [Dressed to Ship](https://medium.com/@srivardhanjalan/dressed-to-ship-1e2591179d8a)**
+- **03 · [Alive on Arrival](https://medium.com/@srivardhanjalan/alive-on-arrival-cda0a351844f)**
+- **04 · [Signed, Sealed, Delivered](https://medium.com/@srivardhanjalan/signed-sealed-delivered-a481a02ac392)**
+- **05 · Two Places at Once** (previous step, publishing soon)
+- **06 · Photos Without the Exposure** (you are here)
+- **07 · Collections** (coming soon)
+
+**[All the code on GitHub](https://github.com/srivardhanjalan/kivan-tutorial)**
