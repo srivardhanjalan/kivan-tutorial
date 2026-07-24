@@ -1,0 +1,42 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  html,body{margin:0;padding:0}
+  body{background:linear-gradient(135deg,#fdeef1 0%,#eef2fb 100%);
+    font-family:-apple-system,'Segoe UI',Roboto,sans-serif;padding:40px 44px;
+    width:848px;height:436px;box-sizing:border-box;overflow:hidden}
+  .card{max-width:760px;margin:0 auto;background:#fff;border-radius:22px;
+    box-shadow:0 24px 60px rgba(60,40,60,.10),0 4px 12px rgba(60,40,60,.05);padding:30px 40px 28px}
+  .k{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+    color:#5b6172;background:#eef0f4;padding:4px 12px;border-radius:20px}
+  h1{font-size:23px;font-weight:800;color:#1f2430;margin:11px 0 3px;letter-spacing:-.01em}
+  .sub{font-size:14px;color:#8a90a0;margin:0;line-height:1.45}
+  .stage{position:relative;width:680px;height:190px;margin:14px auto 0}
+  .node{position:absolute;top:38px;width:120px;display:flex;flex-direction:column;align-items:center;z-index:2}
+  .node img{width:62px;height:62px}
+  .node .lbl{margin-top:7px;font-size:12.5px;font-weight:800;color:#2b3040}
+  .node .tag{font-size:11px;color:#9aa0b0;font-family:Menlo,monospace;margin-top:1px}
+  svg.wires{position:absolute;inset:0;width:680px;height:190px;z-index:1;overflow:visible}
+  .al{font-size:12px;fill:#5b6172;font-weight:600}.al.hot{fill:#FF385C;font-weight:700}
+</style></head><body>
+<div class="card">
+  <span class="k">Read</span>
+  <h1>View a photo</h1>
+  <p class="sub">The bucket is private. The backend signs a short-lived link; you load the photo straight from S3 before it expires.</p>
+  <div class="stage">
+    <svg class="wires" viewBox="0 0 680 190">
+      <defs>
+        <marker id="s" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto"><path d="M0,0 L6.5,3 L0,6 Z" fill="#5b6172"/></marker>
+        <marker id="h" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto"><path d="M0,0 L6.5,3 L0,6 Z" fill="#FF385C"/></marker>
+      </defs>
+      <line x1="117" y1="59" x2="303" y2="59" stroke="#5b6172" stroke-width="1.8" marker-end="url(#s)"/>
+      <text class="al" x="210" y="46" text-anchor="middle">ask to view</text>
+      <line x1="303" y1="80" x2="117" y2="80" stroke="#5b6172" stroke-width="1.8" marker-end="url(#s)"/>
+      <text class="al" x="210" y="97" text-anchor="middle">return a signed link</text>
+      <line x1="117" y1="165" x2="563" y2="165" stroke="#FF385C" stroke-width="2.1" marker-end="url(#h)"/>
+      <text class="al hot" x="340" y="151" text-anchor="middle">load the photo with the link</text>
+    </svg>
+    <div class="node" style="left:20px"><img src="mobile.svg"><div class="lbl">You</div></div>
+    <div class="node" style="left:280px"><img src="apprunner.svg"><div class="lbl">Backend</div><div class="tag">App Runner</div></div>
+    <div class="node" style="left:540px"><img src="s3-arch.svg"><div class="lbl">S3</div><div class="tag">private</div></div>
+  </div>
+</div>
+</body></html>
