@@ -10,7 +10,7 @@ Code is best browsed [on GitHub](https://github.com/srivardhanjalan/kivan-tutori
 - [02 · Dressed to Ship](medium/02-app-shell.html)
 - [03 · Alive on Arrival](medium/03-backend-core.html)
 - [04 · Signed, Sealed, Delivered](medium/04-auth.html)
-- [05 · Handle With Care](medium/05-profiles.html)
+- [05 · Two Places at Once](medium/05-profiles.html)
 - [06 · Photos Without the Exposure](medium/06-media.html)
 
 ## The mocks (interactive — real design tokens)
