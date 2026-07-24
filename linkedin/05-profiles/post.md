@@ -22,7 +22,7 @@ The stored value was padded ("01"), the wheels compared raw ("1"), and nothing m
 
 Then deletion, the part worth getting right. Two writes tear the account down: revoke the Clerk login, and flag the backend record.
 
-My first pass flagged the record first, then called Clerk. My reviewer asked the obvious question: what if the Clerk call fails? The record says gone, the login still signs you in, and only a dashboard can reconcile it.
+My first pass flagged the record first, then called Clerk, so the irreversible step ran second. I had it backwards: if that Clerk call fails, the record says gone, the login still signs you in, and only a dashboard can reconcile it.
 
 So I swapped the order. Do the irreversible thing first, and a failure there changes nothing. You just retry.
 

@@ -19,6 +19,8 @@
     position: relative; overflow: hidden;
     page-break-after: always;
   }
+  /* the last slide forces no break, so no viewer renders a phantom trailing page */
+  .slide:last-of-type { page-break-after: auto; }
   .eyebrow {
     color: #FF385C; font-size: 27px; font-weight: 700;
     letter-spacing: .2em; text-transform: uppercase;
