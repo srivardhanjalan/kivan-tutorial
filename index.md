@@ -28,6 +28,7 @@ Code is best browsed [on GitHub](https://github.com/srivardhanjalan/kivan-tutori
 - [02 · Dressed to Ship — slides](linkedin/02-app-shell/carousel.html) · [PDF + post copy](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/linkedin/02-app-shell)
 - [03 · Alive on Arrival — slides](linkedin/03-backend-core/carousel.html) · [PDF + post copy](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/linkedin/03-backend-core)
 - [04 · Signed, Sealed, Delivered — slides](linkedin/04-auth/carousel.html) · [PDF + post copy](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/linkedin/04-auth)
+- [05 · Two Places at Once: slides](linkedin/05-profiles/carousel.html) · [PDF + post copy](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/linkedin/05-profiles)
 
 ## The code (on GitHub)
 
