@@ -1,0 +1,70 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  html,body{margin:0;padding:0}
+  body{background:linear-gradient(135deg,#fdeef1 0%,#eef2fb 100%);
+    font-family:-apple-system,'Segoe UI',Roboto,sans-serif;padding:48px;
+    width:1036px;box-sizing:border-box;overflow:hidden}
+  .card{max-width:940px;margin:0 auto;background:#fff;border-radius:22px;
+    box-shadow:0 24px 60px rgba(60,40,60,.10),0 4px 12px rgba(60,40,60,.05);padding:40px 44px}
+  h1{font-size:23px;font-weight:800;color:#1f2430;margin:0 0 4px;letter-spacing:-.01em}
+  .sub{font-size:14px;color:#8a90a0;margin:0 0 26px}
+  .legend{display:inline-flex;gap:16px;margin-left:14px;font-size:12px;color:#8a90a0;font-weight:600;vertical-align:middle}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:middle}
+  .new{background:#1a8917}.mod{background:#c98a00}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grp{background:#f7f8fb;border:1px solid #eceef4;border-radius:14px;padding:16px 18px}
+  .grp.wide{grid-column:1 / span 2}
+  .grp h2{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    color:#9aa0b0;margin:0 0 10px}
+  .folder{font-family:'SF Mono',Menlo,Consolas,monospace;font-size:12px;font-weight:700;
+    color:#6b7280;margin:11px 0 5px}
+  .folder:first-of-type{margin-top:2px}
+  .row{display:flex;align-items:flex-start;gap:10px;padding:5px 0 5px 12px}
+  .badge{flex:none;width:44px;font-size:10px;font-weight:800;letter-spacing:.04em;
+    text-transform:uppercase;padding:3px 0;text-align:center;border-radius:6px;margin-top:1px}
+  .b-new{background:#e5f3e8;color:#1a8917}.b-mod{background:#fbf1da;color:#b07d00}
+  .fc{display:flex;flex-direction:column;gap:2px}
+  .path{font-family:'SF Mono',Menlo,Consolas,monospace;font-size:13px;color:#2b3040;font-weight:600}
+  .note{font-family:'SF Mono',Menlo,Consolas,monospace;font-size:11.5px;color:#a3a9b8}
+</style></head><body>
+<div class="card">
+  <h1>What you touch this step
+    <span class="legend"><span><span class="dot new"></span>new</span><span><span class="dot mod"></span>modified</span></span>
+  </h1>
+  <p class="sub">Fifteen files, grouped by folder. Each section below builds one area.</p>
+  <div class="cols">
+    <div class="grp">
+      <h2>Backend &#183; the signer and the lifecycle</h2>
+      <div class="folder">routes/</div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">upload.py</span><span class="note"># POST /upload/signed-url</span></span></div>
+      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">users.py</span><span class="note"># claim on Save, sweep on delete</span></span></div>
+      <div class="folder">utils/</div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">s3_helpers.py</span><span class="note"># sign, claim, delete</span></span></div>
+      <div class="folder">models/</div>
+      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">users.py</span><span class="note"># add cover_photo, sign both photos on read</span></span></div>
+      <div class="folder">app/</div>
+      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">config.py</span><span class="note"># photos_bucket_name</span></span></div>
+      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">main.py</span><span class="note"># include the upload router</span></span></div>
+    </div>
+    <div class="grp">
+      <h2>Frontend &#183; pick, preview, save</h2>
+      <div class="folder">src/services/</div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">ImageUploadService.ts</span><span class="note"># pick, get a link, PUT the bytes</span></span></div>
+      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">api.ts</span><span class="note"># signed-url contract, cover_photo</span></span></div>
+      <div class="folder">src/hooks/</div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">usePendingImageUpload.ts</span><span class="note"># one photo slot's state</span></span></div>
+      <div class="folder">src/components/</div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">ImageUploadField.tsx</span><span class="note"># label, preview, camera button</span></span></div>
+      <div class="folder">src/screens/</div>
+      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">SettingsScreen.tsx</span><span class="note"># the Photos section</span></span></div>
+      <div class="folder">project root</div>
+      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">app.json</span><span class="note"># photo permission string</span></span></div>
+      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">package.json</span><span class="note"># expo-image-picker</span></span></div>
+    </div>
+    <div class="grp wide">
+      <h2>Infra &#183; the private bucket</h2>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">s3.tf</span><span class="note"># private bucket, versioning, CORS, lifecycle rules, App Runner grant</span></span></div>
+      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">apprunner.tf</span><span class="note"># inject PHOTOS_BUCKET_NAME into the container</span></span></div>
+    </div>
+  </div>
+</div>
+</body></html>
