@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
-from app.routes import health, upload, users
+from app.routes import health, life_events, upload, users, wishes, wishlists
 
 app = FastAPI(
     title="Kivan API",
@@ -10,8 +10,8 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Gzip for responses over 1 KB — today that's only the OpenAPI document;
-# list endpoints grow into it in later steps
+# Gzip for responses over 1 KB — the OpenAPI document, and now this step's
+# list endpoints (a wishlist grid or the life-events taxonomy crosses it)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # CORS middleware. The wildcard origin is safe for THIS api: auth is a
@@ -29,6 +29,11 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(users.router)
 app.include_router(upload.router)
+app.include_router(life_events.router)
+app.include_router(wishlists.router)
+app.include_router(wishes.router)
+# The wishlist-scoped wishes listing lives on a second router under /wishlists
+app.include_router(wishes.wishlist_wishes_router)
 
 
 @app.get("/")

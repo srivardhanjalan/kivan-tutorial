@@ -44,6 +44,12 @@ export const Spacing = {
     return this.chromePillHeight + this.tabBarBottomMargin + this.tabBarContentGap; // 98
   },
 
+  /** The art-block height at the top of a detail screen (wishlist and wish
+      heroes share it, so the two detail screens stay visually aligned) */
+  detailHeroHeight: 180,
+  detailHeroGlyphSize: 64, // placeholder glyph in a detail hero (emoji + Ionicons)
+  tileGlyphSize: 40,       // placeholder glyph in a tile-sized slot (cards, add tile, upload field)
+
   floatingHeaderContentGap: 12,
   /** Top padding for content under the floating header (60 + 12 = 72) */
   get floatingHeaderContentPadding() {

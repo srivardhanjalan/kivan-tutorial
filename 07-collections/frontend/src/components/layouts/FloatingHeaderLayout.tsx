@@ -4,14 +4,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import FloatingHeader from '../FloatingHeader';
 import LoadingView from '../LoadingView';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
 import Colors from '../../constants/Colors';
 import Opacity from '../../constants/Opacity';
 import { CommonScreenStyles, Spacing } from '../../constants/ScreenStyles';
 
 interface FloatingHeaderLayoutProps {
   title: string;
-  /** Renders a back button before the title — pushed screens pass goBack */
-  onBack?: () => void;
+  /** Renders a back button that pops the screen — pushed screens set it */
+  showBack?: boolean;
   /** Right header content (action buttons) */
   headerRight?: React.ReactNode;
   /** Replaces the screen with the standard branded loading state */
@@ -32,11 +33,13 @@ interface FloatingHeaderLayoutProps {
  */
 const FloatingHeaderLayout: React.FC<FloatingHeaderLayoutProps> = ({
   title,
-  onBack,
+  showBack = false,
   headerRight,
   loading = false,
   children,
 }) => {
+  const navigation = useAppNavigation();
+
   if (loading) {
     return <LoadingView />;
   }
@@ -54,12 +57,12 @@ const FloatingHeaderLayout: React.FC<FloatingHeaderLayoutProps> = ({
       <FloatingHeader
         title={title}
         leftContent={
-          onBack ? (
+          showBack ? (
             // Not a HeaderIconButton: pulled to the screen edge, its
             // pressed-fill circle would clip off-screen — the back button
             // keeps the full tap target but presses with opacity instead
             <TouchableOpacity
-              onPress={onBack}
+              onPress={() => navigation.goBack()}
               activeOpacity={Opacity.pressed}
               accessibilityRole="button"
               accessibilityLabel="Back"

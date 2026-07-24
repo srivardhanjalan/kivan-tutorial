@@ -1,27 +1,28 @@
-# Step 06 — Media
+# Step 07 — Collections
 
-Photos arrive, and the backend owns their whole life. A profile and a cover
-image upload straight to S3 through a short-lived presigned URL — the API
-never touches the bytes — landing first under a `pending/` prefix. Saving
-your profile *claims* that pending object into permanent storage; walking
-away leaves it to an S3 lifecycle rule that expires anything unclaimed after
-a day. Nothing the client says can create an orphan, and there is no
-client-facing delete at all: replacement and account-deletion cleanup happen
-server-side, so the bucket can't accumulate junk you can't see.
+The app finally becomes the thing it exists to be: wishlists that hold wishes,
+each wishlist filed under one of nine seeded occasions (birthday, wedding,
+graduation… and a catch-all *general*). A wishlist has a single owner — the
+account that created it — and every read and write is checked against that one
+`created_by`. A wish's access is simply its wishlist's access: every wish route
+funnels through the same ownership gate, so there's one rule, in one place, for
+the whole domain. Deleting a wishlist cascades — its wishes and every photo they
+uploaded go with it. And the photos ride step 06's pending → claim → expire
+lifecycle unchanged — the upload kind-list grows two entries, and the shared
+update-planner grows teeth: now that three routes store photos, it also checks
+that a pending key belongs to the caller and actually exists before claiming it.
 
 **The exact delta this step adds:**
-[PR #42 — Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/42/files)
-
-> Note: #42 also added a customer-managed KMS key for the SSM secret; a
-> follow-up removed it — the default `aws/ssm` key injects the secret fine, so
-> the current infra has no `kms.tf`. See the `CREATE_FAILED` gotcha below for why.
+[PR #48 — Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/48/files)
 
 ## Run it locally
 
-Same two terminals as step 05. The photo lifecycle needs a real bucket, so
-uploads only work against a deployed backend (below) — locally,
-`PHOTOS_BUCKET_NAME` is empty and every stored URL is treated as external and
-passes through untouched, so the app still boots and every other screen works.
+Same two terminals as step 06. The three new DynamoDB tables are read through
+your local AWS credentials (boto3's standard chain), so a full local run wants
+the tables to exist — apply the stack and seed the life-events table (below)
+first, or expect the collections screens to error until they do. Everything else
+(auth, profile, the photo lifecycle's local pass-through) boots exactly as
+before.
 
 ```bash
 cd backend
@@ -31,127 +32,209 @@ CLERK_SECRET_KEY=sk_test_... .venv/bin/uvicorn app.main:app --reload
 
 ```bash
 cd frontend
-npx expo install            # picks up expo-image-picker at the SDK-matched version
+npx expo install            # SDK-matched versions, never hand-pinned
 npx expo start -c --localhost
 ```
 
 ## Deploy it
 
-Unlike step 05, this step **adds infrastructure** — the photos bucket, its
-lifecycle rules, and the S3 grant on the App Runner instance role. On a stack
-that's already up, `terraform apply` creates them, then the image redeploys:
+This step **adds infrastructure** — three DynamoDB tables (`wishlists`,
+`wishes`, `life-events`) and a per-table IAM grant on the App Runner instance
+role. On a stack that's already up, `terraform apply` creates them, the image
+redeploys, and then a one-time seed populates the reference table:
 
 ```bash
 cd infra
-terraform apply              # + the S3 bucket, lifecycle rules, IAM grant
-./scripts/deploy.sh          # rebuild :latest so the backend can sign/claim
+terraform apply                                     # + 3 tables, + per-table IAM
+./scripts/deploy.sh                                 # rebuild :latest with the new routes
+AWS_REGION=us-east-1 ENVIRONMENT=production \
+  ../backend/.venv/bin/python scripts/seed_life_events.py   # 9 occasions (idempotent)
 ```
 
-Deploying fresh? Follow step 03's staged bootstrap (registry → push → apply),
-then the same line. The bucket name is derived once in `s3.tf`
-(`kivan-<env>-photos-<account-id>` — S3 names are globally unique) and injected
-into the container as `PHOTOS_BUCKET_NAME`, so nothing is hand-configured.
+(The seed runs on the backend venv from "Run it locally" — create that first if
+you came straight here to deploy. `ENVIRONMENT` must match your terraform
+`environment` and `AWS_REGION` its `aws_region` — `production` / `us-east-1`
+are the series defaults; change both sides of a pair or neither.)
 
-**Try it end to end:** open the gear on Home → **Photos** → set a profile
-photo and a cover photo from your library, then **Save Photos**. The preview
-appears the instant each upload lands (that *is* the success signal — no
-toast), and both survive a reload because the save claimed them out of
-`pending/`. Replace one and the old object is deleted; delete your account and
-both are swept.
+Deploying fresh? Follow step 03's staged bootstrap (registry → push → apply),
+then the same three lines. The seed is **not optional and not one-off-forgettable**:
+without it `GET /life-events` returns an empty list and the wishlist-creation
+screen has no occasions to offer — run it once after every fresh apply, before
+you use the app. It's idempotent (upsert by id), so re-running is harmless.
+
+**Try it end to end:** open the **My Stuff** tab → **Create a wishlist** (the
+empty state's button; once you have one, the same form is the **New Wishlist**
+tile) → name it (required — save is blocked without one), pick an occasion,
+optionally set a wishlist image → save. (Home now shows it too — the
+"Your wishlists" rail is the content step 06's Home promised.) Open the
+wishlist → **Add a wish** (again the empty state's button, becoming the **New
+Wish** tile once the wishlist has one) → give it a name, a cost, a link, a
+photo → save. Tap the wish → **Mark as
+fulfilled** (the state flips instantly, no reload). Edit and delete live in each
+detail header. Delete the wishlist and every wish and photo under it is swept;
+delete your whole account (Settings danger zone) and all your collections go with
+it.
 
 ## What's here
 
 ```
 backend/
-  app/routes/upload.py         + POST /upload/signed-url — a 5-minute presigned
-                                 PUT into pending/, profile & cover only
-  app/utils/s3_helpers.py      + claim_pending_photo / delete_photo_by_url /
-                                 get_signed_url_for_s3 — the whole lifecycle
-  app/routes/users.py          PUT /me now claims the new photo and deletes the
-                                 replaced one; DELETE /me sweeps both objects
-  app/models/users.py          + cover_photo, + image_url/cover_photo on the
-                                 update body, + a serializer that re-signs reads
-  app/config.py                + photos_bucket_name (injected by App Runner)
-  app/main.py                  includes the upload router
+  app/routes/wishlists.py      + wishlist CRUD, GET /wishlists/me (a real
+                                 CreatedByIndex Query — never a Scan), and a
+                                 delete that cascades to wishes + photos
+  app/routes/wishes.py         + wish CRUD, POST /{id}/complete|uncomplete, and
+                                 GET /wishlists/{id}/wishes (WishlistIdIndex).
+                                 Every route funnels through get_owned_wishlist
+  app/routes/life_events.py    + GET /life-events — auth-gated Scan over the
+                                 seeded taxonomy, ordered by display_order
+  app/utils/wishlist_access.py + get_owned_wishlist (the one 404/403 gate) and
+                                 delete_wishlist_and_contents (the cascade)
+  app/utils/dynamo.py          + three shared helpers: query_all_pages (follows
+                                 LastEvaluatedKey so a >1 MB collection never
+                                 silently truncates); get_item_or_404 (the one
+                                 get-or-404, with the empty/>2048-byte key guard
+                                 that makes an impossible id a 404, not a 500 —
+                                 the fetch half of every ownership gate); and
+                                 update_item_fields (the guarded, field-scoped
+                                 write every update funnels through — a stale
+                                 full-item rewrite can't clobber a concurrent
+                                 change or resurrect a deleted row)
+  app/utils/s3_helpers.py      plan_photo_update lands here, shared and hardened:
+                                 key-based compare (never raw signed URLs), plus
+                                 an owner check and a pending-key existence gate
+                                 now that three routes store photos
+  app/routes/upload.py         the resource_type Literal union gains
+                                 wishlist_photo / wish_photo
+  app/routes/users.py          DELETE /me now sweeps the account's wishlists via
+                                 the shared cascade; _plan_photo_update extracted
+  app/models/{wishlists,wishes,life_events}.py  the three records; the photo-
+                                 bearing two (wishlist, wish) re-sign image_url
+                                 on read via the same signing helper as User
+                                 (a life event is a fixed emoji, no photo)
+  app/database.py / config.py  + the three table handles and their names
+  app/main.py                  includes the new routers (wishes mounts twice —
+                                 its own prefix plus the /wishlists nested list)
 infra/
-  s3.tf                        + the private bucket: public-access blocked,
-                                 versioned, encrypted, CORS, three lifecycle
-                                 rules (the pending/ 1-day expiry backstop), and
-                                 an S3 grant scoped to this bucket's ARN
-  apprunner.tf                 + PHOTOS_BUCKET_NAME from the bucket
-frontend/                      step 05's app plus:
-  src/services/ImageUploadService.ts  pick → presigned URL → PUT bytes to S3
-  src/hooks/usePendingImageUpload.ts  one image slot's pending/claim state,
-                                      reusing useAsyncAction for load + errors
-  src/components/ImageUploadField.tsx the label + preview + camera button
-  src/services/api.ts          + the signed-url contract and cover_photo
-  src/screens/SettingsScreen.tsx   + a Photos section: profile + cover, one
-                                     "Save Photos" that claims both
-  app.json                     + NSPhotoLibraryUsageDescription (the picker
-                                 crashes without it)
-  package.json                 + expo-image-picker
+  dynamodb.tf                  + wishlists (CreatedByIndex), wishes
+                                 (WishlistIdIndex), life-events (no index)
+  iam.tf                       + a least-privilege statement per table: the
+                                 running role only ever *Scans* life-events;
+                                 GetItem/PutItem are withheld (seeding is a
+                                 developer-credential job, not the runtime role's)
+  scripts/seed_life_events.py  + the 9-occasion seeder (idempotent upsert)
+frontend/                      step 06's app plus:
+  src/screens/HomeScreen.tsx           + a "Your wishlists" rail — the 6 newest,
+                                       each linking into its detail (the content
+                                       step 06's Home promised)
+  src/screens/MyStuffScreen.tsx        the wishlist grid (add tile + refetch on focus)
+  src/screens/WishlistDetailScreen.tsx a pastel/photo hero + the wishes grid
+  src/screens/WishlistFormScreen.tsx   create/edit a wishlist (name, occasion, photo)
+  src/screens/WishDetailScreen.tsx     image, cost, link, and the got-it toggle
+  src/screens/WishFormScreen.tsx       the manual add-wish form — built from
+                                       scratch for this step: the finished app
+                                       has no manual form at all; there, wishes
+                                       arrive via 08's catalog and 09's browser
+  src/components/ArtTile.tsx           the one clipped art block — owns the
+                                       "placeholder only when no image" rule via
+                                       a `placeholder` prop; the tile family
+                                       (TileCaption, WishlistCard, WishCard,
+                                       AddTileCard, TileGrid, the glyphs) rides it
+  src/components/LifeEventSelector.tsx the occasion picker
+  src/constants/lifeEventPastels.ts    the taxonomy-keyed pastel washes the
+                                       wishlist card + detail hero read
+  src/hooks/usePendingImageUpload.ts   + seed-at-mount and `changedUrl` — the
+                                       hook itself answers "did the upload change
+                                       anything", so no caller re-tracks the URL
+  src/hooks/{useLifeEvents,useConfirmedDelete,useAppNavigation}.ts  the shared
+                                       taxonomy fetch, confirm-then-delete, and
+                                       typed navigation helpers
+  src/utils/formatCost.ts              cost as a display string, currency symbol
+                                       from one AppConfig constant
+  src/services/api.ts                  + the wishlist / wish / life-event contracts
 ```
 
 ## The ideas this step plants
 
-- **The client is never in the write path.** It uploads to S3 directly with a
-  URL the backend mints and reads through URLs the backend signs — the API
-  handles zero bytes. The bucket is fully private; a stored URL isn't
-  fetchable until `get_signed_url_for_s3` re-signs it on read.
-- **Pending → claim → expire.** An upload is provisional (`pending/…`) until a
-  save promotes it to the permanent keyspace; a save that never comes costs
-  almost nothing because the lifecycle rule reclaims the object *and its bytes*
-  within a day (the bucket is versioned, so the rule expires the noncurrent
-  version too, not just the current one). Orphans are impossible by
-  construction, not by cleanup discipline.
-- **Cleanup is backend-owned.** Replacing a photo deletes the old object;
-  deleting your account sweeps both. There is deliberately **no** client
-  delete endpoint — the one this app used to have shipped a no-op ownership
-  check that let anyone delete anyone's photo.
+- **One owner, one gate.** A wishlist's `created_by` is its sole owner, and
+  `get_owned_wishlist` is the *only* place access is judged (404 if missing, 403
+  if not yours). Every wish route calls it — a wish's access is its wishlist's
+  access, never re-derived — and `GET /wishlists/me` reads that ownership off a
+  real `CreatedByIndex` Query, never a Scan of the whole table. Co-owners are a
+  deliberate step-14 problem; the model is single-owner today so the rule can be
+  this simple.
+- **Delete means delete.** `delete_wishlist_and_contents` drops the wishlist, its
+  wishes (batched off `WishlistIdIndex`), and every photo any of them uploaded.
+  Account deletion reuses the exact same cascade over your wishlists — one
+  teardown path, two callers, no orphaned rows and no orphaned bytes.
+- **Reuse the lifecycle, don't rebuild it.** Wishlist and wish photos are just
+  two more `resource_type` values on step 06's presign → `pending/` → claim →
+  expire machinery. `plan_photo_update` moved into `s3_helpers` the moment a
+  third route needed it — and sharing it forced it to grow up: it compares by S3
+  *key* (not raw signed URL), refuses a pending key another user uploaded, and
+  `head_object`-checks the key exists before any claim. One hardened path, three
+  routes storing photos one identical way.
+- **Least privilege is per table.** The running role gets exactly the DynamoDB
+  actions each table's routes use — and for life-events that's `Scan` and nothing
+  else. Writing the reference data is a job for your developer credentials, so
+  the runtime role can't put or overwrite an occasion even if the code tried.
+- **Reference data is seeded, not shipped in code.** The nine occasions live in a
+  table, populated by an idempotent script. The taxonomy can grow without a
+  redeploy, and the model ignores extra item fields so a later step can widen the
+  seed without touching Python.
 
 ## Gotchas
 
-- **A private bucket means every read must be re-signed.** Persist the raw S3
-  URL, forget the read-side serializer, and every image 403s. The serializer
-  on the `User` model signs `image_url` and `cover_photo` on the way out;
-  external URLs (a Clerk avatar) pass through unsigned.
-- **Two windows, don't confuse them.** The presigned PUT lasts **5 minutes**
-  (long enough for a phone photo, useless if leaked); the `pending/` sweep is
-  **1 day** (the abandon-an-upload backstop). Different jobs, different clocks.
-- **The bucket name is global.** Unlike the region-scoped DynamoDB table, an S3
-  name is unique across all of AWS — hence the account-id suffix, derived in
-  `s3.tf` and injected, never hand-typed in two places that can drift.
-- **`expo-image-picker` needs the iOS permission string.** No
-  `NSPhotoLibraryUsageDescription` in `app.json` and the picker crashes on
-  open. Install the package with `npx expo install`, never a hand-pinned
-  version — it must match Expo Go's renderer.
-- **`CREATE_FAILED` with no logs — two causes, same symptom.** Step 04
-  documented one: the instance role's `ssm:GetParameters` grant not being
-  *ordered* before the service, fixed with the `depends_on` in `apprunner.tf`
-  (which we keep — a real prerequisite). But it isn't the whole story. Even
-  with the role, its grant, and that `depends_on` all in place — and the secret
-  injecting off the **default `aws/ssm` key**, no customer key or `kms:Decrypt`
-  needed — a *fresh* `terraform apply` still intermittently dies with the *same*
-  bare `CREATE_FAILED` and no logs. We couldn't pin the exact mechanism (it
-  survives the `depends_on` and leaves no error behind), but AWS's
-  [create-failure docs](https://docs.aws.amazon.com/apprunner/latest/dg/troubleshooting-create-failure.html)
-  list "temporary issues with the underlying AWS services" among the causes —
-  and the cure is reliable: Terraform taints the failed service, so **re-running
-  `terraform apply` replaces it and it comes up `RUNNING`**, identical config,
-  no change. Verifying this step we saw it on 3 of 6 fresh creates; a plain
-  retry cleared it every time.
-- **Presigned URLs must be SigV4.** boto3 can still emit deprecated SigV2 URLs
-  that only work in pre-2014 regions like `us-east-1`; the S3 client pins
-  `signature_version=s3v4` so uploads and reads work in any region.
+- **A GSI has no range key — sort in the handler.** `CreatedByIndex` and
+  `WishlistIdIndex` are hash-only, so DynamoDB returns items in no useful order.
+  `GET /wishlists/me` sorts newest-first and the wishes listing oldest-first, in
+  Python, after the Query. (ISO timestamps sort lexically = chronologically, so
+  this is a plain string sort.)
+- **A single Query page truncates at 1 MB.** DynamoDB caps one page and hands
+  back a `LastEvaluatedKey`; read only the first page and a large collection
+  silently loses its tail. Both Query-backed lists (wishlists, wishes) go through
+  `query_all_pages`, which loops until the key is exhausted — the whole reason
+  that helper exists. (Life-events reads a single Scan page on purpose: nine
+  reference rows will never graze the cap.)
+- **DynamoDB rejects `float`.** A wish's `cost` is stored as a `Decimal` and
+  coerced back to `float` on read. The models bound `cost` at validation
+  (`ge=0, le=1e12, allow_inf_nan=False`) — `ge=0` is the plain no-negative-price
+  rule, but the other two each stop a distinct DynamoDB 500 that would otherwise
+  fire long after the 422 should have: JSON's parser lets `Infinity`/`NaN`
+  through (`allow_inf_nan=False` catches those), and DynamoDB rejects any finite
+  magnitude past ~9.9e125 (`le=1e12` keeps a valid number far under that
+  ceiling). Drop either of those two and a well-formed body blows up the
+  serializer instead of getting a clean 422.
+- **One currency, one place.** Cost is a plain number; the symbol (`₹`) is a
+  single `AppConfig.currencySymbol` every cost adornment reads. Per-user currency
+  (a picker + conversion) is a deliberate step-09 deferral — this keeps the swap
+  point to exactly one constant until then.
+- **App Runner images build ONLY on the colima-rosetta docker driver.**
+  buildx/QEMU builds on Apple Silicon pass locally and die on AWS with
+  `CREATE_FAILED` and no logs. `deploy.sh` builds on the right context — don't
+  swap it.
+- **`CREATE_FAILED` with no logs on a *fresh* create — just retry the apply.**
+  Even with the instance role, its grants, and the `apprunner.tf` `depends_on`
+  all in place, a fresh `terraform apply` intermittently dies with a bare
+  `CREATE_FAILED` and no logs — AWS lists "temporary issues with the underlying
+  services" among the causes. Terraform taints the failed service, so re-running
+  `terraform apply` replaces it and it comes up `RUNNING`, identical config, no
+  change. Not every failure has a config root cause; a plain retry is the fix.
 
 ## Done when
 
-- [ ] Setting a profile photo shows an instant preview and survives a reload.
-- [ ] The same for a cover photo — both are real S3 uploads.
-- [ ] The bucket blocks all public access; images load only via signed URLs.
-- [ ] Replacing a photo leaves no old object behind; deleting the account
-      sweeps both.
-- [ ] An upload you never save is gone within a day (the `pending/` rule).
+- [ ] Create a wishlist under an occasion → it shows in My Stuff newest-first,
+      the moment you return.
+- [ ] Add a wish with a name, cost, link, and photo → open it → the cost renders
+      with the currency symbol and the photo loads via a signed URL.
+- [ ] Mark a wish fulfilled → the state flips with no reload; reopen it and the
+      state persisted.
+- [ ] While you still have an account: `curl $API/wishlists/me` with no token
+      → 401; `GET /wishlists/{id}` on a second account's wishlist → 403; on a
+      made-up id → 404. (Run this BEFORE deleting your account below — after
+      that, no new token can be minted.)
+- [ ] Delete a wishlist → its wishes and their photos are gone (no orphan rows,
+      no orphan objects).
+- [ ] Delete your account → every wishlist you owned is swept along with it.
 
-Next: `07-collections` — the wishlists and wishes the whole app exists for,
-with photos that ride exactly this lifecycle.
+Next: `08-storefronts` — curated stores with products, so a wish can come from a
+catalog instead of the hand-typed form built here.

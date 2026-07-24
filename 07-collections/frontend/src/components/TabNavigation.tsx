@@ -9,10 +9,12 @@ import { Tabs, SearchTab, TabConfig, TabKey } from '../config/tabs';
 import GlassPill from './GlassPill';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
 import HomeScreen from '../screens/HomeScreen';
+import MyStuffScreen from '../screens/MyStuffScreen';
 
 // Tabs with a real screen; the rest stay placeholders until their step
 const TabScreens: Partial<Record<TabKey, React.ComponentType>> = {
   HomeTab: HomeScreen,
+  MyStuffTab: MyStuffScreen,
 };
 
 // The param list comes from the config, so adding a tab there types the

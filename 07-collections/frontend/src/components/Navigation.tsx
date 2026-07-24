@@ -8,16 +8,27 @@ import LoadingView from './LoadingView';
 import SignInScreen from '../screens/SignInScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import WishlistFormScreen from '../screens/WishlistFormScreen';
+import WishlistDetailScreen from '../screens/WishlistDetailScreen';
+import WishFormScreen from '../screens/WishFormScreen';
+import WishDetailScreen from '../screens/WishDetailScreen';
 import {
   setAuthTokenGetter,
   fetchOnboardingCompleted,
   completeOnboarding,
 } from '../services/api';
+import type { Wishlist, Wish } from '../services/api';
 
 /** The signed-in stack: the tab shell, plus every screen pushed over it */
 export type RootStackParamList = {
   Tabs: undefined;
   Settings: undefined;
+  /** Create (no param) or edit (the wishlist) one wishlist */
+  WishlistForm: { wishlist?: Wishlist };
+  WishlistDetail: { wishlistId: string };
+  /** Create (wishlist only) or edit (the wish) one wish */
+  WishForm: { wishlistId: string; wish?: Wish };
+  WishDetail: { wishId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -82,6 +93,10 @@ export default function Navigation() {
         <Stack.Navigator id={undefined} screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Tabs" component={TabNavigation} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="WishlistForm" component={WishlistFormScreen} />
+          <Stack.Screen name="WishlistDetail" component={WishlistDetailScreen} />
+          <Stack.Screen name="WishForm" component={WishFormScreen} />
+          <Stack.Screen name="WishDetail" component={WishDetailScreen} />
         </Stack.Navigator>
       </NavigationContainer>
       <OnboardingTutorial visible={showOnboarding} onDismiss={handleOnboardingDismiss} />

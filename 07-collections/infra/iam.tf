@@ -72,6 +72,7 @@ resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
     Version = "2012-10-17"
     Statement = [
       {
+        # Users: key-only get/put/update by id (JIT provisioning + profile)
         Effect = "Allow"
         Action = [
           "dynamodb:GetItem",
@@ -79,6 +80,51 @@ resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
           "dynamodb:UpdateItem"
         ]
         Resource = aws_dynamodb_table.users.arn
+      },
+      {
+        # Wishlists: get/put/delete by id, UpdateItem (PUT is a guarded
+        # field-scoped update — utils/dynamo.update_item_fields), and Query
+        # on CreatedByIndex (GET /wishlists/me + the account-deletion sweep).
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query"
+        ]
+        Resource = [
+          aws_dynamodb_table.wishlists.arn,
+          "${aws_dynamodb_table.wishlists.arn}/index/*"
+        ]
+      },
+      {
+        # Wishes: item CRUD (UpdateItem flips `completed`), Query on
+        # WishlistIdIndex (listing + cascade delete), and BatchWriteItem for
+        # the cascade's batched deletes.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+          "dynamodb:BatchWriteItem"
+        ]
+        Resource = [
+          aws_dynamodb_table.wishes.arn,
+          "${aws_dynamodb_table.wishes.arn}/index/*"
+        ]
+      },
+      {
+        # Life events: reference data the app reads with a full-table Scan
+        # (GET /life-events) and nothing more. The running role only Scans;
+        # seeding writes under local developer credentials, not this role, so
+        # GetItem/PutItem are deliberately withheld. Scan is granted on this
+        # table and nowhere else.
+        Effect   = "Allow"
+        Action   = ["dynamodb:Scan"]
+        Resource = aws_dynamodb_table.life_events.arn
       }
     ]
   })
