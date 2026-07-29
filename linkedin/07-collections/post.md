@@ -28,7 +28,7 @@ What is a permission check you have seen re-derived in five places, each one a l
 ## First comment (secondary links, posted after publishing)
 
 The previous step, 06 · Photos Without the Exposure:
-[PASTE STEP 06 MEDIUM URL]
+https://medium.com/@srivardhanjalan/photos-without-the-exposure-96e9acf11db3
 
 New to the series? Start with the introduction:
 https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9
