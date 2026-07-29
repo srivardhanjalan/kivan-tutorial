@@ -1,0 +1,97 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  :root{--primary:#FF385C;--dark:#1A1A1A;--text2:#6E6E73}
+  html,body{margin:0;padding:0}
+  body{width:1500px;height:750px;overflow:hidden;font-family:-apple-system,'Segoe UI',Roboto,sans-serif}
+  .hero{width:1500px;height:750px;position:relative;
+    background:linear-gradient(115deg,#FFE8EC 0%,#FDFFFF 42%,#E7F1F8 100%)}
+  .copy{position:absolute;left:96px;top:70px;max-width:680px}
+  .eyebrow{font-size:15px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--primary);margin-bottom:18px}
+  .title{font-size:72px;font-weight:800;letter-spacing:-2px;line-height:1.02;color:var(--dark)}
+  .sub{font-size:22px;color:var(--text2);line-height:1.45;margin-top:18px;max-width:600px}
+  .chips{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap;max-width:600px}
+  .chip{height:40px;border-radius:999px;background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.07);
+    display:flex;align-items:center;padding:0 18px;font-size:15.5px;font-weight:700;color:var(--dark);white-space:nowrap}
+  .chip.hot{background:var(--primary);color:#fff;border-color:var(--primary)}
+  /* terminal */
+  .term{position:absolute;left:96px;top:430px;width:812px;border-radius:14px;
+    background:#1D1E24;box-shadow:0 30px 70px rgba(20,20,30,.28);overflow:hidden}
+  .tbar{height:38px;background:#2A2B33;display:flex;align-items:center;padding:0 16px;gap:8px}
+  .dot2{width:12px;height:12px;border-radius:6px}
+  .ttitle{flex:1;text-align:center;color:#8A8B94;font-size:13px;font-weight:600;font-family:'SF Mono',Menlo,monospace;margin-right:44px}
+  .tbody{padding:18px 24px 20px;font-family:'SF Mono',Menlo,monospace;font-size:15px;line-height:1.72;color:#D6D7DE}
+  .g{color:#4ADE80}.r{color:#FF6B6B}.p{color:#FF6B8A}.dim{color:#8A8B94}
+  /* phone: floated screenshot frame - rounded, soft shadow, thin light border, no dark bezel */
+  .shot{position:absolute;right:104px;top:60px;width:312px;border-radius:40px;overflow:hidden;
+    box-shadow:0 30px 70px rgba(20,20,30,.26);border:1px solid #e6e6ea;background:#fff}
+  .screen{width:100%;height:664px;background:#fff;position:relative;
+    font-family:-apple-system,'Segoe UI',Roboto,sans-serif}
+  .sbar{height:50px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 22px 7px 26px;
+    font-size:14px;font-weight:700;color:#1A1A1A}
+  .sbar .rt{display:flex;align-items:center;gap:5px}
+  .nav{display:flex;align-items:center;padding:2px 18px 6px}
+  .nav .ttl{font-size:28px;font-weight:800;letter-spacing:-.6px;color:#1A1A1A}
+  .body2{padding:0 18px}
+  .sect{margin:16px 0 12px;font-size:19px;font-weight:800;letter-spacing:-.3px;color:#1A1A1A}
+  .sect .meta{font-size:14px;font-weight:600;color:#6E6E73;margin-left:7px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .tile{border-radius:20px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .emoji{font-size:46px;line-height:1}
+  .cap{margin-top:8px;font-size:15px;font-weight:600;letter-spacing:-.2px;color:#1A1A1A}
+  .cell .add{background:rgba(224,224,224,.33)}
+  .plus{width:44px;height:44px;border-radius:50%;background:var(--primary);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:400;line-height:1;padding-bottom:3px;box-sizing:border-box}
+  .cap.add{color:var(--primary)}
+</style></head><body>
+<div class="hero">
+  <div class="copy">
+    <div class="eyebrow">Zero to Shipped &#183; 07 &#183; Collections</div>
+    <div class="title">Whose&nbsp;wish?</div>
+    <div class="sub">Wishlists hold wishes, each filed under an occasion, and one owner answers for all of it. One gate judges every read and write.</div>
+    <div class="chips">
+      <span class="chip">React Native</span><span class="chip">FastAPI</span>
+      <span class="chip">DynamoDB</span><span class="chip">Amazon S3</span><span class="chip">Terraform</span>
+    </div>
+  </div>
+  <div class="term">
+    <div class="tbar">
+      <span class="dot2" style="background:#FF5F57"></span>
+      <span class="dot2" style="background:#FEBC2E"></span>
+      <span class="dot2" style="background:#28C840"></span>
+      <span class="ttitle">07-collections &#183; one gate, three answers</span>
+    </div>
+    <div class="tbody">
+      <span class="dim">$</span> curl -s -o /dev/null -w '%{http_code}' $API/wishlists/me<br>
+      <span class="r">401</span>&nbsp;&nbsp;<span class="dim">&#8592; no token, no access</span><br>
+      <span class="dim">$</span> curl -sw '%{http_code}' -H "$AUTH" $API/wishlists/$OTHERS<br>
+      <span class="p">403</span>&nbsp;&nbsp;<span class="dim">&#8592; not your wishlist</span><br>
+      <span class="dim">$</span> curl -sw '%{http_code}' -H "$AUTH" $API/wishlists/made-up-id<br>
+      <span class="g">404</span>&nbsp;&nbsp;<span class="dim">&#8592; one gate: get_owned_wishlist</span>
+    </div>
+  </div>
+  <div class="shot">
+    <div class="screen">
+      <div class="sbar"><span>9:41</span>
+        <span class="rt">
+          <svg width="18" height="11" viewBox="0 0 18 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#1A1A1A"/><rect x="5" y="5" width="3" height="6" rx="1" fill="#1A1A1A"/><rect x="10" y="2.5" width="3" height="8.5" rx="1" fill="#1A1A1A"/><rect x="15" y="0" width="3" height="11" rx="1" fill="#1A1A1A"/></svg>
+          <svg width="16" height="11" viewBox="0 0 16 12" fill="none"><path d="M1.6 3.4 A9 9 0 0 1 14.4 3.4" stroke="#1A1A1A" stroke-width="1.5"/><path d="M4 6 A5.3 5.3 0 0 1 12 6" stroke="#1A1A1A" stroke-width="1.5"/><circle cx="8" cy="9" r="1.3" fill="#1A1A1A"/></svg>
+          <svg width="26" height="12" viewBox="0 0 26 12"><rect x="1" y="1" width="21" height="10" rx="2.5" fill="none" stroke="#1A1A1A" stroke-opacity=".35" stroke-width="1"/><rect x="2.5" y="2.5" width="16" height="7" rx="1.2" fill="#1A1A1A"/><rect x="23.2" y="4" width="1.8" height="4" rx="1" fill="#1A1A1A" fill-opacity=".35"/></svg>
+        </span>
+      </div>
+      <div class="nav">
+        <span class="ttl">My Stuff</span>
+      </div>
+      <div class="body2">
+        <div class="sect">Wishlists<span class="meta">5</span></div>
+        <div class="grid">
+          <div class="cell"><div class="tile add"><div class="plus">+</div></div><div class="cap add">New Wishlist</div></div>
+          <div class="cell"><div class="tile" style="background:#FFE8EC"><span class="emoji">&#127874;</span></div><div class="cap">My Birthday</div></div>
+          <div class="cell"><div class="tile" style="background:#EFEAFB"><span class="emoji">&#128141;</span></div><div class="cap">Wedding</div></div>
+          <div class="cell"><div class="tile" style="background:#E7F1F8"><span class="emoji">&#127891;</span></div><div class="cap">Grad Season</div></div>
+          <div class="cell"><div class="tile" style="background:#E8F4EA"><span class="emoji">&#127969;</span></div><div class="cap">New Apartment</div></div>
+          <div class="cell"><div class="tile" style="background:#EFEAFB"><span class="emoji">&#127876;</span></div><div class="cap">Holidays</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>
