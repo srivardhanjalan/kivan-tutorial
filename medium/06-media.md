@@ -152,7 +152,7 @@ Step 7, Collections: the wishlists and wishes the whole app exists for. Photos r
 - **02 · [Dressed to Ship](https://medium.com/@srivardhanjalan/dressed-to-ship-1e2591179d8a)**
 - **03 · [Alive on Arrival](https://medium.com/@srivardhanjalan/alive-on-arrival-cda0a351844f)**
 - **04 · [Signed, Sealed, Delivered](https://medium.com/@srivardhanjalan/signed-sealed-delivered-a481a02ac392)**
-- **05 · Two Places at Once** (previous step, publishing soon)
+- **05 · [Two Places at Once](https://medium.com/@srivardhanjalan/two-places-at-once-1e00bb46354b)**
 - **06 · Photos Without the Exposure** (you are here)
 - **07 · Collections** (coming soon)
 
