@@ -1,0 +1,44 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  html,body{margin:0;padding:0}
+  body{background:transparent;
+    font-family:-apple-system,'Segoe UI',Roboto,sans-serif;padding:40px 44px;
+    width:848px;height:436px;box-sizing:border-box;overflow:hidden}
+  .card{max-width:760px;margin:0 auto;background:transparent;border-radius:22px;
+    box-shadow:none;padding:30px 40px 28px}
+  .k{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+    color:#5b6172;background:#eef0f4;padding:4px 12px;border-radius:20px}
+  h1{font-size:23px;font-weight:800;color:#1f2430;margin:11px 0 3px;letter-spacing:-.01em}
+  .sub{font-size:14px;color:#8a90a0;margin:0;line-height:1.45}
+  .stage{position:relative;width:680px;height:190px;margin:14px auto 0}
+  .node{position:absolute;top:38px;width:120px;display:flex;flex-direction:column;align-items:center;z-index:2}
+  .node img{width:62px;height:62px;border-radius:12px}
+  .node .lbl{margin-top:7px;font-size:12.5px;font-weight:800;color:#2b3040}
+  .node .tag{font-size:11px;color:#9aa0b0;font-family:Menlo,monospace;margin-top:1px}
+  svg.wires{position:absolute;inset:0;width:680px;height:190px;z-index:1;overflow:visible}
+  .al{font-size:12px;fill:#5b6172;font-weight:600}.al.hot{fill:#FF385C;font-weight:700}
+  .foot{font-size:12px;color:#9aa0b0;text-align:center;margin:10px auto 0;max-width:640px;line-height:1.4}
+</style></head><body>
+<div class="card">
+  <span class="k">Read</span>
+  <h1>One gate, every route</h1>
+  <p class="sub">A wish has no owner of its own. Its access is its wishlist's, judged in exactly one place.</p>
+  <div class="stage">
+    <svg class="wires" viewBox="0 0 680 190">
+      <defs>
+        <marker id="s" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto"><path d="M0,0 L6.5,3 L0,6 Z" fill="#5b6172"/></marker>
+        <marker id="h" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto"><path d="M0,0 L6.5,3 L0,6 Z" fill="#FF385C"/></marker>
+      </defs>
+      <line x1="117" y1="69" x2="303" y2="69" stroke="#5b6172" stroke-width="1.8" marker-end="url(#s)"/>
+      <text class="al" x="210" y="55" text-anchor="middle">GET a wish</text>
+      <line x1="377" y1="69" x2="563" y2="69" stroke="#5b6172" stroke-width="1.8" marker-end="url(#s)"/>
+      <text class="al" x="470" y="55" text-anchor="middle">get the wish, then its wishlist</text>
+      <line x1="377" y1="165" x2="563" y2="165" stroke="#FF385C" stroke-width="2.1" marker-end="url(#h)"/>
+      <text class="al hot" x="470" y="151" text-anchor="middle">created_by must be you</text>
+    </svg>
+    <div class="node" style="left:20px"><img src="mobile.svg"><div class="lbl">You</div><div class="tag">the app</div></div>
+    <div class="node" style="left:280px"><img src="apprunner.svg"><div class="lbl">Backend</div><div class="tag">get_owned_wishlist</div></div>
+    <div class="node" style="left:540px"><img src="dynamodb.svg"><div class="lbl">DynamoDB</div><div class="tag">wishlists</div></div>
+  </div>
+  <div class="foot">Every wish route funnels through the one check: 404 if the wishlist is missing, 403 if it isn't yours. Access is never re-derived per route.</div>
+</div>
+</body></html>
