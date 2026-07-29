@@ -13,13 +13,13 @@
 Until now the app has no idea who is using it. Every screen is anonymous, and the backend holds no user records at all. Teaching it who you are is the whole step, and it is four problems at once, none of them the login form.
 
 - **Someone has to create the user record, and it can't be the phone.** The obvious move (let the app send its name and email up after signup) hands the client a pen to write its own database row: any name, any email, all attacker-controlled.
-- **The backend can't trust a token on sight.** A session token rides on every request. Verify it wrong and a forged one walks in, or a real user hits a Clerk outage and gets sent off to debug a token that was fine.
-- **The first-run tutorial can't remember on the phone.** Store "already seen it" on the device and a reinstall replays it; switch phones and it forgets.
-- **The backend's Clerk secret can't sit in the console.** The server needs a secret key to call Clerk, and a plaintext environment variable is readable by anyone who can describe the service.
+- **The backend can't trust a token on sight.** A session token rides on every request, and verifying it wrong either lets a forged one through or blames the user for an outage that is ours.
+- **The first-run tutorial can't remember on the phone.** A welcome that plays once has to stay played across reinstalls and new devices.
+- **The backend's Clerk secret can't sit in the console.** The server needs a secret key to reach Clerk, and it must not land somewhere the console will read back.
 
 ## What we build
 
-A real sign-in that ends with the backend knowing you. The phone signs in with Clerk (Apple, Google, or email and a code). Every request after that carries a Clerk token, and the backend verifies it locally against Clerk's own public keys. The first time it sees a valid token for someone it has never met, it fetches that person's profile from Clerk server-to-server and writes the DynamoDB record itself. The client is never handed a create-user endpoint at all.
+A real sign-in that ends with the backend knowing you. The phone signs in with Clerk (Apple, Google, or email and a password). Every request after that carries a Clerk token, and the backend verifies it locally against Clerk's own public keys. The first time it sees a valid token for someone it has never met, it fetches that person's profile from Clerk server-to-server and writes the DynamoDB record itself. The client is never handed a create-user endpoint at all.
 
 That answers all four:
 
@@ -38,9 +38,9 @@ This step gives you an account, not a profile to edit or a way to delete it. Tho
 
 ## What we touch this step
 
-Sixteen files carry the work, across the backend, the app, and the infra. Each build section below takes one area.
+Seventeen files carry the work, across the backend, the app, and the infra. Each build section below takes one area.
 
-![What we touch this step, sixteen files grouped by folder: the backend verifier and record (auth dependency, provisioning, users routes, model, config), the frontend way in (both auth screens, the shared methods column, OAuth config, onboarding, the auth gate, Home), and the infra table and secret; each file marked new or modified](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-filemap.png?v=PLACEHOLDER)
+![What we touch this step, seventeen files grouped by folder: the backend verifier and record (auth dependency, provisioning, users routes, model, config), the frontend way in (the ClerkProvider entry point, both auth screens, the shared methods column, OAuth config, onboarding, the auth gate, Home), and the infra table and secret; each file marked new or modified](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-filemap.png?v=PLACEHOLDER)
 
 ## One screen for sign-in and sign-up
 
@@ -88,7 +88,7 @@ Store "seen it" on the phone and a reinstall replays the welcome carousel. So th
 
 A plaintext environment variable is readable by anyone with `apprunner:DescribeService`, and a secret key that talks to Clerk is exactly the wrong thing to leave sitting in the console. So we never let the key become a plain env var.
 
-It lives in SSM as a **SecureString**. App Runner resolves it at instance start through `runtime_environment_secrets`, and the instance role can read that one parameter and nothing else. The container gets `CLERK_SECRET_KEY` in its environment; `DescribeService` shows only an SSM reference:
+It lives in SSM as a **SecureString**. App Runner resolves it at instance start through `runtime_environment_secrets`, and the instance role can read that one SSM parameter and no other. The container gets `CLERK_SECRET_KEY` in its environment; `DescribeService` shows only an SSM reference:
 
 [![App Runner injecting the Clerk key from SSM at instance start via runtime_environment_secrets, never as a plaintext value](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-code-secret.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/04-auth/infra/apprunner.tf)
 

@@ -1,0 +1,45 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  html,body{margin:0;padding:0}
+  body{width:860px;height:558px;box-sizing:border-box;
+    background:transparent;padding:0;overflow:hidden;
+    font-family:-apple-system,'Segoe UI',Roboto,sans-serif}
+  .card{width:860px;margin:0;background:#0d1117;border-radius:12px;
+    box-shadow:none;overflow:hidden}
+  .bar{height:34px;background:#161b22;display:flex;align-items:center;padding:0 14px;gap:7px}
+  .d{width:11px;height:11px;border-radius:50%}
+  .fname{color:#8b949e;font:600 12px 'SF Mono',Menlo,Consolas,monospace;margin-left:8px}
+  .code{padding:20px 22px}
+  .code pre{margin:0;font:12.5px/22px 'SF Mono',Menlo,Consolas,monospace;
+    color:#e6edf3;white-space:pre;overflow-x:auto}
+  .code pre span{font-size:12.5px !important}
+</style></head><body>
+  <div class="card">
+    <div class="bar"><span class="d" style="background:#FF5F57"></span>
+      <span class="d" style="background:#FEBC2E"></span><span class="d" style="background:#28C840"></span>
+      <span class="fname">app/utils/user_provisioning.py</span></div>
+    <div class="code"><div class="highlight" style="background: #0d1117"><pre style="line-height: 125%;"><span></span>    <span style="color: #E6EDF3">now</span> <span style="color: #FF7B72; font-weight: bold">=</span> <span style="color: #E6EDF3">utc_now_iso()</span>
+
+    <span style="color: #E6EDF3">new_user</span> <span style="color: #FF7B72; font-weight: bold">=</span> <span style="color: #E6EDF3">{</span>
+        <span style="color: #A5D6FF">&quot;id&quot;</span><span style="color: #E6EDF3">:</span> <span style="color: #E6EDF3">user_id,</span>
+        <span style="color: #A5D6FF">&quot;email&quot;</span><span style="color: #E6EDF3">:</span> <span style="color: #E6EDF3">email,</span>
+        <span style="color: #A5D6FF">&quot;first_name&quot;</span><span style="color: #E6EDF3">:</span> <span style="color: #E6EDF3">profile</span><span style="color: #FF7B72; font-weight: bold">.</span><span style="color: #E6EDF3">get(</span><span style="color: #A5D6FF">&quot;first_name&quot;</span><span style="color: #E6EDF3">),</span>
+        <span style="color: #A5D6FF">&quot;last_name&quot;</span><span style="color: #E6EDF3">:</span> <span style="color: #E6EDF3">profile</span><span style="color: #FF7B72; font-weight: bold">.</span><span style="color: #E6EDF3">get(</span><span style="color: #A5D6FF">&quot;last_name&quot;</span><span style="color: #E6EDF3">),</span>
+        <span style="color: #A5D6FF">&quot;image_url&quot;</span><span style="color: #E6EDF3">:</span> <span style="color: #E6EDF3">profile</span><span style="color: #FF7B72; font-weight: bold">.</span><span style="color: #E6EDF3">get(</span><span style="color: #A5D6FF">&quot;image_url&quot;</span><span style="color: #E6EDF3">),</span>
+        <span style="color: #A5D6FF">&quot;onboarding_completed&quot;</span><span style="color: #E6EDF3">:</span> <span style="color: #79C0FF">False</span><span style="color: #E6EDF3">,</span>
+        <span style="color: #A5D6FF">&quot;created_at&quot;</span><span style="color: #E6EDF3">:</span> <span style="color: #E6EDF3">now,</span>
+        <span style="color: #A5D6FF">&quot;updated_at&quot;</span><span style="color: #E6EDF3">:</span> <span style="color: #E6EDF3">now,</span>
+    <span style="color: #E6EDF3">}</span>
+
+    <span style="color: #FF7B72">try</span><span style="color: #E6EDF3">:</span>
+        <span style="color: #E6EDF3">users_table</span><span style="color: #FF7B72; font-weight: bold">.</span><span style="color: #E6EDF3">put_item(</span>
+            <span style="color: #E6EDF3">Item</span><span style="color: #FF7B72; font-weight: bold">=</span><span style="color: #E6EDF3">new_user,</span>
+            <span style="color: #E6EDF3">ConditionExpression</span><span style="color: #FF7B72; font-weight: bold">=</span><span style="color: #A5D6FF">&quot;attribute_not_exists(id)&quot;</span>
+        <span style="color: #E6EDF3">)</span>
+        <span style="color: #E6EDF3">logger</span><span style="color: #FF7B72; font-weight: bold">.</span><span style="color: #E6EDF3">info(</span><span style="color: #79C0FF">f</span><span style="color: #A5D6FF">&quot;JIT-provisioned user {</span><span style="color: #E6EDF3">user_id</span><span style="color: #A5D6FF">}&quot;</span><span style="color: #E6EDF3">)</span>
+    <span style="color: #FF7B72">except</span> <span style="color: #E6EDF3">ClientError</span> <span style="color: #FF7B72">as</span> <span style="color: #E6EDF3">e:</span>
+        <span style="color: #FF7B72">if</span> <span style="color: #E6EDF3">e</span><span style="color: #FF7B72; font-weight: bold">.</span><span style="color: #E6EDF3">response[</span><span style="color: #A5D6FF">&quot;Error&quot;</span><span style="color: #E6EDF3">][</span><span style="color: #A5D6FF">&quot;Code&quot;</span><span style="color: #E6EDF3">]</span> <span style="color: #FF7B72; font-weight: bold">!=</span> <span style="color: #A5D6FF">&quot;ConditionalCheckFailedException&quot;</span><span style="color: #E6EDF3">:</span>
+            <span style="color: #FF7B72">raise</span>
+</pre></div>
+</div>
+  </div>
+</body></html>
