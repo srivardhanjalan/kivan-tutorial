@@ -1,6 +1,6 @@
 # Signed, Sealed, Delivered
 
-*Zero to Shipped, step 4. Sign in with Clerk, and the backend writes your user record itself, straight from Clerk, never from the phone. A forged token gets a flat 401; when the fault is ours, a 503 names the fix.*
+*Zero to Shipped, step 4. Sign in with Clerk, and the backend writes your user record itself, straight from Clerk, never from the phone. A forged token gets a flat 401; a 503 means the fault is ours, and the one that bites fresh setups hands you the fix.*
 
 ![Zero to Shipped 04 hero: the real Kivan sign-in screen with Apple, Google, and email, beside a terminal where a request with no token gets a flat 401 and a request with a valid token gets back the user record the backend wrote itself](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-04.png?v=PLACEHOLDER)
 
@@ -24,13 +24,13 @@ A real sign-in that ends with the backend knowing you. The phone signs in with C
 That answers all four:
 
 - **The record** is created just-in-time, server-side, from Clerk's copy of your profile, with a create-only write so a returning user is never overwritten.
-- **The token** is verified against Clerk's cached signing keys: a bad token is the caller's flat 401, an unreachable Clerk or a missing table is our 503, and the 503 names the fix.
+- **The token** is verified against Clerk's cached signing keys: a bad token is the caller's flat 401, an unreachable Clerk or a missing table is our 503, and the missing-table 503 names the exact fix.
 - **The tutorial** flag lives on the backend record, not the device, so a reinstall or a new phone never replays it.
 - **The secret** lives in SSM as a SecureString and reaches the container at boot, never as a plaintext value the console can read.
 
 This step gives you an account, not a profile to edit or a way to delete it. Those are step 5. It splits into five moves, in build order: one screen for both sign-in and sign-up, the just-in-time record, the token verifier, the reinstall-proof tutorial, and the Clerk secret kept out of the console.
 
-**What we need:** step 3 done, a Clerk application with Email, Google, and Apple enabled, and an AWS account. The users table is real DynamoDB, so `terraform apply` runs this step even when you run the API on your laptop.
+**What we need:** step 3 done, a Clerk application with Email and Google enabled (Apple optional), and an AWS account. The users table is real DynamoDB, so `terraform apply` runs this step even when you run the API on your laptop.
 
 **Time:** about 45 to 75 minutes, most of it the one-time Clerk setup and the deploy.
 
@@ -70,7 +70,7 @@ The existence check costs only the first request per user on a given instance: a
 
 Confuse "your token is bad" with "our service is down" and a Clerk outage sends a valid user off to debug a token that was fine, with the library's internal error string attached for anyone to read. So the backend is careful about who each failure belongs to.
 
-Every request carries a Clerk session token as a Bearer token. The backend verifies it locally: it fetches Clerk's public signing keys once from the JWKS endpoint, caches the set for an hour, and checks each token's signature and expiry against a key it already holds. A missing token, a garbage token, or one signed by a key it can't find is the caller's problem, and each gets a flat `401`. When the fault is ours instead (Clerk unreachable, a wrong secret key, no users table) the answer is a `503` whose message names the fix:
+Every request carries a Clerk session token as a Bearer token. The backend verifies it locally: it fetches Clerk's public signing keys once from the JWKS endpoint, caches the set for an hour, and checks each token's signature and expiry against a key it already holds. A missing token, a garbage token, or one signed by a key it can't find is the caller's problem, and each gets a flat `401`. When the fault is ours instead (Clerk unreachable, a wrong secret key, no users table) the answer is a `503`, not a `401`: the generic ones say the service is temporarily unavailable, and the missing-table one names the fix outright:
 
 [![The verifier splitting failures by owner: an unreachable JWKS endpoint raises 503, a forged or expired token raises 401](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-code-verify.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/04-auth/backend/app/dependencies/auth.py)
 
