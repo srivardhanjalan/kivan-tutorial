@@ -31,6 +31,7 @@ Code is best browsed [on GitHub](https://github.com/srivardhanjalan/kivan-tutori
 - [04 · Signed, Sealed, Delivered — slides](linkedin/04-auth/carousel.html) · [PDF + post copy](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/linkedin/04-auth)
 - [05 · Two Places at Once: slides](linkedin/05-profiles/carousel.html) · [PDF + post copy](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/linkedin/05-profiles)
 - [06 · Photos Without the Exposure: slides](linkedin/06-media/carousel.html) · [PDF + post copy](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/linkedin/06-media)
+- [07 · Whose Wish Is It Anyway?: slides](linkedin/07-collections/carousel.html) · [PDF + post copy](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/linkedin/07-collections)
 
 ## The code (on GitHub)
 
