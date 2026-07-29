@@ -121,6 +121,6 @@ Step 6, Media: profile and cover photos on S3, with the backend owning the whole
 - **03 · [Alive on Arrival](https://medium.com/@srivardhanjalan/alive-on-arrival-cda0a351844f)**
 - **04 · [Signed, Sealed, Delivered](https://medium.com/@srivardhanjalan/signed-sealed-delivered-a481a02ac392)**
 - **05 · Two Places at Once** (you are here)
-- **06 · Photos Without the Exposure** (coming soon)
+- **06 · [Photos Without the Exposure](https://medium.com/@srivardhanjalan/photos-without-the-exposure-96e9acf11db3)**
 
 **[All the code on GitHub](https://github.com/srivardhanjalan/kivan-tutorial)**
