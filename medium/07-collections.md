@@ -17,7 +17,7 @@ The app finally becomes the thing it exists for: wishlists that hold wishes, eac
 - **Delete can leave a trail.** Remove a wishlist but not its wishes and their photos, and you are left with orphaned rows and files nobody can reach.
 - **Two more things now hold photos.** Wishlists and wishes each carry an image, which tempts you into a second, weaker copy of step 6's upload flow.
 
-One thing this step deliberately does not do: let two people share a wishlist. Every list has exactly one owner today, and co-ownership is a whole feature of its own that arrives in step 14. Staying single-owner now is what keeps this step's rule small.
+One thing this step deliberately skips: sharing a wishlist between people. Every list has one owner today; co-ownership is its own feature, in step 14. Single-owner is what keeps this step's rule small.
 
 ## What we build
 
@@ -43,7 +43,7 @@ A wishlist has a single owner: the account in `created_by`. The gate loads the r
 
 [![The one ownership gate: load the wishlist, then 404 if it is missing, 403 if it is not the caller's](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-07-code-gate.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/07-collections/backend/app/utils/wishlist_access.py)
 
-The load half earns its own helper. `get_item_or_404` turns a missing row into a 404, and it handles an impossible id too: an empty or oversized key makes DynamoDB raise a validation error, which would otherwise surface as a 500 for an id that could never exist. Guard that once, and every gate above it inherits a clean 404.
+The load half earns its own helper. `get_item_or_404` turns a missing row into a 404, and an impossible id too: an empty or oversized key makes DynamoDB raise a validation error that would otherwise become a 500. Guard it once, and every gate above inherits a clean 404.
 
 ![Reading a wish: the app asks the backend, the backend loads the wish and then its wishlist, and the one gate checks the wishlist's owner before anything comes back](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-07-gate.png?v=PLACEHOLDER)
 
@@ -55,7 +55,7 @@ Your list of wishlists has to be yours, and cheap to fetch. Filtering the whole 
 
 [![GET /wishlists/me: a query on CreatedByIndex, sorted newest-first in the handler, plus the single-wishlist route calling the gate](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-07-code-wishlists.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/07-collections/backend/app/routes/wishlists.py)
 
-Two things the query can't do for us, and both live in the handler. First, this kind of index returns rows in no useful order, so "newest first" is a plain sort after the read (ISO timestamps sort the same way as time). Second, one page of results caps at 1 MB and hands back a marker for the rest; read only the first page and a big list quietly loses its tail, so both list endpoints follow that marker to the end. Create, update, and delete all open with the same gate call, so ownership is settled before anything changes.
+Two things the query can't do for us live in the handler. It returns rows in no useful order, so "newest first" is a plain sort after the read (ISO timestamps sort the same way as time). And one page caps at 1 MB and hands back a marker for the rest; read only the first page and a big list loses its tail, so both list endpoints follow that marker to the end.
 
 ## A wish's access is its wishlist's
 
@@ -69,7 +69,7 @@ Every wish route goes through it: read, update, delete, the wishlist's wish list
 
 [![update_item_fields: a field-scoped write with a condition, so a row deleted mid-write comes back as a 404 instead of a resurrected phantom](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-07-code-guarded.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/07-collections/backend/app/utils/dynamo.py)
 
-It sets only the changed columns, and carries a condition so a row deleted mid-write comes back as the same 404 the gate would give, never as a resurrected phantom. A wish's `cost` rides along as a plain number, and the currency symbol is one constant every price reads, so switching currency later is a one-line change, not a hunt.
+It sets only the changed columns, with a condition so a row deleted mid-write comes back as a 404, not a resurrected phantom. The currency symbol is one shared constant, so switching currency later is a one-line change.
 
 ## Nine occasions, seeded not shipped
 
@@ -111,11 +111,11 @@ This step adds infrastructure: three DynamoDB tables (`wishlists` and `wishes`, 
 
 The seed is not optional. Skip it and `GET /life-events` returns an empty list, and the create-wishlist screen has no occasions to offer. It updates by id, so running it again is harmless; run it once after every fresh apply.
 
-The permissions split is the part worth reading. Each table gets exactly the actions its routes use, and `life-events` gets the tightest set of all:
+The permissions split is worth a look. Each table gets exactly the actions its routes use, and `life-events` gets the tightest set:
 
 [![The life-events IAM statement: the running role is granted read on that table and nothing else, so it can read the reference data but never write it](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-07-code-iam.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/07-collections/infra/iam.tf)
 
-The running app can read the reference data and nothing more. Seeding it is a developer job, so the app can't add or overwrite an occasion even if a bug told it to. (One deploy-time ghost carries over from step 6: a fresh `terraform apply` can die with a bare `CREATE_FAILED` and no logs. With the role, its grants, and the `apprunner.tf` `depends_on` all in place, there is nothing left to fix in config. Terraform marks the service tainted, so apply again and it comes up on identical input. Retry, don't hunt.)
+The running app can read the reference data and nothing more. Seeding it is a developer job, so the app can't add or overwrite an occasion even if a bug told it to. (A carryover from step 6: a fresh `terraform apply` can die with a bare `CREATE_FAILED` and no logs. Nothing is wrong in config; apply again and it comes up. Retry, don't hunt.)
 
 ## What bit me
 
@@ -149,8 +149,8 @@ Step 8, Storefronts: curated stores with products, so a wish can come from a cat
 - **02 · [Dressed to Ship](https://medium.com/@srivardhanjalan/dressed-to-ship-1e2591179d8a)**
 - **03 · [Alive on Arrival](https://medium.com/@srivardhanjalan/alive-on-arrival-cda0a351844f)**
 - **04 · [Signed, Sealed, Delivered](https://medium.com/@srivardhanjalan/signed-sealed-delivered-a481a02ac392)**
-- **05 · Two Places at Once** (publishing soon)
-- **06 · Photos Without the Exposure** (publishing soon)
+- **05 · [Two Places at Once](https://medium.com/@srivardhanjalan/two-places-at-once-1e00bb46354b)**
+- **06 · [Photos Without the Exposure](https://medium.com/@srivardhanjalan/photos-without-the-exposure-96e9acf11db3)**
 - **07 · Whose Wish Is It Anyway?** (you are here)
 - **08 · Storefronts** (coming soon)
 
