@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<!--
+  ZERO TO SHIPPED · LinkedIn carousel · Step 06 · Media
+  Product-story (layperson) narrative, house light style. One angle: private
+  photos. Big idea -> the worry -> it stays private -> still shows for you ->
+  nothing lingers -> payoff -> CTA. Zero jargon (no S3/bucket/presigned).
+  NO EM-DASHES (U+2014). 7 slides.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Photos that can't leak: LinkedIn carousel</title>
+<style>
+  @page { size: 1080px 1350px; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: -apple-system, "SF Pro Display", "Helvetica Neue", Arial, sans-serif; color: #1A1A1A; }
+
+  .slide {
+    width: 1080px; height: 1350px;
+    background: linear-gradient(135deg, #fdecef 0%, #fbfbfd 46%, #ecf2f8 100%);
+    padding: 110px 92px; display: flex; flex-direction: column;
+    position: relative; overflow: hidden; page-break-after: always;
+  }
+  .slide:last-of-type { page-break-after: auto; }
+
+  .eyebrow { color: #FF385C; font-size: 29px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
+  h1 { font-size: 116px; font-weight: 800; letter-spacing: -0.035em; line-height: 0.99; margin-top: 40px; }
+  h2 { font-size: 96px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.02; margin-top: 40px; }
+  .lede { font-size: 46px; line-height: 1.36; color: #5c5c64; margin-top: 52px; font-weight: 500; max-width: 800px; }
+  .lede strong { color: #1A1A1A; font-weight: 700; }
+  .accent { color: #FF385C; }
+
+  .footer {
+    position: absolute; bottom: 80px; left: 92px; right: 92px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 26px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #a2a2a8;
+  }
+  .brand { position: absolute; left: 92px; bottom: 80px; }
+  .brand .t { font-size: 40px; font-weight: 800; }
+  .brand .h { margin-top: 12px; font-size: 26px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #a2a2a8; }
+
+  /* cover: the real Settings > Photos phone, right margin = slide margin, centered */
+  .phoneshot { position: absolute; right: 92px; top: 50%; transform: translateY(-50%); width: 400px;
+    border-radius: 30px; box-shadow: 0 30px 70px rgba(26,26,26,.16); display: block; }
+</style>
+</head>
+<body>
+
+<!-- 1 · COVER: the big idea. -->
+<section class="slide" id="s1">
+  <div class="eyebrow">Zero to Shipped · 06</div>
+  <h1 style="max-width:470px;">Photos that can't <span class="accent">leak.</span></h1>
+  <div class="lede" style="max-width:450px;">A profile photo and a cover, private the moment you set them.</div>
+  <img class="phoneshot" src="../../mocks/shot-06-photos.png" alt="The Settings Photos screen: a profile photo and a cover photo, each with Change Image, and Save Photos">
+  <div class="brand">
+    <div class="t">Photos Without the Exposure<span class="accent">.</span></div>
+    <div class="h">@srivardhanjalan · swipe &rarr;</div>
+  </div>
+</section>
+
+<!-- 2 · THE PROBLEM (layperson). -->
+<section class="slide" id="s2" style="justify-content:center;">
+  <div class="eyebrow">The worry</div>
+  <h2 style="max-width:900px;">A photo online ends up <span class="accent">everywhere.</span></h2>
+  <div class="lede">A shared link, a screenshot, an old upload that never dies. You lose track of where your face lives.</div>
+  <div class="footer"><span>Photos Without the Exposure</span><span>2 / 7</span></div>
+</section>
+
+<!-- 3 · THE SOLUTION. -->
+<section class="slide" id="s3" style="justify-content:center;">
+  <div class="eyebrow">What we built</div>
+  <h2 style="max-width:900px;">Here, they stay <span class="accent">yours.</span></h2>
+  <div class="lede">Set a profile photo and a cover. There is no public link, so there is nothing to leak.</div>
+  <div class="footer"><span>Photos Without the Exposure</span><span>3 / 7</span></div>
+</section>
+
+<!-- 4 · PRIVATE, BUT STILL YOURS TO SEE. -->
+<section class="slide" id="s4" style="justify-content:center;">
+  <div class="eyebrow">Private, not hidden</div>
+  <h2 style="max-width:900px;">And they still show up <span class="accent">instantly.</span></h2>
+  <div class="lede">Private does not mean locked away from you. Your photo loads the moment you open the app, every time.</div>
+  <div class="footer"><span>Photos Without the Exposure</span><span>4 / 7</span></div>
+</section>
+
+<!-- 5 · NOTHING LINGERS. -->
+<section class="slide" id="s5" style="justify-content:center;">
+  <div class="eyebrow">Nothing left behind</div>
+  <h2 style="max-width:900px;">Change your mind? It just <span class="accent">disappears.</span></h2>
+  <div class="lede">Start a new photo, walk away, and it quietly vanishes. Only the one you save ever sticks.</div>
+  <div class="footer"><span>Photos Without the Exposure</span><span>5 / 7</span></div>
+</section>
+
+<!-- 6 · THE PAYOFF: closes the loop on slide 2. -->
+<section class="slide" id="s6" style="justify-content:center;">
+  <div class="eyebrow">The payoff</div>
+  <h2 style="max-width:900px;">So your face stays <span class="accent">yours.</span></h2>
+  <div class="lede">No stray copies, nothing on the open web, nothing you didn't choose. Just your photo, where you put it.</div>
+  <div class="footer"><span>Photos Without the Exposure</span><span>6 / 7</span></div>
+</section>
+
+<!-- 7 · CTA. -->
+<section class="slide" id="s7" style="justify-content:center;">
+  <div class="eyebrow">Zero to Shipped · 06</div>
+  <h2>Read the full build, <span class="accent">free on Medium.</span></h2>
+  <div class="lede" style="margin-top:72px; font-size:40px;">A wishlist app, built one shippable step at a time.</div>
+  <div class="footer"><span>Photos Without the Exposure</span><span>7 / 7</span></div>
+</section>
+
+<script>
+  if (location.hash) {
+    document.querySelectorAll('.slide').forEach(s => { if ('#' + s.id !== location.hash) s.style.display = 'none'; });
+  }
+</script>
+</body>
+</html>

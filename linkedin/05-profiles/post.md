@@ -35,7 +35,7 @@ What's a two-places bug that's bitten you, one copy updated and the other left q
 ## First comment (posted immediately after publishing: article link ALONE, it's the conversion target)
 
 Full article, Two Places at Once (Zero to Shipped · 05):
-[PASTE LIVE MEDIUM URL AFTER PUBLISHING]
+https://medium.com/@srivardhanjalan/two-places-at-once-1e00bb46354b
 
 ## Reply to your own first comment (secondary links live here, not in comment #1)
 
