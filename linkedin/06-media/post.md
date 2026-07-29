@@ -21,7 +21,7 @@ Then the bug that cost me an evening. Hitting Save with nothing changed deleted 
 Reads come back as signed URLs, so the client echoed back a URL whose signature never string-matched the stored one. The cleanup saw a "new" photo and swept the "old" one, the same file. The fix: compare by S3 key, never the raw string.
 
 Full write-up, with every snippet and the reasoning: Photos Without the Exposure (Zero to Shipped · 06):
-[PASTE LIVE MEDIUM URL AFTER PUBLISHING]
+https://medium.com/@srivardhanjalan/photos-without-the-exposure-96e9acf11db3
 
 What is a bug you've hit where a safe-looking value (a signed URL, a reformatted string) quietly stopped matching itself? Tell me in the comments 👇
 
@@ -30,7 +30,7 @@ What is a bug you've hit where a safe-looking value (a signed URL, a reformatted
 ## First comment (secondary links, posted after publishing)
 
 The previous step, 05 · Two Places at Once:
-[PASTE STEP 05 MEDIUM URL]
+https://medium.com/@srivardhanjalan/two-places-at-once-1e00bb46354b
 
 New to the series? Start with the introduction:
 https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9
