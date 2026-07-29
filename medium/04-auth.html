@@ -1,107 +1,88 @@
-<!doctype html>
-<html><head><meta charset="utf-8"><title>04-auth — paste into Medium</title>
-<style>
-  body{max-width:740px;margin:40px auto;font-family:Georgia,serif;font-size:18px;line-height:1.6;color:#242424;padding:0 20px}
-  img{max-width:100%}
-  pre{background:#f5f5f5;padding:14px;overflow-x:auto;font-size:14px}
-  code{background:#f5f5f5;padding:1px 4px;font-size:15px}
+<!doctype html><html><head><meta charset="utf-8">
+<title>Signed, Sealed, Delivered: paste into Medium</title><style>
+body{font-family:Georgia,'Times New Roman',serif;max-width:740px;margin:40px auto;
+padding:0 20px;color:#242424;line-height:1.6;font-size:20px}
+h1{font-size:40px;line-height:1.15;margin:0.4em 0 0.2em;letter-spacing:-0.02em}
+h2{font-size:28px;margin:1.4em 0 0.3em;letter-spacing:-0.01em}
+p{margin:0.9em 0}
+.subtitle{color:#6b6b6b;font-size:22px;font-style:italic}
+code{font-family:Menlo,Consolas,monospace;font-size:0.85em;background:#f2f2f2;
+padding:2px 5px;border-radius:3px}
+pre{background:#f6f6f6;padding:16px 18px;border-radius:6px;overflow-x:auto;font-size:15px}
+pre code{background:none;padding:0}
+img{max-width:100%;border:1px solid #eee;border-radius:4px}
+figure{margin:1.6em 0}
+figcaption{color:#8c8c8c;font-size:14px;font-style:italic;text-align:center;
+margin-top:8px;font-family:-apple-system,sans-serif}
+figcaption a.src{color:#1a8917;font-style:normal;font-weight:600;font-size:13.5px;
+text-decoration:underline;text-underline-offset:3px}
+.cap{text-align:center;margin:8px 0 24px;font-family:-apple-system,sans-serif}
+.cap a{color:#1a8917;text-decoration:underline;text-underline-offset:3px;
+font-weight:600;font-size:13.5px;font-family:-apple-system,sans-serif}
+ol,ul{padding-left:1.4em} li{margin:0.35em 0}
+hr{border:none;border-top:1px solid #e0e0e0;margin:2em 0}
+a{color:#1a8917}
+.note{background:#fffbe6;border-left:3px solid #e8c000;padding:6px 14px;
+font-size:15px;font-family:-apple-system,sans-serif;color:#7a6a00}
 </style></head><body>
-
 <h1>Signed, Sealed, Delivered</h1>
-
-<p><em>Zero to Shipped · 04. The app learns who you are: Clerk sign-in, JWKS-verified tokens, and a user record the client is never allowed to create.</em></p>
-
-<hr>
-
-<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-04.png?v=e31367e" alt="Zero to Shipped 04 hero, signed, sealed, delivered: Home greeting Kivan Tester by name, and the record the backend wrote itself"></p>
-
-<p>Who's allowed to create a user? I got it wrong first. By the end of this step you sign up in the app, a code lands in your inbox, the first-run tutorial plays, and Home greets you by name above a record the backend wrote for you, not the phone.</p>
-
-<p><em>(Step 04 of <strong>Zero to Shipped</strong>, a production social-wishlist app on Expo, FastAPI, and AWS. New here? <strong><a href="https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9">Start with the introduction</a></strong>. Code is the <code>04-auth/</code> folder; <a href="https://github.com/srivardhanjalan/kivan-tutorial/pull/22/files">PR #22</a> is every line this step adds.)</em></p>
-
+<p class="subtitle"><em>Zero to Shipped, step 4. Sign in with Clerk, and the backend writes your user record itself, straight from Clerk, never from the phone. A forged token gets a flat 401; when the fault is ours, a 503 names the fix.</em></p>
+<figure><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-04.png?v=PLACEHOLDER" alt="Zero to Shipped 04 hero: the real Kivan sign-in screen with Apple, Google, and email, beside a terminal where a request with no token gets a flat 401 and a request with a valid token gets back the user record the backend wrote itself"><figcaption>Zero to Shipped 04 hero: the real Kivan sign-in screen with Apple, Google, and email, beside a terminal where a request with no token gets a flat 401 and a request with a valid token gets back the user record the backend wrote itself</figcaption></figure>
+<p class="subtitle"><em>Step 04 of <a href="https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9"><strong>Zero to Shipped</strong></a>, a production social-wishlist app built one shippable step at a time on Expo, FastAPI, and AWS.</em></p>
+<p class="subtitle"><em><a href="https://github.com/srivardhanjalan/kivan-tutorial">All the code</a> is on GitHub, every step a runnable folder.</em></p>
+<h2>The problem</h2>
+<p>Until now the app has no idea who is using it. Every screen is anonymous, and the backend holds no user records at all. Teaching it who you are is the whole step, and it is four problems at once, none of them the login form.</p>
+<ul><li><strong>Someone has to create the user record, and it can&#x27;t be the phone.</strong> The obvious move (let the app send its name and email up after signup) hands the client a pen to write its own database row: any name, any email, all attacker-controlled.</li><li><strong>The backend can&#x27;t trust a token on sight.</strong> A session token rides on every request. Verify it wrong and a forged one walks in, or a real user hits a Clerk outage and gets sent off to debug a token that was fine.</li><li><strong>The first-run tutorial can&#x27;t remember on the phone.</strong> Store &quot;already seen it&quot; on the device and a reinstall replays it; switch phones and it forgets.</li><li><strong>The backend&#x27;s Clerk secret can&#x27;t sit in the console.</strong> The server needs a secret key to call Clerk, and a plaintext environment variable is readable by anyone who can describe the service.</li></ul>
+<h2>What we build</h2>
+<p>A real sign-in that ends with the backend knowing you. The phone signs in with Clerk (Apple, Google, or email and a code). Every request after that carries a Clerk token, and the backend verifies it locally against Clerk&#x27;s own public keys. The first time it sees a valid token for someone it has never met, it fetches that person&#x27;s profile from Clerk server-to-server and writes the DynamoDB record itself. The client is never handed a create-user endpoint at all.</p>
+<p>That answers all four:</p>
+<ul><li><strong>The record</strong> is created just-in-time, server-side, from Clerk&#x27;s copy of your profile, with a create-only write so a returning user is never overwritten.</li><li><strong>The token</strong> is verified against Clerk&#x27;s cached signing keys: a bad token is the caller&#x27;s flat 401, an unreachable Clerk or a missing table is our 503, and the 503 names the fix.</li><li><strong>The tutorial</strong> flag lives on the backend record, not the device, so a reinstall or a new phone never replays it.</li><li><strong>The secret</strong> lives in SSM as a SecureString and reaches the container at boot, never as a plaintext value the console can read.</li></ul>
+<p>This step gives you an account, not a profile to edit or a way to delete it. Those are step 5. It splits into five moves, in build order: one screen for both sign-in and sign-up, the just-in-time record, the token verifier, the reinstall-proof tutorial, and the Clerk secret kept out of the console.</p>
+<p><strong>What we need:</strong> step 3 done, a Clerk application with Email, Google, and Apple enabled, and an AWS account. The users table is real DynamoDB, so <code>terraform apply</code> runs this step even when you run the API on your laptop.</p>
+<p><strong>Time:</strong> about 45 to 75 minutes, most of it the one-time Clerk setup and the deploy.</p>
+<p><strong>The code:</strong> the snippets below are shown as images; the full, copyable source lives in <a href="https://github.com/srivardhanjalan/kivan-tutorial/pull/22/files">PR #22: Files changed</a>, organized by the file paths shown in each caption.</p>
+<h2>What we touch this step</h2>
+<p>Sixteen files carry the work, across the backend, the app, and the infra. Each build section below takes one area.</p>
+<figure><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-filemap.png?v=PLACEHOLDER" alt="What we touch this step, sixteen files grouped by folder: the backend verifier and record (auth dependency, provisioning, users routes, model, config), the frontend way in (both auth screens, the shared methods column, OAuth config, onboarding, the auth gate, Home), and the infra table and secret; each file marked new or modified"><figcaption>What we touch this step, sixteen files grouped by folder: the backend verifier and record (auth dependency, provisioning, users routes, model, config), the frontend way in (both auth screens, the shared methods column, OAuth config, onboarding, the auth gate, Home), and the infra table and secret; each file marked new or modified</figcaption></figure>
+<h2>One screen for sign-in and sign-up</h2>
+<p>An auth screen you build twice is an auth screen that drifts twice. Sign-in and sign-up are the same column: the OAuth buttons, an &quot;or&quot; rule, an email and password, a brand button, and a link to the other screen. Sign-up adds a verification step and nothing else. So they are one component, <code>AuthMethods</code>, with the verb plugged in.</p>
+<p>The OAuth providers are a config array, the same config-as-data idiom as the step-02 tab bar. Adding Apple next to Google is one line in a list, not a new screen:</p>
+<figure><a href="https://github.com/srivardhanjalan/kivan-tutorial/blob/main/04-auth/frontend/src/components/OAuthButtons.tsx"><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-code-oauth.png?v=PLACEHOLDER" alt="The OAuth providers as a config array, one button rendered per entry"></a><figcaption><a class="src" href="https://github.com/srivardhanjalan/kivan-tutorial/blob/main/04-auth/frontend/src/components/OAuthButtons.tsx">The OAuth providers as a config array, one button rendered per entry ↗</a></figcaption></figure>
+<p>Notice what the button does not do on success: it calls no backend sync. It sets the Clerk session active and stops. The record gets written on the server, by the next authenticated request, which is the whole point of the next section.</p>
 <h2>Nobody creates their own user</h2>
-
-<p>Here's the obvious design, the one I reached for first. The phone signs up with Clerk, then calls <code>POST /users/sync</code> with the name and email to give the backend a record. Clean, direct, wrong.</p>
-
-<p>It hands the client a pen to fill in its own database row. Any name, any email, any field I haven't invented yet, all attacker-controlled. And it fails on its own terms too. Only sign-<em>up</em> syncs, meaning a rebuilt database 404s every returning user forever, and a signup interrupted mid-sync leaves half a user in the table.</p>
-
-<p>This step has no sync endpoint. The backend writes the record itself. The first time the auth dependency sees a valid token for a user it doesn't know, it fetches that user's real profile from Clerk server-to-server and writes the row:</p>
-
-<pre><code class="language-python">users_table.put_item(
-    Item=new_user,
-    ConditionExpression="attribute_not_exists(id)"  # create-only, race-safe
-)</code></pre>
-
-<p>The profile comes from Clerk, not from whatever the phone sent, and the write is create-only. If two first-requests race, the loser is refused and caught, never clobbering the record. The check costs only the first request per user on a given instance, because a confirmed id stays cached in memory for the life of that process. A fresh database or an abandoned signup heals the next time that user calls, though a table rebuilt under a live backend needs a restart to clear that cache.</p>
-
-<p>The record is eight fields: id, email, first and last name, avatar, the onboarding flag, two timestamps. No follower counts, no roles yet. DynamoDB is schemaless, and each of those joins the step that first reads it, one line, no migration. The table under it is a hash key and nothing else.</p>
-
-<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-record.png?v=e31367e" alt="Terminal: the eight-field user record read back from DynamoDB, every field written by the backend from Clerk — the client never sent one"></p>
-
-<h2>Sign-in and sign-up are the same screen</h2>
-
-<p>I built sign-in, started sign-up, and stopped ten lines in. Same screen. Both are OAuth buttons, an "or" divider, email and password, a brand button, and a footer link to the other. Sign-up adds a verification step and nothing else.</p>
-
-<p>That makes them one component, <code>AuthMethods</code>, with the verb plugged in. The OAuth buttons are a config array, the same idiom as the step-02 tab bar, and adding Apple next to Google is a line in a list, not a new screen.</p>
-
-<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-learns.png?v=e31367e" alt="Three real simulator screenshots: the sign-in screen, the first-run tutorial, and Home greeting Kivan Tester by name"></p>
-
-<p>Real screenshots from the verification run, not mockups. Clerk's dev instances let you sign up without an inbox. Any <code>+clerk_test</code> address works, and the code is always <code>424242</code>. That's how an automated UI test drives the whole flow.</p>
-
-<p>The best cleanup here came out of the fix, not the draft. Collapsing the logo's size behind one config value made two style blocks byte-identical, the clone detector caught that, and the real fix fell out: a shared <code>BrandMark</code>. A fix to duplication can be duplication, which is why the gate never trusts a single clean pass.</p>
-
-<h2>401 means you, 503 means me</h2>
-
-<p>Every request carries a Clerk session JWT as a Bearer token. The backend verifies it locally. It fetches Clerk's public signing keys from the JWKS endpoint (the JSON Web Key Set) and caches the set, checking each token's RS256 signature and expiry against a key it already holds. A token whose signature doesn't match, or whose key it can't find, is rejected.</p>
-
-<p>The work is rejecting for the right reason. A missing token, a garbage token, a made-up key id are all the caller's problem, and each gets a flat <code>401 Invalid authentication token</code>. When the fault is mine instead (Clerk down, a wrong secret key, no users table), the answer is a <code>503</code> whose message names the fix; the missing-table one says to run <code>terraform apply</code> and set <code>ENVIRONMENT</code> to match, which only a caller with a valid token ever sees. Confuse the two and a Clerk outage surfaces as a <code>401</code> with the library's error string attached, which sends a valid user off to debug a fine token and leaks internals to anyone who asks.</p>
-
-<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-status.png?v=e31367e" alt="Terminal: a missing token and a garbage token both return a flat 401, while a server-side fault returns a 503 whose message names the fix"></p>
-
-<pre><code class="language-python">except pyjwt.PyJWKClientConnectionError:   # JWKS unreachable: mine, 503
-    raise HTTPException(503, "Authentication service temporarily unavailable")
-except pyjwt.PyJWTError:                    # forged or expired token: theirs, 401
-    raise HTTPException(401, "Invalid authentication token")</code></pre>
-
-<p>Two sharper traps hide in that verifier, both found only by reading PyJWT's source. Send tokens with unknown key ids and the library re-fetches Clerk's key set on every one. I can't stop the refetch, but I can stop it looking like an outage. An unknown key is the caller's <code>401</code> at info level, never a <code>503</code>, never error-level, or the spam masquerades as a Clerk failure while it floods the logs.</p>
-
-<p>The second trap is a tempting flag. <code>cache_keys=True</code> reads like the performance option, but it is really an <code>lru_cache</code> with no expiry, and a key Clerk rotates or revokes stays trusted until the process restarts. Caching the key <em>set</em> with a one-hour lifespan instead keeps the networkless hot path and drops a revoked key within the hour, not never.</p>
-
-<h2>Keeping the secret key out of the console</h2>
-
-<p>The backend makes two calls to Clerk (fetching the signing keys, and fetching a new user's profile), and both authorize with a Clerk secret key. The lazy way to hand that key to the container is a plaintext App Runner env var, sitting in the console, readable by anyone with <code>apprunner:DescribeService</code>. Instead, the key lives in SSM as a <strong>SecureString</strong>, App Runner resolves it at instance start via <code>runtime_environment_secrets</code>, and the instance role can read that one parameter and nothing else.</p>
-
-<p><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-secret.png?v=e31367e" alt="Terminal: describe-service shows the Clerk secret as an SSM SecureString reference (an ARN), never the plaintext value, readable by a scoped instance role"></p>
-
-<p>That last line broke my first rollout. <code>CREATE_FAILED</code>, no logs, the same empty failure step 03 hit twice. This time the image was fine. App Runner checked its secret access <em>while Terraform was still attaching the SSM policy</em>. Nothing tied the two together, and Terraform built them in parallel, losing the race. One line on the App Runner service resource fixes it:</p>
-
-<pre><code class="language-hcl">depends_on = [aws_iam_role_policy.apprunner_instance_ssm]</code></pre>
-
-<p>One <code>terraform apply -replace</code> rebuilt the service I'd already broken; with the line shipped, every apply since has been clean — same image, <code>RUNNING</code>.</p>
-
+<p>Hand the client a create-user call and it can write anyone&#x27;s name into your table. So we ship no sync endpoint at all; the backend writes the record itself.</p>
+<p>The first time the auth dependency verifies a token for a user it has never seen, it fetches that user&#x27;s real profile from Clerk, server-to-server, and writes the row. The profile comes from Clerk, not from whatever the phone sent, so a client can never assert someone else&#x27;s name. The write is create-only: if two first requests race, the loser is refused and caught, never clobbering the record.</p>
+<figure><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-provision.png?v=PLACEHOLDER" alt="Provisioning a user just-in-time: the app sends its Clerk token, the backend fetches that user&#x27;s profile from Clerk server-to-server, and the backend writes the DynamoDB record. The phone is never on the write path."><figcaption>Provisioning a user just-in-time: the app sends its Clerk token, the backend fetches that user&#x27;s profile from Clerk server-to-server, and the backend writes the DynamoDB record. The phone is never on the write path.</figcaption></figure>
+<p>The record is eight fields: id, email, first and last name, an avatar URL, the onboarding flag, and two timestamps. No follower counts, no roles yet. DynamoDB is schemaless, so each new field joins the step that first reads it, one line, no migration. The write is one conditional put:</p>
+<figure><a href="https://github.com/srivardhanjalan/kivan-tutorial/blob/main/04-auth/backend/app/utils/user_provisioning.py"><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-code-provision.png?v=PLACEHOLDER" alt="The just-in-time user record, written create-only with a conditional put so a race never clobbers an existing row"></a><figcaption><a class="src" href="https://github.com/srivardhanjalan/kivan-tutorial/blob/main/04-auth/backend/app/utils/user_provisioning.py">The just-in-time user record, written create-only with a conditional put so a race never clobbers an existing row ↗</a></figcaption></figure>
+<p>The existence check costs only the first request per user on a given instance: a confirmed id stays cached in memory for the life of the process. A fresh database, or a signup interrupted mid-flight, heals itself the next time that user calls. (Rebuild the table under a running backend and that cache needs a restart to clear, but that is a development snag, not something a user hits.)</p>
+<h2>Verify the token, and blame the right party</h2>
+<p>Confuse &quot;your token is bad&quot; with &quot;our service is down&quot; and a Clerk outage sends a valid user off to debug a token that was fine, with the library&#x27;s internal error string attached for anyone to read. So the backend is careful about who each failure belongs to.</p>
+<p>Every request carries a Clerk session token as a Bearer token. The backend verifies it locally: it fetches Clerk&#x27;s public signing keys once from the JWKS endpoint, caches the set for an hour, and checks each token&#x27;s signature and expiry against a key it already holds. A missing token, a garbage token, or one signed by a key it can&#x27;t find is the caller&#x27;s problem, and each gets a flat <code>401</code>. When the fault is ours instead (Clerk unreachable, a wrong secret key, no users table) the answer is a <code>503</code> whose message names the fix:</p>
+<figure><a href="https://github.com/srivardhanjalan/kivan-tutorial/blob/main/04-auth/backend/app/dependencies/auth.py"><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-code-verify.png?v=PLACEHOLDER" alt="The verifier splitting failures by owner: an unreachable JWKS endpoint raises 503, a forged or expired token raises 401"></a><figcaption><a class="src" href="https://github.com/srivardhanjalan/kivan-tutorial/blob/main/04-auth/backend/app/dependencies/auth.py">The verifier splitting failures by owner: an unreachable JWKS endpoint raises 503, a forged or expired token raises 401 ↗</a></figcaption></figure>
+<p>One tempting flag would have quietly undone this. <code>cache_keys=True</code> reads like the performance option, but it is really a per-key cache with no expiry, and a key Clerk rotates or revokes would stay trusted until the process restarts. So we cache the key set with a one-hour lifespan instead, which keeps the hot path networkless and drops a revoked key within the hour, not never.</p>
 <h2>A tutorial that survives a reinstall</h2>
-
-<p>First sign-in plays a swipeable welcome carousel. The whole feature is one bit of state, and the only decision is where it lives: <code>onboarding_completed</code> sits on the backend record, not the device. Reinstall the app, switch phones. The tutorial stays done, because the flag was never on the phone to lose.</p>
-
-<p>"Get Started" flips it through an endpoint guarded by <code>ConditionExpression="attribute_exists(id)"</code>. DynamoDB's <code>update_item</code> is secretly an upsert. Call it on a missing id and it happily creates a half-formed user. The condition makes it refuse, and the handler turns that refusal into a 404 rather than a phantom account.</p>
-
-<p>The UI test could not tap the carousel's Next button. Its label sits behind a glass blur view, and the touchable wrapping it carried no <code>accessibilityLabel</code>. The automation was stranded exactly where a screen-reader user would be, and one label fixed both in the same commit.</p>
-
-<h2>You're done when</h2>
-
-<ul><li><code>curl $API/users/me</code> → 401; with a garbage token → 401, generic detail</li><li><code>curl -X POST $API/users/sync</code> → 404, the sync endpoint doesn't exist</li><li>A wrong <code>ENVIRONMENT</code> on an authed route → <code>503</code> naming the <code>terraform apply</code> fix, never a <code>401</code></li><li>Sign up with a <code>+clerk_test</code> address, code <code>424242</code> → the first-run tutorial appears</li><li>Home greets you by name, and <strong>Record</strong> shows your email + provisioned date in green, read from DynamoDB, created by no client</li><li>Sign out → sign in → no tutorial replay (the flag survived on the backend record)</li><li>"Continue with Google" opens the browser consent sheet (Apple shares the code path; verify it the same way once enabled in your Clerk app)</li><li><code>aws apprunner describe-service</code> shows the Clerk key as an SSM SecureString reference, never the plaintext value</li></ul>
-
-<h2>What's next</h2>
-
-<p>Step 05 gives the account a past and a delete button. Profile data, birthdays, a Settings screen, account deletion. These are the first fields to join those eight, each with its first real caller.</p>
-
-<p><strong>Following along?</strong> ⭐ <a href="https://github.com/srivardhanjalan/kivan-tutorial">Star the repo</a>. Every step lands as a browsable pull request.</p>
-
+<p>Store &quot;seen it&quot; on the phone and a reinstall replays the welcome carousel. So the <code>onboarding_completed</code> flag sits on the backend record, not the device. Reinstall the app or switch phones: the tutorial stays done, because the flag was never on the phone to lose.</p>
+<p>&quot;Get Started&quot; flips it through an endpoint guarded by a condition. DynamoDB&#x27;s <code>update_item</code> is secretly an upsert: call it on an id that doesn&#x27;t exist and it happily creates a half-formed user. The <code>attribute_exists(id)</code> guard makes it refuse, and the handler turns that refusal into a 404 instead of a phantom account:</p>
+<figure><a href="https://github.com/srivardhanjalan/kivan-tutorial/blob/main/04-auth/backend/app/routes/users.py"><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-code-onboarding.png?v=PLACEHOLDER" alt="The onboarding endpoint flipping the flag, guarded by attribute_exists so an upsert can never invent a partial user"></a><figcaption><a class="src" href="https://github.com/srivardhanjalan/kivan-tutorial/blob/main/04-auth/backend/app/routes/users.py">The onboarding endpoint flipping the flag, guarded by attribute_exists so an upsert can never invent a partial user ↗</a></figcaption></figure>
+<h2>Keep the Clerk secret out of the console</h2>
+<p>A plaintext environment variable is readable by anyone with <code>apprunner:DescribeService</code>, and a secret key that talks to Clerk is exactly the wrong thing to leave sitting in the console. So we never let the key become a plain env var.</p>
+<p>It lives in SSM as a <strong>SecureString</strong>. App Runner resolves it at instance start through <code>runtime_environment_secrets</code>, and the instance role can read that one parameter and nothing else. The container gets <code>CLERK_SECRET_KEY</code> in its environment; <code>DescribeService</code> shows only an SSM reference:</p>
+<figure><a href="https://github.com/srivardhanjalan/kivan-tutorial/blob/main/04-auth/infra/apprunner.tf"><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-code-secret.png?v=PLACEHOLDER" alt="App Runner injecting the Clerk key from SSM at instance start via runtime_environment_secrets, never as a plaintext value"></a><figcaption><a class="src" href="https://github.com/srivardhanjalan/kivan-tutorial/blob/main/04-auth/infra/apprunner.tf">App Runner injecting the Clerk key from SSM at instance start via runtime_environment_secrets, never as a plaintext value ↗</a></figcaption></figure>
+<h2>Deploy it</h2>
+<p>This step adds infrastructure: the users table, the SSM secret, the scoped IAM, and the secret injection on the service. The rollout is the same staged one as step 3, plus the one secret in <code>terraform.tfvars</code>:</p>
+<figure><a href="https://github.com/srivardhanjalan/kivan-tutorial/tree/main/04-auth/infra"><img src="https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-code-deploy.png?v=PLACEHOLDER" alt="The deploy commands: init, build the ECR repo, push the amd64 image, apply the stack, then read the service URL into the app"></a><figcaption><a class="src" href="https://github.com/srivardhanjalan/kivan-tutorial/tree/main/04-auth/infra">The deploy commands: init, build the ECR repo, push the amd64 image, apply the stack, then read the service URL into the app ↗</a></figcaption></figure>
+<h2>What bit me</h2>
+<p>Three things cost me time on this step, worst first.</p>
+<p><strong><code>CREATE_FAILED</code> with no logs, and the image was fine.</strong> My first rollout of this step died with a bare <code>CREATE_FAILED</code> and empty logs. Step 3 taught me that empty failure usually means a bad image, so I went hunting there and found nothing wrong. The real cause was ordering: App Runner validates its access to the SSM secret while it provisions, and Terraform had no reason to know the service depended on the instance role&#x27;s SSM policy, so it built the two in parallel and the service lost the race. A <code>depends_on</code> from the service to the SSM policy serializes them. One <code>terraform apply -replace</code> rebuilt the service I had already broken, and every apply since has come up <code>RUNNING</code> on the same config.</p>
+<p><strong>The app crashed at boot with a missing native module.</strong> <code>@clerk/clerk-expo</code> transitively wants a newer <code>expo-auth-session</code> than Expo Go 54 ships, so the app died on launch with <code>Cannot find native module &#x27;ExpoCryptoAES&#x27;</code>, before a single screen drew. Pinning <code>expo-auth-session</code> and <code>expo-crypto</code> with <code>npx expo install</code> (so npm dedupes Clerk onto the SDK-54 versions) fixed it. It is already in <code>package.json</code>, so you inherit the fix, but it cost me an afternoon of blaming my own code.</p>
+<p><strong>A button my UI test could not tap.</strong> The onboarding carousel&#x27;s Next button lives inside a glass blur view, and text inside a <code>BlurView</code> is invisible to the accessibility tree. The touchable wrapping it carried no accessibility label, so my automation was stranded exactly where a screen-reader user would be. One <code>accessibilityLabel</code> on the touchable fixed the test and VoiceOver in the same commit.</p>
+<h2>You&#x27;re done when</h2>
+<ul><li>☐ <code>curl $API/users/me</code> → 401; with a garbage token → 401, generic detail</li><li>☐ <code>curl -X POST $API/users/sync</code> → 404, because the sync endpoint does not exist</li><li>☐ A wrong <code>ENVIRONMENT</code> on an authenticated route → 503 naming the <code>terraform apply</code> fix, never a 401</li><li>☐ Sign up with a <code>+clerk_test</code> address, code <code>424242</code> → the first-run tutorial appears</li><li>☐ Home greets you by name, and <strong>Record</strong> shows your email and provisioned date in green, read from DynamoDB, written by no client</li><li>☐ Sign out, then sign in again → no tutorial replay, because the flag survived on the backend record</li><li>☐ &quot;Continue with Google&quot; opens the browser consent sheet (Apple shares the code path; verify it the same way once enabled in your Clerk app)</li><li>☐ <code>aws apprunner describe-service</code> shows the Clerk key as an SSM SecureString reference, never the plaintext value</li></ul>
+<h2>What&#x27;s next</h2>
+<p>Step 5, Profiles: the account gets a past and a delete button. Profile fields, a birthday, a Settings screen, and account deletion. These are the first fields to join those eight, each with its first real reader.</p>
 <hr>
-
 <p><strong>Zero to Shipped: the series</strong></p>
-
-<ul><li><strong>00 · <a href="https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9">Introduction</a></strong></li><li><strong>01 · <a href="https://medium.com/@srivardhanjalan/one-script-to-set-up-everything-ae8bcea2d649">One script to set up everything</a></strong></li><li><strong>02 · <a href="https://medium.com/@srivardhanjalan/dressed-to-ship-1e2591179d8a">Dressed to Ship</a></strong></li><li><strong>03 · <a href="https://medium.com/@srivardhanjalan/alive-on-arrival-cda0a351844f">Alive on Arrival</a></strong></li><li><strong>04 · Signed, Sealed, Delivered</strong> <em>(this post)</em></li><li><strong>05 · Profiles</strong> <em>(coming soon)</em></li></ul>
-
-<p><em>All code: <a href="https://github.com/srivardhanjalan/kivan-tutorial">github.com/srivardhanjalan/kivan-tutorial</a></em></p>
+<ul><li><strong>00 · <a href="https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9">Introduction</a></strong></li><li><strong>01 · <a href="https://medium.com/@srivardhanjalan/one-script-to-set-up-everything-ae8bcea2d649">One script to set up everything</a></strong></li><li><strong>02 · <a href="https://medium.com/@srivardhanjalan/dressed-to-ship-1e2591179d8a">Dressed to Ship</a></strong></li><li><strong>03 · <a href="https://medium.com/@srivardhanjalan/alive-on-arrival-cda0a351844f">Alive on Arrival</a></strong></li><li><strong>04 · Signed, Sealed, Delivered</strong> (you are here)</li><li><strong>05 · <a href="https://medium.com/@srivardhanjalan/two-places-at-once-1e00bb46354b">Two Places at Once</a></strong></li><li><strong>06 · <a href="https://medium.com/@srivardhanjalan/photos-without-the-exposure-96e9acf11db3">Photos Without the Exposure</a></strong></li><li><strong>07 · Whose Wish Is It Anyway?</strong> (coming soon)</li></ul>
+<p><strong><a href="https://github.com/srivardhanjalan/kivan-tutorial">All the code on GitHub</a></strong></p>
 </body></html>
