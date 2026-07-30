@@ -98,7 +98,7 @@ This step adds infrastructure: the users table, the SSM secret, the scoped IAM, 
 
 [![The deploy commands: init, build the ECR repo, push the amd64 image, apply the stack, then read the service URL into the app](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-code-deploy.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/04-auth/infra)
 
-Running the API on your laptop instead of App Runner? `config.py` reads its config from the environment only, no `.env` file, so start it with the secret set: `CLERK_SECRET_KEY=sk_test_... ENVIRONMENT=production .venv/bin/python run.py` (the `sk_test_...` key is on the same Clerk API keys page as the publishable key). A missing `CLERK_SECRET_KEY` exits at startup naming the variable, not on some later request. And once `frontend/.env.local` points at your running URL and holds the publishable key, restart the dev server (`npx expo start -c --localhost`): `EXPO_PUBLIC_*` values are inlined at bundle time, so a reload won't pick them up.
+Running the API on your laptop instead of App Runner? `config.py` reads its config from the environment only, no `.env` file, so start it with the secret set: `CLERK_SECRET_KEY=sk_test_... ENVIRONMENT=production .venv/bin/python run.py` (the `sk_test_...` key is on the same Clerk API keys page as the publishable key). A missing `CLERK_SECRET_KEY` fails at startup naming the variable, not on some later request. And once `frontend/.env.local` points at your running URL and holds the publishable key, restart the dev server (`npx expo start -c --localhost`): `EXPO_PUBLIC_*` values are inlined at bundle time, so a reload won't pick them up.
 
 ## What bit me
 
