@@ -24,13 +24,13 @@ A real sign-in that ends with the backend knowing you. The phone signs in with C
 That answers all four:
 
 - **The record** is created just-in-time, server-side, from Clerk's copy of your profile, with a create-only write so a returning user is never overwritten.
-- **The token** is verified against Clerk's cached signing keys: a bad token is the caller's flat 401, an unreachable Clerk or a missing table is our 503, and the missing-table 503 names the exact fix.
+- **The token** is verified against Clerk's cached signing keys: a bad token is the caller's flat 401, an unreachable Clerk or a missing table is our 503, never your 401.
 - **The tutorial** flag lives on the backend record, not the device, so a reinstall or a new phone never replays it.
 - **The secret** lives in SSM as a SecureString and reaches the container at boot, never as a plaintext value the console can read.
 
 This step gives you an account, not a profile to edit or a way to delete it. Those are step 5. It splits into five moves, in build order: one screen for both sign-in and sign-up, the just-in-time record, the token verifier, the reinstall-proof tutorial, and the Clerk secret kept out of the console.
 
-**What we need:** step 3 done, a Clerk application with Email and Google enabled (Apple optional), and an AWS account. The users table is real DynamoDB, so `terraform apply` runs this step even when you run the API on your laptop.
+**What we need:** step 3 done, a Clerk application with Email and Google enabled (Apple optional), and an AWS account. From the Clerk dashboard's API keys, copy the publishable key (`pk_test_...`) into `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` in the gitignored `frontend/.env.local`; the app can't render past its Clerk provider without it. The users table is real DynamoDB, so `terraform apply` runs this step even when you run the API on your laptop.
 
 **Time:** about 45 to 75 minutes, most of it the one-time Clerk setup and the deploy.
 
@@ -98,6 +98,8 @@ This step adds infrastructure: the users table, the SSM secret, the scoped IAM, 
 
 [![The deploy commands: init, build the ECR repo, push the amd64 image, apply the stack, then read the service URL into the app](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-code-deploy.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/04-auth/infra)
 
+Running the API on your laptop instead of App Runner? `config.py` reads its config from the environment only, no `.env` file, so start it with the secret set: `CLERK_SECRET_KEY=sk_test_... ENVIRONMENT=production .venv/bin/python run.py` (the `sk_test_...` key is on the same Clerk API keys page as the publishable key). A missing `CLERK_SECRET_KEY` exits at startup naming the variable, not on some later request. And once `frontend/.env.local` points at your running URL and holds the publishable key, restart the dev server (`npx expo start -c --localhost`): `EXPO_PUBLIC_*` values are inlined at bundle time, so a reload won't pick them up.
+
 ## What bit me
 
 Three things cost me time on this step, worst first.
@@ -112,7 +114,7 @@ Three things cost me time on this step, worst first.
 
 - [ ] `curl $API/users/me` → 401; with a garbage token → 401, generic detail
 - [ ] `curl -X POST $API/users/sync` → 404, because the sync endpoint does not exist
-- [ ] A wrong `ENVIRONMENT` on an authenticated route → 503 naming the `terraform apply` fix, never a 401
+- [ ] With the users table missing (a fresh setup before `terraform apply`, or a mismatched `ENVIRONMENT`): sign-in still succeeds and Home greets you by name, but **Record** turns red with `/users/me failed: 503`, never a 401 and never a bounce back to sign-in
 - [ ] Sign up with a `+clerk_test` address, code `424242` → the first-run tutorial appears
 - [ ] Home greets you by name, and **Record** shows your email and provisioned date in green, read from DynamoDB, written by no client
 - [ ] Sign out, then sign in again → no tutorial replay, because the flag survived on the backend record
