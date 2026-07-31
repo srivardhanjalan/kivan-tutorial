@@ -1,0 +1,68 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  html,body{margin:0;padding:0}
+  body{background:transparent;
+    font-family:-apple-system,'Segoe UI',Roboto,sans-serif;padding:48px;
+    width:1036px;box-sizing:border-box;overflow:hidden}
+  .card{max-width:940px;margin:0 auto;background:transparent;border-radius:22px;
+    box-shadow:none;padding:40px 44px}
+  h1{font-size:23px;font-weight:800;color:#1f2430;margin:0 0 4px;letter-spacing:-.01em}
+  .sub{font-size:14px;color:#8a90a0;margin:0 0 26px}
+  .legend{display:inline-flex;gap:16px;margin-left:14px;font-size:12px;color:#8a90a0;font-weight:600;vertical-align:middle}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:middle}
+  .new{background:#1a8917}.mod{background:#c98a00}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grp{background:#f7f8fb;border:1px solid #eceef4;border-radius:14px;padding:16px 18px}
+  .grp.wide{grid-column:1 / span 2}
+  .grp h2{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    color:#9aa0b0;margin:0 0 10px}
+  .folder{font-family:'SF Mono',Menlo,Consolas,monospace;font-size:12px;font-weight:700;
+    color:#6b7280;margin:11px 0 5px}
+  .folder:first-of-type{margin-top:2px}
+  .row{display:flex;align-items:flex-start;gap:10px;padding:5px 0 5px 12px}
+  .badge{flex:none;width:44px;font-size:10px;font-weight:800;letter-spacing:.04em;
+    text-transform:uppercase;padding:3px 0;text-align:center;border-radius:6px;margin-top:1px}
+  .b-new{background:#e5f3e8;color:#1a8917}.b-mod{background:#fbf1da;color:#b07d00}
+  .fc{display:flex;flex-direction:column;gap:2px}
+  .path{font-family:'SF Mono',Menlo,Consolas,monospace;font-size:13px;color:#2b3040;font-weight:600}
+  .note{font-family:'SF Mono',Menlo,Consolas,monospace;font-size:11.5px;color:#a3a9b8}
+</style></head><body>
+<div class="card">
+  <h1>What we touch this step
+    <span class="legend"><span><span class="dot new"></span>new</span><span><span class="dot mod"></span>modified</span></span>
+  </h1>
+  <p class="sub">Eighteen files carry the work, across the backend, the app, and the infra. Each section below builds one area.</p>
+  <div class="cols">
+    <div class="grp">
+      <h2>Backend &#183; the FastAPI skeleton</h2>
+      <div class="folder">app/</div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">routes/health.py</span><span class="note"># GET /health, one domain per file</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">main.py</span><span class="note"># assembles: middleware + router include</span></span></div>
+      <div class="folder">backend/</div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">run.py</span><span class="note"># local dev server, uvicorn reload</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">Dockerfile</span><span class="note"># python:3.11-slim, the image App Runner runs</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">requirements.txt</span><span class="note"># fastapi + uvicorn, two lines</span></span></div>
+    </div>
+    <div class="grp">
+      <h2>Frontend &#183; the proof-of-life line</h2>
+      <div class="folder">src/services/</div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">api.ts</span><span class="note"># EXPO_PUBLIC_API_URL + fetchHealth</span></span></div>
+      <div class="folder">src/components/</div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">ApiStatus.tsx</span><span class="note"># the Backend &#183; healthy/unreachable line</span></span></div>
+      <div class="folder">src/screens/ &#183; src/constants/</div>
+      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">PlaceholderScreen.tsx &#183; Colors.ts</span><span class="note"># show the line, add success/danger</span></span></div>
+      <div class="folder">project root</div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">.env.example</span><span class="note"># copy to .env.local (gitignored)</span></span></div>
+    </div>
+    <div class="grp wide">
+      <h2>Infra &#183; one file per concern</h2>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">ecr.tf</span><span class="note"># the registry + keep-last-10 lifecycle</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">apprunner.tf</span><span class="note"># the service, health-checked on /health, auto-deploys :latest</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">iam.tf</span><span class="note"># scoped ECR-pull role + the instance role</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">providers.tf</span><span class="note"># AWS provider, default_tags on every resource</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">resource-group.tf</span><span class="note"># the tag-based group holding the whole stack</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">variables.tf &#183; outputs.tf</span><span class="note"># region/env/cpu, the service + ECR URLs</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">scripts/deploy.sh</span><span class="note"># build amd64, push, tag the log groups</span></span></div>
+    </div>
+  </div>
+</div>
+</body></html>
