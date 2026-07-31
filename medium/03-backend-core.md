@@ -23,7 +23,7 @@ A FastAPI backend deployed to your own AWS, every resource tagged into one group
 
 We start with a skeleton that earns its dependencies: `main.py` only assembles, each route lives in its own file, and `requirements.txt` is two lines because the app reads nothing else yet. The stack lives in Terraform, one file per concern, and the provider stamps `Project` and `Environment` on every resource, so a single tag query lists the whole thing and proves when it is gone. That closes the orphan problem. The first rollout is staged into four commands, registry first and the service last, so App Runner never looks at an empty registry. The build runs one specific way, amd64 with attestations off, which is the difference between an image that boots on AWS and one that dies there. And the app grows a proof-of-life line: a green Backend healthy when it reaches the API, a red Backend unreachable with the reason when it can't.
 
-What this step is not: there is no database, no auth, no queue. Those arrive with the steps that consume them (sign-in is step 4). The backend earns its dependencies exactly the way the frontend earned its design tokens back in step 2. Nothing joins before its first caller.
+What this step is not: there is no database, no auth, no queue. Those arrive with the steps that consume them (sign-in is step 4).
 
 **What we need:** step 2 complete, an AWS account, and the Docker, Terraform, and AWS CLI that step 1's setup installed (including the colima-rosetta Docker context). No secrets this step.
 
@@ -35,7 +35,7 @@ What this step is not: there is no database, no auth, no queue. Those arrive wit
 
 Nineteen files carry the work, across the backend, the app, and the infra. Each build section below takes one area.
 
-![What we touch this step, nineteen files grouped by folder: the backend FastAPI skeleton (health route, main assembler, run, Dockerfile, requirements), the frontend proof-of-life line (api, ApiStatus, placeholder screen, env example), and the infra one file per concern (ecr, apprunner, iam, providers, resource-group, variables, outputs, tfvars example, deploy.sh); each file marked new or modified](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-03-filemap.png?v=PLACEHOLDER)
+![What we touch this step, nineteen files grouped by folder: the backend FastAPI skeleton (health route, main assembler, run, Dockerfile, requirements), the frontend proof-of-life line (api, ApiStatus, placeholder screen, Colors.ts, env example), and the infra one file per concern (ecr, apprunner, iam, providers, resource-group, variables, outputs, tfvars example, deploy.sh); each file marked new or modified](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-03-filemap.png?v=PLACEHOLDER)
 
 ## Give the backend a skeleton, not a framework
 
@@ -43,7 +43,7 @@ The skeleton is bare on purpose: one health route, and an assembler that include
 
 [![The health route in its own file: GET /health returns status healthy](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-03-code-health.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/03-backend-core/backend/app/routes/health.py)
 
-`main.py` does nothing but assemble: it creates the app, adds gzip and CORS middleware, and includes the router. Routes never live in `main.py`; each domain gets its own file under `app/routes/`, so the structure that will hold every later router already holds this one. The CORS origin is a wildcard, and that is safe here on purpose: nothing is cookie-authenticated yet (the Bearer token arrives in step 4), so an open origin has no credentials to leak. `requirements.txt` is two lines, FastAPI and Uvicorn, and it stays that short until a feature needs more.
+`main.py` does nothing but assemble: it creates the app, adds gzip and CORS middleware, and includes the router. Routes never live in `main.py`; each domain gets its own file under `app/routes/`, so the structure that will hold every later router already holds this one. The CORS origin is a wildcard, and that is safe here on purpose: nothing is cookie-authenticated yet (the Bearer token arrives in step 4), so an open origin has no credentials to leak. `requirements.txt` is two lines, FastAPI and Uvicorn.
 
 ## Describe the stack in Terraform, one file per concern
 
@@ -85,7 +85,7 @@ Run the backend locally with `cd backend && python3 -m venv .venv && .venv/bin/p
 
 Now the real thing, on AWS. The first rollout is staged because of a chicken-and-egg: App Runner will not create a service from a registry with no image in it. So we build the registry, push an image into it, and only then create the service:
 
-[![The staged first rollout: terraform init, apply the ECR repository, deploy.sh to push an image, apply the service, deploy.sh again to tag the log groups](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-03-code-rollout.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/03-backend-core/infra)
+[![Four commands, one first rollout: prep lines to cd into infra, copy the tfvars example, and terraform init, then the four numbered commands, apply the ECR repository first, deploy.sh to build and push the image, apply the service, and deploy.sh once more to tag the log groups](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-03-code-rollout.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/03-backend-core/infra)
 
 Step 2 there runs `deploy.sh`, the one part of the deploy with a strong opinion. It builds the image for `linux/amd64` (App Runner runs amd64 only) with BuildKit's attestations turned off, then pushes it. App Runner auto-deploys the new `:latest`:
 
@@ -111,7 +111,7 @@ Two things cost me real time on this step, worst first.
 
 ## What's next
 
-Step 4, Signed, Sealed, Delivered: the app gets real users. Clerk sign-in, JWKS verification on the backend, and a user record created just in time, the moment `name` and `scheme` finally earn their place in the config.
+Step 4, Signed, Sealed, Delivered: the app gets real users. Clerk sign-in with Apple, Google, or email, tokens the backend verifies against Clerk's JWKS, and a user record the backend writes for you the first time it sees a valid token, never one the phone is allowed to create.
 
 ---
 
