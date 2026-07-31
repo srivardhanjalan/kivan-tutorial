@@ -23,6 +23,9 @@ and embedded in the root README and the Medium posts.
 | `img-04-code-*.html` | `mocks-04-code-*.png` | post 04: six code cards (oauth, provision, verify, onboarding, secret, deploy) |
 | `img-04-learns.html` | `mocks-04-learns.png` | superseded post-04 image (pre-rewrite; sweep pending) |
 | `img-04-race.html` | `mocks-04-race.png` | superseded post-04 image (pre-rewrite; sweep pending) |
+| `img-04-record.html` | `mocks-04-record.png` | superseded post-04 image (pre-rewrite; sweep pending) |
+| `img-04-secret.html` | `mocks-04-secret.png` | superseded post-04 image (pre-rewrite; sweep pending) |
+| `img-04-status.html` | `mocks-04-status.png` | superseded post-04 image (pre-rewrite; sweep pending) |
 | — | `shot-04-signin.png`, `shot-04-verify.png`, `shot-04-onboarding.png`, `shot-04-home.png` | real simulator screenshots of the step-04 auth flow |
 | `hero-05.html` | `mocks-hero-05.png` | post 05 cover (the working Settings screen + the delete-for-good terminal) |
 | `img-05-account.html` | `mocks-05-account.png` | post 05: edit yourself / erase yourself (real Settings + delete modal) |
