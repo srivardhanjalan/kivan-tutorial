@@ -34,7 +34,7 @@ This step gives you an account, not a profile to edit or a way to delete it. Tho
 
 **Time:** about 45 to 75 minutes, most of it the one-time Clerk setup and the deploy.
 
-**The code:** the snippets below are shown as images; the full, copyable source lives in [the step folder on main](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/04-auth), organized by the file paths shown in each caption. [PR #22: Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/22/files) is the build's story, with a small post-merge cleanup in [PR #27](https://github.com/srivardhanjalan/kivan-tutorial/pull/27).
+**The code:** the snippets below are shown as images; the full, copyable source is [the step folder on `main`](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/04-auth), organized by the file paths shown in each caption. [PR #22: Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/22/files) is the build's story, with a small duplication cleanup afterward in [PR #27](https://github.com/srivardhanjalan/kivan-tutorial/pull/27).
 
 ## What we touch this step
 
