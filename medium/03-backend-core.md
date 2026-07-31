@@ -21,7 +21,7 @@ The app has been a shell. Real screens, real navigation, and nothing behind them
 
 A FastAPI backend deployed to your own AWS, every resource tagged into one group, torn down with `terraform destroy` plus one sweep for the two log groups App Runner writes on its own. Five moves get us there.
 
-We start with a skeleton that earns its dependencies: `main.py` assembles the app and adds a one-line root that names the API, each feature route lives in its own file, and `requirements.txt` is two lines because the app reads nothing else yet. The stack lives in Terraform, one file per concern, and the provider stamps `Project` and `Environment` on every resource, so a single tag query lists the whole thing and proves when it is gone. That closes the orphan problem. The first rollout is staged into four commands, registry first and the service last, so App Runner never looks at an empty registry. The build runs one specific way, amd64 with attestations off, which is the difference between an image that boots on AWS and one that dies there. And the app grows a proof-of-life line: a green Backend healthy when it reaches the API, a red Backend unreachable with the reason when it can't.
+We start with a skeleton that earns its dependencies: `main.py` assembles the app, each feature route lives in its own file, and `requirements.txt` is two lines because the app reads nothing else yet. The stack lives in Terraform, one file per concern, and the provider stamps `Project` and `Environment` on every resource, so a single tag query lists the whole thing and proves when it is gone. That closes the orphan problem. The first rollout is staged into four commands, registry first and the service last, so App Runner never looks at an empty registry. The build runs one specific way, amd64 with attestations off, which is the difference between an image that boots on AWS and one that dies there. And the app grows a proof-of-life line: a green Backend healthy when it reaches the API, a red Backend unreachable with the reason when it can't.
 
 What this step is not: there is no database, no auth, no queue. Those arrive with the steps that consume them (sign-in is step 4).
 
@@ -39,7 +39,7 @@ Nineteen files carry the work, across the backend, the app, and the infra. Each 
 
 ## Give the backend a skeleton, not a framework
 
-The skeleton is bare on purpose: a health route in its own router (the pattern every feature will follow) plus a one-line root `/` that names the API and points at `/docs`. That health route is all App Runner needs to health-check, and all the app needs to prove it can reach the backend.
+The skeleton is bare on purpose: a health route in its own router, plus a docs-pointing root `/`. That health route is all App Runner needs to health-check, and all the app needs to prove it can reach the backend.
 
 [![The health route in its own file: GET /health returns status healthy](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-03-code-health.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/03-backend-core/backend/app/routes/health.py)
 
