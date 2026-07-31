@@ -30,7 +30,7 @@
   <h1>What we touch this step
     <span class="legend"><span><span class="dot new"></span>new</span><span><span class="dot mod"></span>modified</span></span>
   </h1>
-  <p class="sub">Eighteen files carry the work, across the backend, the app, and the infra. Each section below builds one area.</p>
+  <p class="sub">Nineteen files carry the work, across the backend, the app, and the infra. Each section below builds one area.</p>
   <div class="cols">
     <div class="grp">
       <h2>Backend &#183; the FastAPI skeleton</h2>
@@ -61,6 +61,7 @@
       <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">providers.tf</span><span class="note"># AWS provider, default_tags on every resource</span></span></div>
       <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">resource-group.tf</span><span class="note"># the tag-based group holding the whole stack</span></span></div>
       <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">variables.tf &#183; outputs.tf</span><span class="note"># region/env/cpu, the service + ECR URLs</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">terraform.tfvars.example</span><span class="note"># copy to terraform.tfvars (gitignored)</span></span></div>
       <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">scripts/deploy.sh</span><span class="note"># build amd64, push, tag the log groups</span></span></div>
     </div>
   </div>

@@ -26,7 +26,7 @@
   <div class="copy">
     <div class="eyebrow">Zero to Shipped &#183; 03 &#183; Backend Core</div>
     <div class="title">Alive on&nbsp;arrival.</div>
-    <div class="sub">A FastAPI backend live on your own AWS in four commands, every resource tagged and grouped, gone without a trace in one.</div>
+    <div class="sub">A FastAPI backend live on your own AWS in four commands, every resource tagged and grouped, torn down to zero spend when you're done.</div>
     <div class="chips">
       <span class="chip">React Native</span><span class="chip">FastAPI</span>
       <span class="chip">Terraform</span><span class="chip">App Runner</span><span class="chip">Amazon ECR</span>
@@ -44,8 +44,9 @@
 <span class="dim">$</span> ./scripts/deploy.sh&nbsp;&nbsp;<span class="dim"># build amd64 -&gt; push</span><br>
 <span class="dim">$</span> terraform apply&nbsp;&nbsp;<span class="dim"># the service (~5 min)</span><br>
 &nbsp;&nbsp;aws_apprunner_service.backend_ecr: <span class="g">Creation complete</span><br>
+<span class="dim">$</span> ./scripts/deploy.sh&nbsp;&nbsp;<span class="dim"># re-run: tag log groups</span><br>
 <span class="dim">$</span> curl https://&#8230;awsapprunner.com/health<br>
-{"status": <span class="g">"healthy"</span>}
+{"status":<span class="g">"healthy"</span>}
     </div>
   </div>
   <div class="shot"><img src="shot-03-healthy.png"></div>
