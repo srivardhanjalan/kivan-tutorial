@@ -4,7 +4,7 @@
 
 ![Zero to Shipped 03 hero: the app showing a green Backend healthy line beside a terminal running the staged rollout, ending in the App Runner service creation complete and curl returning status healthy](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-03.png?v=PLACEHOLDER)
 
-*Zero to Shipped, step 3 of a production social-wishlist app built one shippable step at a time on Expo, FastAPI, and AWS.*
+*Step 03 of [**Zero to Shipped**](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9), a production social-wishlist app built one shippable step at a time on Expo, FastAPI, and AWS.*
 
 *[All the code](https://github.com/srivardhanjalan/kivan-tutorial) is on GitHub, every step a runnable folder.*
 
@@ -21,7 +21,7 @@ The app has been a shell. Real screens, real navigation, and nothing behind them
 
 A FastAPI backend deployed to your own AWS, every resource tagged into one group, torn down with `terraform destroy` plus one sweep for the two log groups App Runner writes on its own. Five moves get us there.
 
-We start with a skeleton that earns its dependencies: `main.py` only assembles, each route lives in its own file, and `requirements.txt` is two lines because the app reads nothing else yet. The stack lives in Terraform, one file per concern, and the provider stamps `Project` and `Environment` on every resource, so a single tag query lists the whole thing and proves when it is gone. That closes the orphan problem. The first rollout is staged into four commands, registry first and the service last, so App Runner never looks at an empty registry. The build runs one specific way, amd64 with attestations off, which is the difference between an image that boots on AWS and one that dies there. And the app grows a proof-of-life line: a green Backend healthy when it reaches the API, a red Backend unreachable with the reason when it can't.
+We start with a skeleton that earns its dependencies: `main.py` assembles the app and adds a one-line root that names the API, each feature route lives in its own file, and `requirements.txt` is two lines because the app reads nothing else yet. The stack lives in Terraform, one file per concern, and the provider stamps `Project` and `Environment` on every resource, so a single tag query lists the whole thing and proves when it is gone. That closes the orphan problem. The first rollout is staged into four commands, registry first and the service last, so App Runner never looks at an empty registry. The build runs one specific way, amd64 with attestations off, which is the difference between an image that boots on AWS and one that dies there. And the app grows a proof-of-life line: a green Backend healthy when it reaches the API, a red Backend unreachable with the reason when it can't.
 
 What this step is not: there is no database, no auth, no queue. Those arrive with the steps that consume them (sign-in is step 4).
 
@@ -29,7 +29,7 @@ What this step is not: there is no database, no auth, no queue. Those arrive wit
 
 **Time:** about 45 to 60 minutes, most of it the first deploy.
 
-**The code:** the snippets below are shown as images; the full, copyable source is the [step folder on `main`](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/03-backend-core), organized by the file paths in each caption. [PR #16: Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/16/files) is the build's story, with a follow-up in PR #21 tightening the ECR pulls to this one repository and dropping a credentialed wildcard CORS.
+**The code:** the snippets below are shown as images; the full, copyable source is the [step folder on `main`](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/03-backend-core), organized by the file paths in each caption. [PR #16: Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/16/files) is the build's story, with a follow-up in [PR #21](https://github.com/srivardhanjalan/kivan-tutorial/pull/21) tightening the ECR pulls to this one repository and dropping a credentialed wildcard CORS.
 
 ## What we touch this step
 
@@ -39,11 +39,11 @@ Nineteen files carry the work, across the backend, the app, and the infra. Each 
 
 ## Give the backend a skeleton, not a framework
 
-The skeleton is bare on purpose: one health route, and an assembler that includes it. That single route is all App Runner needs to health-check, and all the app needs to prove it can reach the backend.
+The skeleton is bare on purpose: a health route in its own router (the pattern every feature will follow) plus a one-line root `/` that names the API and points at `/docs`. That health route is all App Runner needs to health-check, and all the app needs to prove it can reach the backend.
 
 [![The health route in its own file: GET /health returns status healthy](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-03-code-health.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/03-backend-core/backend/app/routes/health.py)
 
-`main.py` does nothing but assemble: it creates the app, adds gzip and CORS middleware, and includes the router. Routes never live in `main.py`; each domain gets its own file under `app/routes/`, so the structure that will hold every later router already holds this one. The CORS origin is a wildcard, and that is safe here on purpose: nothing is cookie-authenticated yet (the Bearer token arrives in step 4), so an open origin has no credentials to leak. `requirements.txt` is two lines, FastAPI and Uvicorn.
+`main.py` assembles the app: it creates the app, adds gzip and CORS middleware, includes the health router, and serves a one-line root `/` that names the API and points at `/docs`. Feature routes never live in `main.py`; each domain gets its own file under `app/routes/`, so the structure that will hold every later router already holds this one. The CORS origin is a wildcard, and that is safe here on purpose: nothing is cookie-authenticated yet (the Bearer token arrives in step 4), so an open origin has no credentials to leak. `requirements.txt` is two lines, FastAPI and Uvicorn.
 
 ## Describe the stack in Terraform, one file per concern
 
@@ -51,7 +51,7 @@ Everything the backend runs on is code in the `infra/` folder, and the first rul
 
 [![The AWS provider with default_tags, stamping Project and Environment on every resource](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-03-code-providers.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/03-backend-core/infra/providers.tf)
 
-Those tags feed `resource-group.tf`, a group defined by one query: everything tagged `Project=kivan`. One console page then shows your whole stack.
+Those tags feed `resource-group.tf`, a group defined by one query: everything tagged `Project=kivan`. One console page then shows your whole stack (IAM roles are tagged too, but as global resources they don't appear in the regional group's listing).
 
 The registry comes next. App Runner pulls the backend image from ECR, so `ecr.tf` creates the repository and a lifecycle rule that keeps only the last ten images, so old builds do not pile up:
 
