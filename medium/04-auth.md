@@ -30,7 +30,7 @@ That answers all four:
 
 This step gives you an account, not a profile to edit or a way to delete it. Those are step 5. It splits into five moves, in build order: one screen for both sign-in and sign-up, the just-in-time record, the token verifier, the reinstall-proof tutorial, and the Clerk secret kept out of the console.
 
-**What we need:** step 3 done, a Clerk application with Email and Google enabled (Apple optional), and an AWS account. From the Clerk dashboard's API keys, copy the publishable key (`pk_test_...`) into `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` in the gitignored `frontend/.env.local`; the app can't render past its Clerk provider without it. The users table is real DynamoDB, so `terraform apply` runs this step even when you run the API on your laptop.
+**What we need:** step 3 complete, a Clerk application with Email and Google enabled (Apple optional), and an AWS account. From the Clerk dashboard's API keys, copy the publishable key (`pk_test_...`) into `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` in the gitignored `frontend/.env.local`; the app can't render past its Clerk provider without it. The users table is real DynamoDB, so `terraform apply` runs this step even when you run the API on your laptop.
 
 **Time:** about 45 to 75 minutes, most of it the one-time Clerk setup and the deploy.
 
@@ -65,6 +65,8 @@ The record is eight fields: id, email, first and last name, an avatar URL, the o
 [![The just-in-time user record, written create-only with a conditional put so a race never clobbers an existing row](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-04-code-provision.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/04-auth/backend/app/utils/user_provisioning.py)
 
 The existence check costs only the first request per user on a given instance: a confirmed id stays cached in memory for the life of the process. A fresh database, or a signup interrupted mid-flight, heals itself the next time that user calls. (Rebuild the table under a running backend and that cache needs a restart to clear, but that is a development snag, not something a user hits.)
+
+After sign-in, Home carries a **Record** line that asks the backend for that row and prints what comes back: green with your email and provisioned date when the write landed, red with the raw failure when it didn't. It is this step's proof surface, the same role the proof-of-life line played in step 3.
 
 ## Verify the token, and blame the right party
 
@@ -112,14 +114,14 @@ Three things cost me time on this step, worst first.
 
 ## You're done when
 
-- [ ] `curl $API/users/me` → 401; with a garbage token → 401, generic detail
-- [ ] `curl -X POST $API/users/sync` → 404, because the sync endpoint does not exist
-- [ ] With the users table missing (a fresh setup before `terraform apply`, or a mismatched `ENVIRONMENT`): sign-in still succeeds and Home greets you by name, but **Record** turns red with `/users/me failed: 503`, never a 401 and never a bounce back to sign-in
-- [ ] Sign up with a `+clerk_test` address, code `424242` → the first-run tutorial appears
-- [ ] Home greets you by name, and **Record** shows your email and provisioned date in green, read from DynamoDB, written by no client
-- [ ] Sign out, then sign in again → no tutorial replay, because the flag survived on the backend record
-- [ ] "Continue with Google" opens the browser consent sheet (Apple shares the code path; verify it the same way once enabled in your Clerk app)
-- [ ] `aws apprunner describe-service` shows the Clerk key as an SSM SecureString reference, never the plaintext value
+- [ ] `curl $API/users/me` with no token returns 401; with a garbage token it returns 401 with a generic detail.
+- [ ] `curl -X POST $API/users/sync` returns 404, because the sync endpoint does not exist.
+- [ ] With the users table missing (a fresh setup before `terraform apply`, or a mismatched `ENVIRONMENT`), sign-in still succeeds and Home greets you by name, but **Record** turns red with `/users/me failed: 503`, never a 401 and never a bounce back to sign-in.
+- [ ] Signing up with a `+clerk_test` address and code `424242` brings up the first-run tutorial.
+- [ ] Home greets you by name, and **Record** shows your email and provisioned date in green, read from DynamoDB and written by no client.
+- [ ] Signing out and signing in again replays no tutorial, because the flag survived on the backend record.
+- [ ] "Continue with Google" opens the browser consent sheet (Apple shares the code path, so verify it the same way once enabled in your Clerk app).
+- [ ] `aws apprunner describe-service` shows the Clerk key as an SSM SecureString reference, never the plaintext value.
 
 ## What's next
 
