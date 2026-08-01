@@ -18,7 +18,7 @@ Every wish in the app so far is typed by hand. Step 7 built the form, and it wor
 
 ## What we build
 
-A curated catalog: a handful of seeded stores, each holding a few products, browsable from the **Wish Store** tab. Tap a store, tap a product, pick one of your wishlists, and the product becomes a wish there with its name, price, and link already set. It answers all three problems.
+A curated catalog: a handful of seeded stores, each holding a few products, browsable from the **Wish Store** tab. Tap a store, tap a product, pick one of your wishlists, and the product becomes a wish there with its name, price, link, and blurb already set. It answers all three problems.
 
 - **The catalog is a second reference domain, seeded like step 7's occasions.** Two DynamoDB tables the app can read and its running role can't write: a Scan for the small set of stores, an index Query for a store's products. Nothing at runtime seeds or edits them; that runs once from your own credentials.
 - **A product becomes a wish through the same `POST /wishes` the manual form uses.** The catalog knows how to fill a wish's fields; it never reaches into collections' internals. Delete the storefronts code tomorrow and wishlists keep working.
@@ -34,7 +34,7 @@ One thing this step deliberately skips: it is a read-only catalog and nothing mo
 
 ## What we touch this step
 
-Fourteen new files carry the feature, wired into a handful of existing ones. Each build section below takes one area.
+Fourteen new files carry the feature, wired into the existing components, screens, config, and infra around them. Each build section below takes one area.
 
 ![What we touch this step, fourteen new files grouped by folder and the existing ones they wire into: the backend catalog routes and models, the frontend Wish Store screens and the shared tile and detail pieces the wish screens now share too, and the infra two tables with a per-table read-only grant and the seeder; each file marked new or modified](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-filemap.png?v=PLACEHOLDER)
 
@@ -78,11 +78,11 @@ A product card is a wish card: an image tile, a name, a price below. A product d
 
 ## Turn a product into a wish
 
-This is the one seam between the catalog and step 7's collections, and it is deliberately narrow. A product detail's **Add to Wishlist** opens a picker that loads your wishlists, preselects the first, and on confirm creates a wish through the same `POST /wishes` the manual form calls, carrying the product's name, price, and link straight onto it. The catalog fills a wish; it never touches how wishlists are stored or owned.
+This is the one seam between the catalog and step 7's collections, and it is deliberately narrow. A product detail's **Add to Wishlist** opens a picker that loads your wishlists, preselects the first, and on confirm creates a wish through the same `POST /wishes` the manual form calls, carrying the product's name, price, link, and its blurb when it has one straight onto it. The catalog fills a wish; it never touches how wishlists are stored or owned.
 
 [![AddToWishlistModal: pick a wishlist and create a wish through the same POST /wishes the manual form uses](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-code-addwish.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/08-storefronts/frontend/src/components/AddToWishlistModal.tsx)
 
-![Adding a product to a wishlist: the product detail opens the picker, you choose a wishlist, and the app creates a wish through the same POST /wishes the manual form uses, carrying the product's name, price, and link onto it](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-wish.png?v=PLACEHOLDER)
+![Adding a product to a wishlist: the product detail opens the picker, you choose a wishlist, and the app creates a wish through the same POST /wishes the manual form uses, carrying the product's name, price, link, and its blurb when it has one onto it](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-wish.png?v=PLACEHOLDER)
 
 The picker also refuses to dead-end. Open it with no wishlists yet and it routes you to create one instead of leaving you stuck with nothing to pick. Because the confirm always has a preselected target, there is no silent no-op where you tap Add and nothing happens.
 
