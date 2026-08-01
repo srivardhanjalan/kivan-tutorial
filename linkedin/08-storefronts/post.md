@@ -4,9 +4,9 @@
 
 The app just got a store. Tap a product and it lands on your wishlist already filled in, no typing.
 
-Step 8 is the catalog: a handful of curated stores, each with a few products, browsable from a new Wish Store tab.
+Step 8 is the catalog: a handful of curated stores, each with a few products, filling the Wish Store tab that has sat empty since step 2.
 
-Drawing the store list was the easy afternoon. The interesting part was everything the catalog is not allowed to do.
+Drawing the store list was the easy part. The interesting work was everything the catalog is not allowed to do.
 
 The stores and products are the same for every user. So the running server has no reason to write them, and every reason not to be able to: one bug or one breach should never get to rewrite the catalog for everyone.
 
@@ -47,7 +47,7 @@ https://github.com/srivardhanjalan/kivan-tutorial
 - Upload `off-the-shelf-carousel.pdf` as a document post; LinkedIn renders it as a swipeable carousel.
 - The carousel is a layperson product story ("Shop your own wishlist"); the post body is the first-person build story for the developer audience. The article link lives in the BODY, near the end (no "link in the first comment" mechanic). The first comment carries only the secondary links (previous step, series intro, repo).
 - Document title (renders as a header on the doc; keep <60 chars): "A wish you pick, not type" (25 chars). The cover headline ("Shop your own wishlist."), the post hook ("The app just got a store..."), and this doc title each vary the claim: checked, no verbatim tripling.
-- Fold budget: mobile truncates at ~140 chars, desktop ~210. The hook must be complete and self-sufficient inside ~140: the current opening is 98 chars (the whole milestone plus "already filled in, no typing" lands before the fold).
+- Fold budget: mobile truncates at ~140 chars, desktop ~210. The hook must be complete and self-sufficient inside ~140: the current opening is 99 chars (the whole milestone plus "already filled in, no typing" lands before the fold).
 - NO em-dashes anywhere (post or slides). Colon, comma, period, parens instead.
 - Hashtags: 3 relevant tags at the end. Hashtag feeds were deprecated (late 2024); tags are light topical metadata, not a reach lever.
 - Proof before posting. Typo fixes are safe only in the first ~10 minutes; substantive edits inside the 60 to 90 minute momentum window measurably cut impressions (30 to 50% in creator data; LinkedIn documents no penalty, it is momentum interruption).
