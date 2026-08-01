@@ -18,16 +18,22 @@ interface ArtTileCardProps {
   subtitle?: string;
   /** Dims the whole tile: a wish's fulfilled state */
   dimmed?: boolean;
+  /** Caption color override: the add tile's caption wears the brand accent */
+  captionColor?: string;
+  /** Caption line clamp: the add tile pins its single-word label to one line */
+  captionLines?: number;
   /** Overlays riding on the art block (the fulfilled check badge) */
   children?: React.ReactNode;
 }
 
 /**
- * A pressable art tile with a caption: the one shape the wishlist, wish, and
- * product cards share. Each supplies its own wash, placeholder, and (for the
- * two priced ones) a cost subtitle; the wish card adds its fulfilled dim and
- * check badge via `dimmed` and `children`. The tile/caption/subtitle
- * composition lives here so those three cards can't drift apart.
+ * A pressable art tile with a caption: the one shape the tile family shares.
+ * The wishlist, wish, and product cards each supply their own wash,
+ * placeholder, and (for the priced ones) a cost subtitle; the wish card adds
+ * its fulfilled dim and check badge via `dimmed` and `children`; the add tile
+ * puts a plus in the placeholder and forwards its accent caption color and
+ * one-line clamp. The tile/caption/subtitle composition and the pressable's
+ * accessibility wiring live here so the whole family can't drift apart.
  */
 const ArtTileCard: React.FC<ArtTileCardProps> = ({
   title,
@@ -37,6 +43,8 @@ const ArtTileCard: React.FC<ArtTileCardProps> = ({
   placeholder,
   subtitle,
   dimmed,
+  captionColor,
+  captionLines,
   children,
 }) => (
   <TouchableOpacity
@@ -49,7 +57,7 @@ const ArtTileCard: React.FC<ArtTileCardProps> = ({
     <ArtTile color={color} imageUrl={imageUrl} placeholder={placeholder}>
       {children}
     </ArtTile>
-    <TileCaption>{title}</TileCaption>
+    <TileCaption color={captionColor} numberOfLines={captionLines}>{title}</TileCaption>
     {subtitle !== undefined && <Text style={styles.subtitle}>{subtitle}</Text>}
   </TouchableOpacity>
 );
