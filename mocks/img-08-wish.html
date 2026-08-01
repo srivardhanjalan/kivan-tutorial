@@ -1,0 +1,43 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  html,body{margin:0;padding:0}
+  body{background:transparent;
+    font-family:-apple-system,'Segoe UI',Roboto,sans-serif;padding:44px 48px;
+    width:872px;height:470px;box-sizing:border-box;overflow:hidden}
+  .card{max-width:776px;margin:0 auto;background:transparent;border-radius:22px;
+    box-shadow:none;padding:30px 40px 28px}
+  .k{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+    color:#5b6172;background:#eef0f4;padding:4px 12px;border-radius:20px}
+  h1{font-size:23px;font-weight:800;color:#1f2430;margin:11px 0 3px;letter-spacing:-.01em}
+  .sub{font-size:14px;color:#8a90a0;margin:0;line-height:1.45}
+  .stage{position:relative;width:700px;height:190px;margin:16px auto 0}
+  .node{position:absolute;top:38px;width:150px;display:flex;flex-direction:column;align-items:center;z-index:2}
+  .node img{width:62px;height:62px;border-radius:12px}
+  .node .lbl{margin-top:8px;font-size:12.5px;font-weight:800;color:#2b3040}
+  .node .tag{font-size:11px;color:#9aa0b0;font-family:Menlo,monospace;margin-top:1px;text-align:center}
+  svg.wires{position:absolute;inset:0;width:700px;height:190px;z-index:1;overflow:visible}
+  .al{font-size:12px;fill:#5b6172;font-weight:600}.al.hot{fill:#FF385C;font-weight:700}
+  .foot{font-size:12px;color:#9aa0b0;text-align:center;margin:12px auto 0;max-width:660px;line-height:1.45}
+</style></head><body>
+<div class="card">
+  <span class="k">Add</span>
+  <h1>One seam into your wishlists</h1>
+  <p class="sub">A product becomes a wish through the same POST /wishes the manual form uses.</p>
+  <div class="stage">
+    <svg class="wires" viewBox="0 0 700 190">
+      <defs>
+        <marker id="s" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto"><path d="M0,0 L6.5,3 L0,6 Z" fill="#5b6172"/></marker>
+        <marker id="h" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto"><path d="M0,0 L6.5,3 L0,6 Z" fill="#FF385C"/></marker>
+      </defs>
+      <line x1="150" y1="69" x2="286" y2="69" stroke="#FF385C" stroke-width="2.1" marker-end="url(#h)"/>
+      <text class="al hot" x="218" y="55" text-anchor="middle">POST /wishes</text>
+      <text class="al hot" x="218" y="88" text-anchor="middle">name, price, link</text>
+      <line x1="425" y1="69" x2="561" y2="69" stroke="#5b6172" stroke-width="1.8" marker-end="url(#s)"/>
+      <text class="al" x="493" y="55" text-anchor="middle">one wish, in your list</text>
+    </svg>
+    <div class="node" style="left:10px"><img src="mobile.svg"><div class="lbl">Product detail</div><div class="tag">Add to Wishlist</div></div>
+    <div class="node" style="left:275px"><img src="apprunner.svg"><div class="lbl">Backend</div><div class="tag">the wishes route</div></div>
+    <div class="node" style="left:540px"><img src="dynamodb.svg"><div class="lbl">DynamoDB</div><div class="tag">wishes</div></div>
+  </div>
+  <div class="foot">The catalog fills a wish's fields and calls the same endpoint the manual form does. It never touches how wishlists are stored or owned, so deleting the storefronts code would leave collections untouched.</div>
+</div>
+</body></html>
