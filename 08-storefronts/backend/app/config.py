@@ -41,5 +41,13 @@ class Settings(BaseSettings):
         # seed script — the table is reference data those two co-own
         return f"kivan-{self.environment}-life-events"
 
+    @property
+    def storefronts_table(self) -> str:
+        return f"kivan-{self.environment}-storefronts"
+
+    @property
+    def products_table(self) -> str:
+        return f"kivan-{self.environment}-products"
+
 
 settings = Settings()

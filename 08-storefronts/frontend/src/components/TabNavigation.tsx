@@ -10,10 +10,12 @@ import GlassPill from './GlassPill';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
 import HomeScreen from '../screens/HomeScreen';
 import MyStuffScreen from '../screens/MyStuffScreen';
+import StorefrontsScreen from '../screens/StorefrontsScreen';
 
 // Tabs with a real screen; the rest stay placeholders until their step
 const TabScreens: Partial<Record<TabKey, React.ComponentType>> = {
   HomeTab: HomeScreen,
+  AddWishTab: StorefrontsScreen,
   MyStuffTab: MyStuffScreen,
 };
 
@@ -130,7 +132,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-evenly',
-    paddingHorizontal: 4,
+    paddingHorizontal: Spacing.xs,
     paddingVertical: Spacing.chromePillPadding,
   },
   tabButton: {
