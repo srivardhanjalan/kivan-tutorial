@@ -148,13 +148,20 @@ frontend/                      step 07's app plus:
 
 ## Gotchas
 
-- **Adding a screen re-creates the screen next to it.** `ProductCard` was a
-  clone of `WishCard`, `ProductDetailScreen` shared `WishDetailScreen`'s
-  title/price/blurb styles byte for byte, and both details spelled the same
-  link-open with the same error copy. jscpd caught the first, the semantic
-  reviewer caught the rest, and each fix (extract a shared card, block, hook)
-  exposed the next until a full gate pass found nothing. A new screen modeled on
-  an old one is a duplication suspect before it is anything else.
+- **Adding a screen re-creates the screen next to it.** A product card and a
+  product detail landed beside the wish ones, and every shared shape had to move
+  into one place: the pressable tile card (`ArtTileCard`, now behind the
+  wishlist, wish, product, and add tiles alike), the detail title/price/blurb
+  (`DetailTitleBlock`), the action button (`DetailAction`), and the
+  open-a-link-or-toast (`useOpenExternalLink`). A couple were obvious up front;
+  the gate caught the rest, each fix exposing the next. jscpd flagged the
+  product detail's styles as byte-identical to the wish detail's; the semantic
+  reviewer flagged the duplicated link-open with its shared error copy, a
+  hand-rolled confirm/cancel stack that `ConfirmCancelButtons` already owned, and
+  `AddTileCard` re-spelling the tile scaffold `ArtTileCard` had just been
+  extracted to own. The rounds ran until a full gate pass found nothing. A new
+  screen modeled on an old one is a duplication suspect before it is anything
+  else.
 - **DynamoDB rejects `float`, so a product price is a `Decimal` too.** The seed
   writes `Decimal(str(price))` and the model coerces back to `float` on read,
   the same path a wish's `cost` takes. A product added to a wishlist carries its
@@ -172,13 +179,16 @@ frontend/                      step 07's app plus:
   wishes listing off `WishlistIdIndex`. The products read goes through
   `query_all_pages` for the same reason wishes does: a single Query page
   truncates at 1 MB.
-- **The design system only has the tokens earlier steps needed.** The port from
-  the finished app reached for `Spacing.xs` and `Typography.caption`, neither of
-  which exists here: this tutorial adds a token the step a component first uses
-  it, never in advance. tsc caught both. When a value the app "should" have is
-  missing, it is missing on purpose, so use what exists (`Typography.bodySecondary`,
-  a bare sub-scale literal) rather than reintroducing a token this step has no
-  other use for.
+- **A token is missing until it earns its way in.** The port from the finished
+  app reached for `Spacing.xs` and `Typography.caption`; neither existed here,
+  because this tutorial adds a token the step a component first uses it, never in
+  advance, and tsc caught both. The first pass used what existed
+  (`Typography.bodySecondary`, and a bare `4` literal for the store card's
+  gaps). Then the gate's own semantic reviewer found that `4` living in three
+  homes (the store card's two gaps and the tab bar's pill padding), which is
+  exactly the "a value used twice becomes a token" bar, so `Spacing.xs: 4`
+  landed with its three real callers. `Typography.caption` never earned one:
+  nothing needed it twice, so `Typography.bodySecondary` stayed.
 - **App Runner images build ONLY on the colima-rosetta docker driver.**
   buildx/QEMU builds on Apple Silicon pass locally and die on AWS with
   `CREATE_FAILED` and no logs. `deploy.sh` builds on the right context; do not
