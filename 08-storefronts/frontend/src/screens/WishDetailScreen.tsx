@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Linking, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import EditDeleteHeaderButtons from '../components/EditDeleteHeaderButtons';
-import PrimaryButton from '../components/PrimaryButton';
+import DetailAction from '../components/DetailAction';
 import ConfirmModal from '../components/ConfirmModal';
 import ArtTile from '../components/ArtTile';
 import ImagePlaceholderGlyph from '../components/ImagePlaceholderGlyph';
-import { useToast } from '../components/ToastProvider';
+import DetailTitleBlock from '../components/DetailTitleBlock';
 import useFetch from '../hooks/useFetch';
 import useAsyncAction from '../hooks/useAsyncAction';
 import useConfirmedDelete from '../hooks/useConfirmedDelete';
+import useOpenExternalLink from '../hooks/useOpenExternalLink';
 import { fetchWish, completeWish, uncompleteWish, deleteWish } from '../services/api';
 import type { Wish } from '../services/api';
-import { formatCost } from '../utils/formatCost';
 import Colors from '../constants/Colors';
 import Typography from '../constants/Typography';
 import { Spacing } from '../constants/ScreenStyles';
@@ -29,7 +29,7 @@ export default function WishDetailScreen() {
   const navigation = useAppNavigation();
   const route = useAppRoute<'WishDetail'>();
   const { wishId } = route.params;
-  const toast = useToast();
+  const openExternalLink = useOpenExternalLink();
 
   // Refetch on focus so an edit shows on return; the local copy below gives
   // the complete/uncomplete toggle instant feedback, and a focus refetch then
@@ -54,11 +54,7 @@ export default function WishDetailScreen() {
     }, 'Could not update this wish');
 
   const openLink = () => {
-    if (wish?.link_url) {
-      Linking.openURL(wish.link_url).catch(() =>
-        toast.show('Could not open the link', { type: 'error' })
-      );
-    }
+    if (wish?.link_url) openExternalLink(wish.link_url);
   };
 
   return (
@@ -92,24 +88,18 @@ export default function WishDetailScreen() {
             </View>
           )}
 
-          <Text style={styles.name}>{wish.name}</Text>
-          {wish.cost !== null && <Text style={styles.cost}>{formatCost(wish.cost)}</Text>}
-          {wish.description ? <Text style={styles.description}>{wish.description}</Text> : null}
+          <DetailTitleBlock title={wish.name} cost={wish.cost} description={wish.description} />
 
           {wish.link_url ? (
-            <View style={styles.action}>
-              <PrimaryButton title="Open Link" variant="secondary" onPress={openLink} />
-            </View>
+            <DetailAction title="Open Link" variant="secondary" onPress={openLink} />
           ) : null}
 
-          <View style={styles.action}>
-            <PrimaryButton
-              title={wish.completed ? 'Mark as not fulfilled' : 'Mark as fulfilled'}
-              variant={wish.completed ? 'secondary' : 'primary'}
-              onPress={toggleComplete}
-              loading={toggling}
-            />
-          </View>
+          <DetailAction
+            title={wish.completed ? 'Mark as not fulfilled' : 'Mark as fulfilled'}
+            variant={wish.completed ? 'secondary' : 'primary'}
+            onPress={toggleComplete}
+            loading={toggling}
+          />
         </>
       )}
 
@@ -133,22 +123,5 @@ const styles = StyleSheet.create({
   fulfilledText: {
     ...Typography.bodySecondaryStrong,
     color: Colors.success,
-  },
-  name: {
-    ...Typography.sectionTitle,
-    marginTop: Spacing.lg,
-  },
-  cost: {
-    ...Typography.sectionTitle,
-    color: Colors.primary,
-    marginTop: Spacing.sm,
-  },
-  description: {
-    ...Typography.body,
-    color: Colors.textSecondary,
-    marginTop: Spacing.md,
-  },
-  action: {
-    marginTop: Spacing.lg,
   },
 });

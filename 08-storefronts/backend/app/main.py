@@ -2,7 +2,16 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
-from app.routes import health, life_events, upload, users, wishes, wishlists
+from app.routes import (
+    health,
+    life_events,
+    products,
+    storefronts,
+    upload,
+    users,
+    wishes,
+    wishlists,
+)
 
 app = FastAPI(
     title="Kivan API",
@@ -34,6 +43,9 @@ app.include_router(wishlists.router)
 app.include_router(wishes.router)
 # The wishlist-scoped wishes listing lives on a second router under /wishlists
 app.include_router(wishes.wishlist_wishes_router)
+# The curated catalog: stores, plus the storefront-scoped product listing
+app.include_router(storefronts.router)
+app.include_router(products.router)
 
 
 @app.get("/")

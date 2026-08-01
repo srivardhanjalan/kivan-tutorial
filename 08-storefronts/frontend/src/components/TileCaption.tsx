@@ -12,7 +12,7 @@ interface TileCaptionProps {
 
 /**
  * The caption under an art tile — one composition for the whole tile family
- * (wishlist card, wish card, add tile) so their captions can't drift.
+ * (the wishlist, wish, and product cards, the add tile) so their captions can't drift.
  */
 const TileCaption: React.FC<TileCaptionProps> = ({
   children,
