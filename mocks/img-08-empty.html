@@ -1,0 +1,45 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  html,body{margin:0;padding:0}
+  body{background:transparent;
+    font-family:-apple-system,'Segoe UI',Roboto,sans-serif;padding:44px 48px;
+    width:872px;height:520px;box-sizing:border-box;overflow:hidden}
+  .card{max-width:776px;margin:0 auto;background:transparent;border-radius:22px;
+    box-shadow:none;padding:30px 40px 28px}
+  .k{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+    color:#5b6172;background:#eef0f4;padding:4px 12px;border-radius:20px}
+  h1{font-size:23px;font-weight:800;color:#1f2430;margin:11px 0 3px;letter-spacing:-.01em}
+  .sub{font-size:14px;color:#8a90a0;margin:0;line-height:1.45}
+  .stage{position:relative;width:700px;height:250px;margin:16px auto 0}
+  .node{position:absolute;width:160px;display:flex;flex-direction:column;align-items:center;z-index:2}
+  .node img,.node .ic{width:62px;height:62px;border-radius:12px}
+  .node .lbl{margin-top:8px;font-size:12.5px;font-weight:800;color:#2b3040}
+  .node .tag{font-size:11px;color:#9aa0b0;font-family:Menlo,monospace;margin-top:1px;text-align:center}
+  svg.wires{position:absolute;inset:0;width:700px;height:250px;z-index:1;overflow:visible}
+  .al{font-size:12px;fill:#5b6172;font-weight:600}.al.hot{fill:#FF385C;font-weight:700}
+  .foot{font-size:12px;color:#9aa0b0;text-align:center;margin:12px auto 0;max-width:660px;line-height:1.45}
+</style></head><body>
+<div class="card">
+  <span class="k">Add</span>
+  <h1>The picker won't dead-end</h1>
+  <p class="sub">Open Add to Wishlist with no wishlists yet, and it routes you to create one instead of stranding you.</p>
+  <div class="stage">
+    <svg class="wires" viewBox="0 0 700 250">
+      <defs>
+        <marker id="s" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto"><path d="M0,0 L6.5,3 L0,6 Z" fill="#5b6172"/></marker>
+        <marker id="h" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto"><path d="M0,0 L6.5,3 L0,6 Z" fill="#FF385C"/></marker>
+      </defs>
+      <path d="M150 120 C 300 120, 360 58, 505 58" fill="none" stroke="#5b6172" stroke-width="1.8" marker-end="url(#s)"/>
+      <text class="al" x="332" y="48" text-anchor="middle">have lists → pick one</text>
+      <path d="M150 120 C 300 120, 360 190, 505 190" fill="none" stroke="#FF385C" stroke-width="2.1" marker-end="url(#h)"/>
+      <text class="al hot" x="360" y="205" text-anchor="middle">no lists yet → create first</text>
+    </svg>
+    <div class="node" style="left:5px;top:89px"><img src="mobile.svg"><div class="lbl">Add to Wishlist</div><div class="tag">product detail</div></div>
+    <div class="node" style="left:530px;top:27px"><img src="dynamodb.svg"><div class="lbl">Your wishlist</div><div class="tag">POST /wishes</div></div>
+    <div class="node" style="left:530px;top:159px">
+      <svg class="ic" viewBox="0 0 80 80"><rect x="8" y="8" width="64" height="64" rx="14" fill="#FFF0F3" stroke="#FF385C" stroke-width="2.6"/><line x1="40" y1="26" x2="40" y2="54" stroke="#FF385C" stroke-width="4.5" stroke-linecap="round"/><line x1="26" y1="40" x2="54" y2="40" stroke="#FF385C" stroke-width="4.5" stroke-linecap="round"/></svg>
+      <div class="lbl">New Wishlist</div><div class="tag">routed here</div>
+    </div>
+  </div>
+  <div class="foot">The confirm always has a preselected target, so there is no silent no-op where you tap Add and nothing happens. With nothing to pick, the picker sends you to create a wishlist first.</div>
+</div>
+</body></html>
