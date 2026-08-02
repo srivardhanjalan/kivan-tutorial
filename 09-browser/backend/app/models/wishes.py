@@ -27,6 +27,12 @@ class WishCreate(BaseModel):
     cost: Optional[float] = Field(
         default=None, ge=0, le=1e12, allow_inf_nan=False
     )
+    # The currency `cost` is quoted in, captured from the store a browser
+    # scrape came from (a plain ISO code like "USD"/"INR", NOT a Decimal:
+    # it is a label, not an amount). Absent on a manually-entered or catalog
+    # wish, whose cost reads in the app's default symbol. 8 is the ceiling
+    # for the codes the scraper emits (INR/USD/GBP/EUR/AED/SGD/AUD/CAD).
+    cost_currency: Optional[str] = Field(default=None, max_length=8)
     # 2048 is the practical URL ceiling browsers/CDNs honor
     link_url: Optional[str] = Field(default=None, max_length=2048)
     image_url: Optional[str] = Field(default=None, max_length=2048)
@@ -42,7 +48,8 @@ class WishUpdate(BaseModel):
     """PUT /wishes/{id} body — send only what changes; an omitted field is left
     untouched, while an explicit null clears description, cost, or link_url.
     name is non-nullable (a null is ignored), and image_url:null is ignored too
-    (removing a photo isn't a step-07 flow)."""
+    (removing a photo isn't a step-07 flow). A wish's cost_currency is captured
+    once at creation (a browser scrape) and not edited here, so it is absent."""
 
     # Same caps as WishCreate, same reason — a validated body must never be
     # able to blow up the serializer.
@@ -57,13 +64,16 @@ class WishUpdate(BaseModel):
 
 class Wish(BaseModel):
     """A wish record as stored. `cost` goes into DynamoDB as a Decimal (it
-    rejects float); Pydantic v2 coerces that Decimal back to float here on read."""
+    rejects float); Pydantic v2 coerces that Decimal back to float here on read.
+    `cost_currency` is a plain string (an ISO code label), so it stores and
+    reads without any Decimal coercion."""
 
     id: str
     wishlist_id: str
     name: str
     description: Optional[str] = None
     cost: Optional[float] = None
+    cost_currency: Optional[str] = None
     link_url: Optional[str] = None
     image_url: Optional[str] = None
     # Present only on catalog-sourced wishes; drives the store-logo badge

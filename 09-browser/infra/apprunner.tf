@@ -30,7 +30,8 @@ resource "aws_apprunner_service" "backend_ecr" {
         # ssm:GetParameters grant (see iam.tf) — the default aws/ssm key needs
         # no extra kms:Decrypt.
         runtime_environment_secrets = {
-          CLERK_SECRET_KEY = aws_ssm_parameter.clerk_secret_key.arn
+          CLERK_SECRET_KEY  = aws_ssm_parameter.clerk_secret_key.arn
+          FIRECRAWL_API_KEY = aws_ssm_parameter.firecrawl_api_key.arn
         }
       }
 

@@ -48,7 +48,10 @@ resource "aws_iam_role_policy" "apprunner_ecr_access" {
   })
 }
 
-# IAM Policy for the running backend to resolve its secret from SSM
+# IAM Policy for the running backend to resolve its secrets from SSM: the
+# Clerk key (JWKS + profile calls) and the Firecrawl key (the scrape proxy).
+# App Runner resolves runtime_environment_secrets through this one grant, so
+# both parameter ARNs are listed here.
 resource "aws_iam_role_policy" "apprunner_instance_ssm" {
   name = "${local.project_name}-apprunner-ssm-policy-${local.environment}"
   role = aws_iam_role.apprunner_instance.id
@@ -56,9 +59,12 @@ resource "aws_iam_role_policy" "apprunner_instance_ssm" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = ["ssm:GetParameters"]
-        Resource = aws_ssm_parameter.clerk_secret_key.arn
+        Effect = "Allow"
+        Action = ["ssm:GetParameters"]
+        Resource = [
+          aws_ssm_parameter.clerk_secret_key.arn,
+          aws_ssm_parameter.firecrawl_api_key.arn
+        ]
       }
     ]
   })
@@ -134,6 +140,15 @@ resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
         Effect   = "Allow"
         Action   = ["dynamodb:Scan"]
         Resource = aws_dynamodb_table.storefronts.arn
+      },
+      {
+        # Brands: the real-store directory read with a full-table Scan
+        # (GET /brands) and nothing more, the same reference-data pattern
+        # storefronts and life-events set. Seeding writes under developer
+        # credentials, so the running role gets Scan alone (no Get/Put).
+        Effect   = "Allow"
+        Action   = ["dynamodb:Scan"]
+        Resource = aws_dynamodb_table.brands.arn
       },
       {
         # Products: read-only and storefront-scoped. A Query on

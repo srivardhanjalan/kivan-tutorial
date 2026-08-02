@@ -94,7 +94,7 @@ export default function WishDetailScreen() {
             </View>
           )}
 
-          <DetailTitleBlock title={wish.name} cost={wish.cost} description={wish.description} />
+          <DetailTitleBlock title={wish.name} cost={wish.cost} currency={wish.cost_currency} description={wish.description} />
 
           {wish.link_url ? (
             <DetailAction title="Open Link" variant="secondary" onPress={openLink} />

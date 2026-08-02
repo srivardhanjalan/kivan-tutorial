@@ -1,5 +1,7 @@
 # Copy to terraform.tfvars (gitignored). The Clerk secret key comes from
-# dashboard.clerk.com → your app → API keys.
-aws_region       = "us-east-1"
-environment      = "production"
-clerk_secret_key = "sk_test_..."
+# dashboard.clerk.com → your app → API keys; the Firecrawl key from
+# firecrawl.dev → your dashboard → API keys (step 01 lists it as an account).
+aws_region        = "us-east-1"
+environment       = "production"
+clerk_secret_key  = "sk_test_..."
+firecrawl_api_key = "fc-your-key-here"

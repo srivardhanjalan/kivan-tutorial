@@ -50,6 +50,9 @@ def create_wish(wish: WishCreate, user_id: str = Depends(get_current_user_id)):
         "description": wish.description,
         # DynamoDB rejects float — store Decimal; the response model coerces back
         "cost": Decimal(str(wish.cost)) if wish.cost is not None else None,
+        # A plain string (an ISO code label), so it stores as-is, no Decimal.
+        # None-safe: a manual or catalog wish carries no captured currency.
+        "cost_currency": wish.cost_currency,
         "link_url": wish.link_url,
         "image_url": stored,
         # null for a hand-typed wish; the catalog add-flow carries the product's

@@ -30,7 +30,7 @@ const WishCard: React.FC<WishCardProps> = ({ wish, onPress, storefrontLogo }) =>
     color={Colors.subtleFill}
     imageUrl={wish.image_url}
     placeholder={<ImagePlaceholderGlyph size={Spacing.tileGlyphSize} />}
-    subtitle={wish.cost !== null ? formatCost(wish.cost) : undefined}
+    subtitle={wish.cost !== null ? formatCost(wish.cost, wish.cost_currency) : undefined}
     dimmed={wish.completed}
   >
     {storefrontLogo && !wish.completed && (
