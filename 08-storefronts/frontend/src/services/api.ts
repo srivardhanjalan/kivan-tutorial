@@ -289,6 +289,45 @@ export async function uncompleteWish(id: string): Promise<Wish> {
   return res.json();
 }
 
+// ── Storefronts: the curated catalog wishes can be added from ───────────────
+
+/** A curated store in the catalog. `product_count` is the denormalized count
+    the store card shows; the seeded stores carry no logo (step 15's admin
+    uploader adds those), so the card renders a storefront glyph. */
+export interface Storefront {
+  id: string;
+  name: string;
+  description: string | null;
+  product_count: number;
+}
+
+/** One product in a storefront. `price` is in the app's single currency
+    (formatCost renders it); adding the product to a wishlist carries name,
+    price, and link_url straight onto a new wish (the field is named to match a
+    wish's own link_url). Seeded products carry no image (a step-15 concern), so
+    the product tile shows a placeholder glyph. */
+export interface Product {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  link_url: string;
+}
+
+/** The curated catalog of stores, ordered by the backend's display_order. */
+export async function fetchStorefronts(): Promise<Storefront[]> {
+  const res = await request('/storefronts');
+  return res.json();
+}
+
+/** A storefront's products, in display order (the backend sorts). */
+export async function fetchStorefrontProducts(
+  storefrontId: string
+): Promise<Product[]> {
+  const res = await request(`/storefronts/${storefrontId}/products`);
+  return res.json();
+}
+
 /** PUT the local file's raw bytes straight to S3 with its own presigned URL.
     This one bypasses `request()` on purpose: it targets S3, not our API, so
     it carries the image's Content-Type and NO Authorization header. */

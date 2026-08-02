@@ -90,3 +90,51 @@ resource "aws_dynamodb_table" "life_events" {
     Name = "${local.project_name}-${local.environment}-life-events"
   }
 }
+
+# Storefronts table: the curated catalog of stores wishes can be added from.
+# Reference data like life-events, read by a full Scan (GET /storefronts); no
+# GSI, no query key. Populated by infra/scripts/seed_storefronts.py.
+resource "aws_dynamodb_table" "storefronts" {
+  name         = "${local.project_name}-${local.environment}-storefronts"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "id"
+
+  attribute {
+    name = "id"
+    type = "S"
+  }
+
+  tags = {
+    Name = "${local.project_name}-${local.environment}-storefronts"
+  }
+}
+
+# Products table: one row per catalog product, each belonging to a storefront.
+# StorefrontIdIndex serves the storefront-scoped listing
+# (GET /storefronts/{id}/products) without a Scan. Seeded alongside the
+# storefronts by the same script.
+resource "aws_dynamodb_table" "products" {
+  name         = "${local.project_name}-${local.environment}-products"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "id"
+
+  attribute {
+    name = "id"
+    type = "S"
+  }
+
+  attribute {
+    name = "storefront_id"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name            = "StorefrontIdIndex"
+    hash_key        = "storefront_id"
+    projection_type = "ALL"
+  }
+
+  tags = {
+    Name = "${local.project_name}-${local.environment}-products"
+  }
+}

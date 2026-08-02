@@ -125,6 +125,26 @@ resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
         Effect   = "Allow"
         Action   = ["dynamodb:Scan"]
         Resource = aws_dynamodb_table.life_events.arn
+      },
+      {
+        # Storefronts: the curated catalog read with a full-table Scan
+        # (GET /storefronts) and nothing more, the same reference-data pattern
+        # life-events set. Seeding writes under developer credentials, so the
+        # running role gets Scan alone (no Get/Put).
+        Effect   = "Allow"
+        Action   = ["dynamodb:Scan"]
+        Resource = aws_dynamodb_table.storefronts.arn
+      },
+      {
+        # Products: read-only and storefront-scoped. A Query on
+        # StorefrontIdIndex (GET /storefronts/{id}/products) and nothing else;
+        # seeding is a developer-credential job, so no Put here either.
+        Effect = "Allow"
+        Action = ["dynamodb:Query"]
+        Resource = [
+          aws_dynamodb_table.products.arn,
+          "${aws_dynamodb_table.products.arn}/index/*"
+        ]
       }
     ]
   })

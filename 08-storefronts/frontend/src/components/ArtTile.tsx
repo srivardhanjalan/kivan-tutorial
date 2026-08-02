@@ -20,8 +20,8 @@ interface ArtTileProps {
 
 /**
  * The one place the app turns a stored image URL into a clipped art block —
- * the wishlist tile, the wish tile, the add-new tile, and (via `height`) the
- * detail hero banner all share this exact shape, radius, and clip. When
+ * the tile family (wishlist, wish, product, and add-new tiles) and (via
+ * `height`) the detail hero banners all share this exact shape, radius, and clip. When
  * `imageUrl` is set it renders full-bleed and the placeholder stays hidden;
  * children always render on top.
  */

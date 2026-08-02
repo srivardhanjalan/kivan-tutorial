@@ -15,9 +15,9 @@ interface ConfirmCancelButtonsProps {
 }
 
 /**
- * The stacked confirm/cancel pair every edit block and confirm modal ends
- * with: the confirm CTA on top, a hairline gap, then a quiet Cancel. The
- * confirm goes danger-red on destructive actions.
+ * The stacked confirm/cancel pair the edit blocks and modals end with: the
+ * confirm CTA on top, a hairline gap, then a quiet Cancel. The confirm goes
+ * danger-red on destructive actions.
  */
 const ConfirmCancelButtons: React.FC<ConfirmCancelButtonsProps> = ({
   confirmTitle,

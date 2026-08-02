@@ -73,7 +73,6 @@ const styles = StyleSheet.create({
   placeholder: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
   },
   placeholderText: {
     ...Typography.bodySecondary,

@@ -15,9 +15,9 @@ interface ModalCardProps {
 
 /**
  * The app's one modal surface: a dimmed backdrop, a stretched card, a title
- * and a line of copy, then whatever the caller stacks below. Every confirm —
- * the light delete-wishlist/wish prompt and Settings' typed-DELETE ritual —
- * raises it, so they share one look.
+ * and a line of copy, then whatever the caller stacks below. The confirms (the
+ * delete-wishlist/wish prompt, Settings' typed-DELETE ritual) and the
+ * add-to-wishlist picker all raise it, so they share one look.
  */
 const ModalCard: React.FC<ModalCardProps> = ({ visible, title, message, children }) => (
   <Modal visible={visible} animationType="fade" transparent>

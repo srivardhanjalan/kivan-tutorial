@@ -8,6 +8,9 @@ import BorderRadius from './BorderRadius';
  * A value joins when a component first uses it, never in advance.
  */
 export const Spacing = {
+  // The tight sub-scale step: a pill's inner padding and a store card's
+  // name/blurb/count gaps all want this same 4pt
+  xs: 4,
   sm: 8,
   md: 12,
   lg: 16,
@@ -44,8 +47,8 @@ export const Spacing = {
     return this.chromePillHeight + this.tabBarBottomMargin + this.tabBarContentGap; // 98
   },
 
-  /** The art-block height at the top of a detail screen (wishlist and wish
-      heroes share it, so the two detail screens stay visually aligned) */
+  /** The art-block height at the top of a detail screen (the wish, wishlist,
+      and product heroes share it, so the detail screens stay visually aligned) */
   detailHeroHeight: 180,
   detailHeroGlyphSize: 64, // placeholder glyph in a detail hero (emoji + Ionicons)
   tileGlyphSize: 40,       // placeholder glyph in a tile-sized slot (cards, add tile, upload field)
