@@ -6,9 +6,12 @@
  * from the title. That shared logic lives here, parameterized by
  * StandardScraperConfig, so each brand file is a few lines of configuration.
  *
- * The shared extraction is more careful than the generic default: it looks for
- * a price NEAR the product title first (the sale price, not a strikethrough or
- * an EMI line), then falls back to a context-filtered scan that skips prices
+ * The shared extraction prefers the canonical structured price (og/product
+ * metadata) when the store emits one: it is the live selling price, free of the
+ * strikethrough MRP that a page-body scan would grab first (Nykaa lists
+ * "Regular price ₹649. Discounted price ₹422." with the MRP first). Absent that
+ * metadata it looks for a price NEAR the product title (the price sits under
+ * the name), then falls back to a context-filtered scan that skips prices
  * sitting next to "cart"/"shipping"/"coupon"/"offer" and friends. All scans go
  * through the shared priceMatcher, so any supported currency (₹, $, £, €, ...)
  * is recognized and reported. Image extraction is the module default (og:image
@@ -21,7 +24,11 @@
  */
 
 import { BrandScraper } from '../types';
-import { BrandScraperConfig, extractTitleFromMetadata } from '../methods/firecrawl';
+import {
+  BrandScraperConfig,
+  extractTitleFromMetadata,
+  structuredPrice,
+} from '../methods/firecrawl';
 import { matchAllPrices, matchPrice } from './priceMatcher';
 import { priceContext, isNoisePriceContext } from './priceContext';
 import { makeScraper } from './makeScraper';
@@ -46,6 +53,11 @@ const STANDARD_NOISE = ['delivery'];
  * first context-valid price in the markdown, then in the html.
  */
 function extractStandardPrice(html: string, markdown: string, metadata: any) {
+  // Try 0: the canonical structured price (the selling price, free of the
+  // strikethrough MRP a body scan would grab first) when the store emits one.
+  const structured = structuredPrice(metadata);
+  if (structured) return structured;
+
   // Try 1: the first price within 500 chars after the product title (the
   // live sale price sits right under the name).
   const productTitle = metadata.ogTitle || metadata.title || '';

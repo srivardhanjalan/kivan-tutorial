@@ -188,24 +188,45 @@ function defaultExtractImage(html: string, metadata: any): string | null {
   return null;
 }
 
-/** Default price: og:price:amount (currency from og:price:currency) first,
-    then the first currency-prefixed price the matcher finds in the markdown,
-    then the html. The matched symbol carries the currency. */
+/**
+ * The canonical price from OpenGraph product metadata, the most reliable signal
+ * a store can give: it is the live selling price, free of the strikethrough
+ * MRP, EMI, and trade-in prose that litters the page body. Reads both the
+ * og:price:* and product:price:* tag pairs (Firecrawl surfaces them raw and
+ * camelCased), currency from the matching *:currency tag. Null when the page
+ * emits neither. Central helper: the default extraction and the standard
+ * scraper both prefer it before parsing any prose price.
+ */
+export function structuredPrice(metadata: any): ExtractedPrice {
+  const amount =
+    metadata['og:price:amount'] ||
+    metadata.ogPriceAmount ||
+    metadata['product:price:amount'] ||
+    metadata.productPriceAmount;
+  if (!amount) return null;
+
+  const price = parseAmount(String(amount));
+  if (isNaN(price) || price <= 0) return null;
+
+  const currency = asSupportedCurrency(
+    metadata['og:price:currency'] ||
+      metadata.ogPriceCurrency ||
+      metadata['product:price:currency'] ||
+      metadata.productPriceCurrency
+  );
+  return { price, currency };
+}
+
+/** Default price: the structured metadata price first, then the first
+    currency-prefixed price the matcher finds in the markdown, then the html.
+    The matched symbol carries the currency. */
 function defaultExtractPrice(
   html: string,
   markdown: string,
   metadata: any
 ): ExtractedPrice {
-  const ogAmount = metadata['og:price:amount'] || metadata.ogPriceAmount;
-  if (ogAmount) {
-    const price = parseAmount(String(ogAmount));
-    if (!isNaN(price) && price > 0) {
-      const currency = asSupportedCurrency(
-        metadata['og:price:currency'] || metadata.ogPriceCurrency
-      );
-      return { price, currency };
-    }
-  }
+  const structured = structuredPrice(metadata);
+  if (structured) return structured;
 
   const fromMarkdown = matchPrice(markdown);
   if (fromMarkdown) {
