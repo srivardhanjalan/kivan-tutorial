@@ -30,7 +30,7 @@ One thing this step deliberately skips: it is a read-only catalog and nothing mo
 
 **Time:** about 45 to 75 minutes, most of it the deploy and the one-time seed.
 
-**The code:** the snippets below are shown as images; the full, copyable source is [the step folder on `main`](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/08-storefronts), organized by the file paths shown in each caption. [PR #PR-NUMBER-TBD: Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/PR-NUMBER-TBD/files) is the build's story.
+**The code:** the snippets below are shown as images; the full, copyable source is [the step folder on `main`](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/08-storefronts), organized by the file paths shown in each caption. [PR #71: Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/71/files) is the build's story.
 
 ## What we touch this step
 
