@@ -14,15 +14,15 @@ interface ProductCardProps {
 /**
  * A catalog product as a tile (the shared ArtTileCard): the same art block,
  * caption, and cost line as a wish card, since a product becomes a wish. The
- * seeded products carry no image, so the art block shows the placeholder glyph
- * (product images arrive with the admin uploader in step 15); name and price
- * sit below.
+ * product photo fills the art block (a placeholder glyph stands in when it has
+ * none); name and price sit below.
  */
 const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) => (
   <ArtTileCard
     title={product.name}
     onPress={onPress}
     color={Colors.subtleFill}
+    imageUrl={product.image_url}
     placeholder={<ImagePlaceholderGlyph size={Spacing.tileGlyphSize} />}
     subtitle={formatCost(product.price)}
   />

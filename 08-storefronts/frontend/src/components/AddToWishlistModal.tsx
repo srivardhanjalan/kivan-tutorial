@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Text, ActivityIndicator, StyleSheet } from 'react-native';
 import ModalCard from './ModalCard';
+import SelectableRow from './SelectableRow';
+import SelectableList from './SelectableList';
 import ConfirmCancelButtons from './ConfirmCancelButtons';
 import { useToast } from './ToastProvider';
 import { useAppNavigation } from '../hooks/useAppNavigation';
@@ -10,13 +11,15 @@ import { createWish, fetchMyWishlists } from '../services/api';
 import type { Product, Wishlist } from '../services/api';
 import Colors from '../constants/Colors';
 import Typography from '../constants/Typography';
-import Opacity from '../constants/Opacity';
-import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
+import { Spacing } from '../constants/ScreenStyles';
 
 interface AddToWishlistModalProps {
   visible: boolean;
   product: Product;
   onClose: () => void;
+  /** Fired after the product lands as a wish, so the detail screen can flip to
+      its "already saved" state without a refetch. */
+  onAdded: () => void;
 }
 
 /**
@@ -26,7 +29,7 @@ interface AddToWishlistModalProps {
  * time it opens and preselects the first; with none yet, it routes you to
  * create one instead of dead-ending.
  */
-export default function AddToWishlistModal({ visible, product, onClose }: AddToWishlistModalProps) {
+export default function AddToWishlistModal({ visible, product, onClose, onAdded }: AddToWishlistModalProps) {
   const navigation = useAppNavigation();
   const toast = useToast();
   const { loading: adding, run } = useAsyncAction();
@@ -65,9 +68,14 @@ export default function AddToWishlistModal({ visible, product, onClose }: AddToW
         ...(product.description ? { description: product.description } : {}),
         cost: product.price,
         link_url: product.link_url,
+        // Carry the product's photo onto the wish, and stamp which store it came
+        // from so the wish tiles can badge it with that store's logo
+        ...(product.image_url ? { image_url: product.image_url } : {}),
+        storefront_id: product.storefront_id,
       });
       const savedTo = wishlists?.find((w) => w.id === selectedId)?.name;
       toast.show(savedTo ? `Added to ${savedTo}` : 'Added to your wishlist');
+      onAdded();
       onClose();
     }, 'Could not add this to your wishlist');
   };
@@ -99,30 +107,16 @@ export default function AddToWishlistModal({ visible, product, onClose }: AddToW
         </>
       ) : (
         <>
-          <View style={styles.list}>
-            {wishlists.map((w) => {
-              const selected = w.id === selectedId;
-              return (
-                <TouchableOpacity
-                  key={w.id}
-                  onPress={() => setSelectedId(w.id)}
-                  activeOpacity={Opacity.pressed}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected }}
-                  accessibilityLabel={w.name}
-                  style={[CommonScreenStyles.outlinedSurface, styles.row, selected && styles.rowSelected]}
-                >
-                  <Text
-                    style={[styles.rowLabel, selected && styles.rowLabelSelected]}
-                    numberOfLines={1}
-                  >
-                    {w.name}
-                  </Text>
-                  {selected && <Ionicons name="checkmark" size={20} color={Colors.primary} />}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <SelectableList>
+            {wishlists.map((w) => (
+              <SelectableRow
+                key={w.id}
+                label={w.name}
+                selected={w.id === selectedId}
+                onPress={() => setSelectedId(w.id)}
+              />
+            ))}
+          </SelectableList>
           <ConfirmCancelButtons
             confirmTitle="Add to wishlist"
             onConfirm={add}
@@ -143,28 +137,5 @@ const styles = StyleSheet.create({
   empty: {
     ...Typography.bodySecondary,
     marginBottom: Spacing.lg,
-  },
-  list: {
-    gap: Spacing.sm,
-    marginBottom: Spacing.lg,
-  },
-  // Layered over CommonScreenStyles.outlinedSurface (the shared raised-card
-  // look StorefrontRow also composes): this adds only the row layout and a
-  // tighter vertical pad than the surface's all-round lg
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: Spacing.md,
-  },
-  rowSelected: {
-    borderColor: Colors.primary,
-  },
-  rowLabel: {
-    ...Typography.bodySecondaryStrong,
-    flex: 1,
-  },
-  rowLabelSelected: {
-    color: Colors.primary,
   },
 });

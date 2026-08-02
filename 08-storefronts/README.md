@@ -3,18 +3,22 @@
 A wish no longer has to be typed from scratch. This step adds a **curated
 catalog**: a handful of seeded stores, each holding a few products, browsable
 from the **Wish Store** tab. Tap a store, tap a product, pick one of your
-wishlists, and the product lands there as a wish with its name, price, and link
-already filled in. It is the second read-only reference domain in the app (the
+wishlists, and the product lands there as a wish with its name, price, link, and
+photo already filled in, badged with the store it came from. It is the second
+read-only reference domain in the app (the
 life-events taxonomy was the first), and it plugs into step 07's collections
 through exactly one seam: the same `POST /wishes` the manual form already uses.
 
 The catalog is deliberately thin. Stores and products are **seeded reference
-data**, read through two auth-gated endpoints and nothing more. There is no
-store or product creation, no ownership or admin roles, no images, no
-categories, no per-store currency: those belong to later steps (the admin
-dashboard in step 15, real store websites and multi-currency scraping in step
-09). What ships here is the smallest honest thing that lets a wish come from a
-catalog.
+data**, read through auth-gated endpoints and nothing more. Each store carries
+a logo and each product a photo and a category (the images are honest,
+license-clean placeholders committed under `assets/catalog/` and served by
+URL), so the store directory, the product tiles, and the category filter all
+run on real image and grouping data. What is still absent belongs to later
+steps: no store or product creation, no ownership or admin roles, no uploading
+your own logos and photos (the admin dashboard, step 15), and no per-store
+currency (multi-currency scraping, step 09). What ships here is the smallest
+honest thing that lets a wish come from a catalog.
 
 **The exact delta this step adds:**
 [PR #71 · Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/71/files)
