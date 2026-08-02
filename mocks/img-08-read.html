@@ -1,0 +1,45 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  html,body{margin:0;padding:0}
+  body{background:transparent;
+    font-family:-apple-system,'Segoe UI',Roboto,sans-serif;padding:44px 48px;
+    width:872px;height:490px;box-sizing:border-box;overflow:hidden}
+  .card{max-width:776px;margin:0 auto;background:transparent;border-radius:22px;
+    box-shadow:none;padding:30px 40px 28px}
+  .k{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+    color:#5b6172;background:#eef0f4;padding:4px 12px;border-radius:20px}
+  h1{font-size:23px;font-weight:800;color:#1f2430;margin:11px 0 3px;letter-spacing:-.01em}
+  .sub{font-size:14px;color:#8a90a0;margin:0;line-height:1.45}
+  .stage{position:relative;width:700px;height:212px;margin:16px auto 0}
+  .node{position:absolute;top:56px;width:150px;display:flex;flex-direction:column;align-items:center;z-index:2}
+  .node img{width:62px;height:62px;border-radius:12px}
+  .node .lbl{margin-top:8px;font-size:12.5px;font-weight:800;color:#2b3040}
+  .node .tag{font-size:11px;color:#9aa0b0;font-family:Menlo,monospace;margin-top:1px;text-align:center}
+  svg.wires{position:absolute;inset:0;width:700px;height:212px;z-index:1;overflow:visible}
+  .al{font-size:12px;fill:#5b6172;font-weight:600}.al.hot{fill:#FF385C;font-weight:700}
+  .foot{font-size:12px;color:#9aa0b0;text-align:center;margin:12px auto 0;max-width:660px;line-height:1.45}
+</style></head><body>
+<div class="card">
+  <span class="k">Read</span>
+  <h1>Two reads: the stores, then one store's products</h1>
+  <p class="sub">The tab Scans the small set of stores; opening one Queries just that store's products.</p>
+  <div class="stage">
+    <svg class="wires" viewBox="0 0 700 212">
+      <defs>
+        <marker id="s" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto"><path d="M0,0 L6.5,3 L0,6 Z" fill="#5b6172"/></marker>
+        <marker id="h" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto"><path d="M0,0 L6.5,3 L0,6 Z" fill="#FF385C"/></marker>
+      </defs>
+      <line x1="150" y1="87" x2="286" y2="87" stroke="#5b6172" stroke-width="1.8" marker-end="url(#s)"/>
+      <text class="al" x="218" y="73" text-anchor="middle">GET /storefronts,</text>
+      <text class="al" x="218" y="106" text-anchor="middle">then /{id}/products</text>
+      <line x1="425" y1="70" x2="561" y2="70" stroke="#5b6172" stroke-width="1.8" marker-end="url(#s)"/>
+      <text class="al" x="493" y="56" text-anchor="middle">Scan · all stores</text>
+      <line x1="425" y1="104" x2="561" y2="104" stroke="#FF385C" stroke-width="2.1" marker-end="url(#h)"/>
+      <text class="al hot" x="493" y="126" text-anchor="middle">Query index · one store</text>
+    </svg>
+    <div class="node" style="left:10px"><img src="mobile.svg"><div class="lbl">Wish Store</div><div class="tag">the catalog screens</div></div>
+    <div class="node" style="left:275px"><img src="apprunner.svg"><div class="lbl">Backend</div><div class="tag">two auth-gated routes</div></div>
+    <div class="node" style="left:540px"><img src="dynamodb.svg"><div class="lbl">DynamoDB</div><div class="tag">storefronts + products</div></div>
+  </div>
+  <div class="foot">A store's products never come from a Scan of the whole catalog: the store-scoped Query on StorefrontIdIndex reads just that one store's rows, the same shape the wishes listing uses off its own index.</div>
+</div>
+</body></html>
