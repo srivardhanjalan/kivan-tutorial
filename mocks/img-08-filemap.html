@@ -1,0 +1,66 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  html,body{margin:0;padding:0}
+  body{background:transparent;
+    font-family:-apple-system,'Segoe UI',Roboto,sans-serif;padding:56px;
+    width:1052px;box-sizing:border-box;overflow:hidden}
+  .card{max-width:940px;margin:0 auto;background:transparent;border-radius:22px;
+    box-shadow:none;padding:40px 44px}
+  h1{font-size:23px;font-weight:800;color:#1f2430;margin:0 0 4px;letter-spacing:-.01em}
+  .sub{font-size:14px;color:#8a90a0;margin:0 0 26px}
+  .legend{display:inline-flex;gap:16px;margin-left:14px;font-size:12px;color:#8a90a0;font-weight:600;vertical-align:middle}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:middle}
+  .new{background:#1a8917}.mod{background:#c98a00}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grp{background:#f7f8fb;border:1px solid #eceef4;border-radius:14px;padding:16px 18px}
+  .grp.wide{grid-column:1 / span 2}
+  .grp h2{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    color:#9aa0b0;margin:0 0 10px}
+  .folder{font-family:'SF Mono',Menlo,Consolas,monospace;font-size:12px;font-weight:700;
+    color:#6b7280;margin:11px 0 5px}
+  .folder:first-of-type{margin-top:2px}
+  .row{display:flex;align-items:flex-start;gap:10px;padding:5px 0 5px 12px}
+  .badge{flex:none;width:44px;font-size:10px;font-weight:800;letter-spacing:.04em;
+    text-transform:uppercase;padding:3px 0;text-align:center;border-radius:6px;margin-top:1px}
+  .b-new{background:#e5f3e8;color:#1a8917}.b-mod{background:#fbf1da;color:#b07d00}
+  .fc{display:flex;flex-direction:column;gap:2px}
+  .path{font-family:'SF Mono',Menlo,Consolas,monospace;font-size:13px;color:#2b3040;font-weight:600}
+  .note{font-family:'SF Mono',Menlo,Consolas,monospace;font-size:11.5px;color:#a3a9b8}
+</style></head><body>
+<div class="card">
+  <h1>What we touch this step
+    <span class="legend"><span><span class="dot new"></span>new</span><span><span class="dot mod"></span>modified</span></span>
+  </h1>
+  <p class="sub">Fourteen new files carry the feature; the modified ones wire it in. Each build section below takes one area.</p>
+  <div class="cols">
+    <div class="grp">
+      <h2>Backend &#183; the catalog reads</h2>
+      <div class="folder">app/routes/</div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">storefronts.py</span><span class="note"># GET /storefronts: auth-gated Scan, sorted</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">products.py</span><span class="note"># GET /storefronts/{id}/products: GSI Query</span></span></div>
+      <div class="folder">app/models/</div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">storefronts.py &#183; products.py</span><span class="note"># the two records; price Decimal &#8594; float</span></span></div>
+      <div class="folder">app/</div>
+      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">main.py &#183; database.py &#183; config.py</span><span class="note"># include routers, two table handles + names</span></span></div>
+    </div>
+    <div class="grp">
+      <h2>Frontend &#183; the Wish Store</h2>
+      <div class="folder">src/screens/</div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">StorefrontsScreen.tsx</span><span class="note"># the Wish Store tab: the store list</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">StorefrontDetailScreen.tsx &#183; ProductDetailScreen.tsx</span><span class="note"># a store's products, then a product</span></span></div>
+      <div class="folder">src/components/</div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">ProductCard.tsx &#183; AddToWishlistModal.tsx</span><span class="note"># the product tile, and the picker &#8594; POST /wishes</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">ArtTileCard.tsx &#183; DetailTitleBlock.tsx &#183; DetailAction.tsx</span><span class="note"># the shared card and detail pieces</span></span></div>
+      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">WishCard.tsx &#183; WishDetailScreen.tsx &#183; &#8230;</span><span class="note"># the wish screens now use those shared pieces</span></span></div>
+      <div class="folder">src/hooks/ &#183; src/services/</div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">useOpenExternalLink.ts</span><span class="note"># the one link-open both details share</span></span></div>
+      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">api.ts &#183; Navigation.tsx &#183; TabNavigation.tsx</span><span class="note"># contracts, the two pushed screens, the tab mount</span></span></div>
+    </div>
+    <div class="grp wide">
+      <h2>Infra &#183; two tables and the seed</h2>
+      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">dynamodb.tf</span><span class="note"># + storefronts (no index), products (StorefrontIdIndex)</span></span></div>
+      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">iam.tf</span><span class="note"># + per-table read-only grant: Scan storefronts, Query products</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">scripts/seed_storefronts.py</span><span class="note"># 4 stores, 15 products, idempotent upsert</span></span></div>
+    </div>
+  </div>
+</div>
+</body></html>
