@@ -17,7 +17,7 @@ dashboard in step 15, real store websites and multi-currency scraping in step
 catalog.
 
 **The exact delta this step adds:**
-[PR #PLACEHOLDER · Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/PLACEHOLDER/files)
+[PR #71 · Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/71/files)
 
 ## Run it locally
 
