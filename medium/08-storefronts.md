@@ -1,6 +1,6 @@
 # Off the Shelf
 
-*Zero to Shipped, step 8. Tap a product and it lands in a wishlist already filled in, from a catalog the running server can read but never overwrite. The screens that get you there each started as a copy of the one beside it.*
+*Zero to Shipped, step 8. A store inside the app. Tap a product and the wish fills itself in, name, price, and link. The app can read the catalog but never change it.*
 
 ![Zero to Shipped 08 hero: the Wish Store tab listing four curated stores with product counts, beside a terminal where GET /storefronts with no token returns 401, with a token returns the seeded stores, and a store's products come back in display order](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-08.png?v=PLACEHOLDER)
 
@@ -13,7 +13,7 @@
 Every wish in the app so far is typed by hand. Step 7 built the form, and it works, but a wishlist starts empty and stays empty until you fill in a name, a price, and a link for each thing you want. This step lets a wish come from a catalog instead: browse a store, tap a product, and it lands in a wishlist already filled in. Drawing the store list is the easy part. Making the catalog real is four problems at once.
 
 - **The catalog is data the app must never be able to overwrite.** Stores and products are shared reference data, the same for every user. If the code that serves them can also write them, one bug or one breach rewrites the whole catalog for everyone.
-- **A product's fields have to become a wish's fields with nothing in between.** A product carries a name, a price, a store link, a blurb. Each needs a home on a wish. If the shapes don't already line up, you write a little translation layer, and a translation layer is a thing that rots the first time either side changes.
+- **A product's fields have to become a wish's fields with nothing in between.** Name, price, store link, blurb: each needs a home on a wish, and any gap between the shapes means a translation layer, which rots the first time either side changes.
 - **The seam between the two can't couple them.** The store lives in its own world; a wishlist lives in step 7's. Wire them together the wrong way and a change to one can corrupt the other.
 - **Every new browse screen sits next to one you already built.** A product card is a wish card with a different label. A product detail is a wish detail. Copy each one and you now maintain two of everything, and they drift the first time you touch only one.
 
@@ -82,7 +82,13 @@ One detail rides in the product model, and it is why turning a product into a wi
 
 The **Wish Store** tab, empty since step 2, now mounts the store list. Tap a store to see its products in the same grid the wishes ride, and tap a product for its detail. Three new screens, and every one of them is a sibling of a screen step 7 already built. That is exactly the trap.
 
-A product card is a wish card: an image tile, a name, a price below. A product detail leads with the same title, price, and blurb a wish detail does, and jumps to a link the same way. Built as copies, they would be four near-identical pieces, drifting apart on the first one-sided edit. So none of them is a copy. Each shared shape moved into one place the moment the product screen became its second real caller: `ArtTileCard` now backs the wishlist, wish, and product cards, and the add tile behind both New Wishlist and New Wish folded into it the same round; `DetailTitleBlock` backs both detail screens; `useOpenExternalLink` holds the one link-open call and its error copy.
+A product card is a wish card: an image tile, a name, a price below. A product detail leads with the same title, price, and blurb a wish detail does, and jumps to a link the same way. Built as copies, they would be near-identical pieces, drifting apart on the first one-sided edit. So none of them is a copy. Each shared shape moved into one place the moment the product screen became its second real caller, and here is where each one went.
+
+The tile went first, because it had the most callers waiting. `ArtTileCard` is the one pressable tile-and-caption the wishlist card, the wish card, and now the product card all render; the add tile behind both New Wishlist and New Wish folded into it the same round, so one component draws the whole tile family.
+
+Then the detail block. Both detail screens open with the same three lines: a big name, a brand-accent price, a muted blurb beneath it. `DetailTitleBlock` owns those lines. The one difference between the two is that a wish can carry no cost and a product always has one, so the price is a nullable prop, not a second component: pass a cost and the price line renders, pass none and it does not.
+
+Then the link-open. A wish detail jumps to its source link and a product detail jumps to its store link the identical way: open the URL, and toast `Could not open the link` when the platform won't. `useOpenExternalLink` is that one call and its failure copy, a hook both screens reach for so the error text can't drift between them.
 
 The timing is the rule. We extract on the second caller, never the first. One caller is a component invented for a future that may never arrive, which is a defect exactly like dead code. Two callers is a duplication you can point at. So nothing here was pulled out ahead of the product screen that needed it.
 
@@ -112,13 +118,11 @@ Like the life-events seed, `seed_storefronts.py` is not optional: without it, `G
 
 ## What bit me
 
-Three things cost me time on this step, worst first.
+Two things cost me time here, and both were build-time, not runtime. A read-only catalog that reuses machinery step 7 already shipped had fewer live failures than the photo-delete of step 6 or the float-500 of step 7. What it had was a gate that kept finding work: a duplication that cascaded, and a token that had to earn its callers before it landed.
 
 **Adding a screen re-created the one next to it.** Every browse screen I added started as a copy of the wish screen beside it, and the copies did not announce themselves. jscpd caught the byte-for-byte ones. The semantic pass caught the ones that only matched in shape: the picker had hand-rolled its own confirm-and-cancel button stack, when `ConfirmCancelButtons` already owned exactly that, over in `ConfirmModal` and the Settings screen. Swapping it in dropped a now-dead `PrimaryButton` import the hand-rolled version had pulled in. The draining part was the cascade. Extract the shared tile, and the shared detail block is the next duplicate standing. Extract that, and the duplicated link-open is what's left. Each fix uncovered the next, so I re-ran the gate after every one and only stopped when a full pass found nothing. A new screen modeled on an old one is a duplication suspect before it is anything else.
 
 **A token I reached for did not exist, then earned its way in.** Porting these screens, I reached for `Spacing.xs` and `Typography.caption`, and neither was in this codebase, which adds a token the step a component first needs it, never in advance. tsc caught both instantly. For the caption I used what was already there, `Typography.bodySecondary`, and it never found a second use, so it stayed and it still is not a `caption`. For a 4pt gap I dropped a bare literal, because one use does not earn a token. Then the audit gate found that same 4pt in three places at once, the store card's two gaps and the tab bar's pill padding, which is exactly the "a value used twice becomes a token" bar, so `Spacing.xs` landed with its three real callers, not on my first wish for it. The hairline under a tile's name stayed a bare 2px, smaller than any scale step, because the code only ever asks for it once.
-
-**A field I named the obvious way didn't line up.** I called the product's store URL `link`, which is what you'd call it out loud. Then the picker had to hand it to a wish, whose field is `link_url`, so I was quietly mapping one name onto the other at the call site. The app already had a rule I'd walked past: every stored or external URL ends in `_url`, a wish's link and a user's photo both. Renaming the field to `link_url` across the model, the seed, the type, and both call sites turned that mapping into `link_url: product.link_url`, a plain copy. One name for one thing, and the seam got shorter.
 
 ## You're done when
 
