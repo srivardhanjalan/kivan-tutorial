@@ -1,9 +1,9 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import ArtTile from './ArtTile';
-import TileCaption from './TileCaption';
 import Typography from '../constants/Typography';
 import Opacity from '../constants/Opacity';
+import { Spacing } from '../constants/ScreenStyles';
 
 interface ArtTileCardProps {
   /** The caption under the tile: also the tile's accessibility label */
@@ -31,9 +31,10 @@ interface ArtTileCardProps {
  * The wishlist, wish, and product cards each supply their own wash,
  * placeholder, and (for the priced ones) a cost subtitle; the wish card adds
  * its fulfilled dim and check badge via `dimmed` and `children`; the add tile
- * puts a plus in the placeholder and forwards its accent caption color and
- * one-line clamp. The tile/caption/subtitle composition and the pressable's
- * accessibility wiring live here so the whole family can't drift apart.
+ * puts a plus in the placeholder and takes an accent caption color and a
+ * one-line clamp. The tile, its caption, an optional cost subtitle, and the
+ * pressable's accessibility wiring all live here (this is the one place a tile
+ * caption is composed) so the whole family can't drift apart.
  */
 const ArtTileCard: React.FC<ArtTileCardProps> = ({
   title,
@@ -57,7 +58,12 @@ const ArtTileCard: React.FC<ArtTileCardProps> = ({
     <ArtTile color={color} imageUrl={imageUrl} placeholder={placeholder}>
       {children}
     </ArtTile>
-    <TileCaption color={captionColor} numberOfLines={captionLines}>{title}</TileCaption>
+    <Text
+      style={[styles.caption, captionColor !== undefined && { color: captionColor }]}
+      numberOfLines={captionLines ?? 2}
+    >
+      {title}
+    </Text>
     {subtitle !== undefined && <Text style={styles.subtitle}>{subtitle}</Text>}
   </TouchableOpacity>
 );
@@ -65,6 +71,10 @@ const ArtTileCard: React.FC<ArtTileCardProps> = ({
 const styles = StyleSheet.create({
   dimmed: {
     opacity: Opacity.disabled,
+  },
+  caption: {
+    ...Typography.cardTitle,
+    marginTop: Spacing.sm,
   },
   subtitle: {
     ...Typography.bodySecondary,
