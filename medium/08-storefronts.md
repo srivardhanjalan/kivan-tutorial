@@ -13,7 +13,7 @@
 Every wish in the app so far is typed by hand. Step 7 built the form, and it works. But a wishlist starts empty and stays empty until you type in a name, a price, and a link for every item you want. This step lets a wish come from a catalog instead: browse a store, tap a product, and it lands in a wishlist already filled in. Drawing the store list is the easy part. Making the catalog real is four problems at once.
 
 - **The catalog is data the app must never be able to overwrite.** Stores and products are shared reference data, the same for every user. If the code that serves them can also write them, one bug or one breach rewrites the whole catalog for everyone.
-- **A product's fields have to become a wish's fields with nothing in between.** Name, price, store link, blurb: each needs a home on a wish, and any gap between the shapes means a translation layer, and that layer breaks the first time either side changes.
+- **A product's fields have to become a wish's fields with nothing in between.** Name, price, store link, blurb: each needs a home on a wish. Any gap between the two shapes forces a translation layer, and that layer breaks the first time either side changes.
 - **The seam between the two can't couple them.** The store lives in its own world; a wishlist lives in step 7's. Wire them together the wrong way and a change to one can corrupt the other.
 - **Every new browse screen sits next to one you already built.** A product card is a wish card with a different label. A product detail is a wish detail. Copy each one and you now maintain two of everything, and they drift the first time you touch only one.
 
@@ -84,7 +84,7 @@ The **Wish Store** tab, empty since step 2, now mounts the store list. Tap a sto
 
 A product card is a wish card: an image tile, a name, a price below. A product detail leads with the same title, price, and blurb a wish detail does, and jumps to a link the same way. Built as copies, they would be near-identical pieces, drifting apart on the first one-sided edit. So none of them is a copy. Each shared shape moved into one place the moment the product screen became its second real caller, and here is where each one went.
 
-The tile went first, because it had the most callers waiting. `ArtTileCard` is the one pressable tile-and-caption the wishlist card, the wish card, and now the product card all render. The add tile behind both New Wishlist and New Wish folded into it the same round, so one component draws the whole tile family.
+The tile went first, because it had the most callers waiting. `ArtTileCard` is the one pressable tile-and-caption that the wishlist card, the wish card, and now the product card all render. The add tile behind both New Wishlist and New Wish folded into it the same round, so one component draws the whole tile family.
 
 Then the detail block. Both detail screens open with the same three lines: a big name, a brand-accent price, a muted blurb beneath it. `DetailTitleBlock` owns those lines. The one difference: a wish can carry no cost, and a product always has one. So the price is a nullable prop, not a second component. Pass a cost and the price line renders; pass none and it does not.
 
