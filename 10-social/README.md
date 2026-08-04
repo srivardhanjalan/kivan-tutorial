@@ -1,230 +1,212 @@
-# Step 09: Browser Acquisition
+# Step 10: Social
 
-A wish can now come from a **real store's website**. Step 08 let a wish come
-from a curated catalog; this step adds the other acquisition path: a **brand
-directory** of real stores, an **in-app browser** that opens any of them, and
-**product scrapers** that read a product's title, image, and price straight off
-the live page. Tap a brand, browse to the product you want, tap **Add to
-wishlist**, and the page becomes a wish, its price captured in the currency the
-store quoted. It plugs into collections through the same one seam everything
-else does: the `POST /wishes` the manual form and the catalog already use.
+The app has been single-player until now: your wishlists, your stuff, a catalog
+you add from. This step makes it a **network**. You can search for people,
+**follow** them, open anyone's **public profile**, and **love** the wishlists
+you like. A profile shows who someone is, who follows them, the wishlists they
+own, and the ones they've loved, and every follower count taps through to the
+people behind it.
 
-**Multi-currency, precisely.** A scraped price is captured and displayed in the
-currency the store quotes it in (`₹`, `$`, `£`, `€`, `AED`, and the other codes
-the matcher recognizes). This step does **not** add a per-user display currency
-or currency conversion: honest conversion needs a live exchange-rate source, and
-hardcoding stale rates would be a lie baked into the app. So each wish reads in
-its own captured currency, and a manual or catalog wish (which carries none)
-reads in the app's default symbol. A display-currency picker with conversion is
-a later concern, not this step's.
+Social is a **platform feature**, not a collections one: it knows about *users*
+and *wishlists*, never about life-events or the catalog. It plugs in through two
+seams. Users gain the fields and indexes that make them searchable and
+rankable, and a wishlist gains a public read path and a love tally. Deleting the
+whole social layer would leave collections and storefronts exactly as they were.
+
+What ships here is deliberately the follow graph and loves, nothing more. There
+are **no notifications** when someone follows or loves you (that pipeline is
+step 11), **no privacy** on a wishlist (every wishlist is publicly viewable this
+step; public/private and co-owner visibility arrive with sharing in step 14),
+and **no blocking or muting**. A wishlist you view that isn't yours is
+read-only: you can love it and see its wishes, but not edit them.
 
 **The exact delta this step adds:**
-[PR #72 · Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/72/files)
+[PR #PLACEHOLDER · Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/PLACEHOLDER/files)
 
 ## Run it locally
 
-Same two terminals as step 08, with one new secret. The backend now needs a
-**Firecrawl API key** (the scrape proxy is required config, so it fails at
-startup naming the variable if it is missing, exactly like the Clerk key). Get
-one free at [firecrawl.dev](https://firecrawl.dev) (step 01 lists it as an
-account). The new `brands` table is read through your local AWS credentials, so
-a full local run wants the stack applied and the brands seeded (below), or the
-directory is empty until you do.
+Same two terminals as step 09. The two new DynamoDB tables and the two new user
+indexes are read through your local AWS credentials, so a full local run wants
+the stack applied first (below). Unlike storefronts there is **no seed**: social
+data is user-generated, so the follow graph and loves fill in as you use the
+app. Everything else boots exactly as before.
 
 ```bash
 cd backend
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-CLERK_SECRET_KEY=sk_test_... FIRECRAWL_API_KEY=fc-... \
-  .venv/bin/uvicorn app.main:app --reload
+CLERK_SECRET_KEY=sk_test_... .venv/bin/uvicorn app.main:app --reload
 ```
 
 ```bash
 cd frontend
-npx expo install            # SDK-matched versions (this step adds react-native-webview)
+npx expo install            # SDK-matched versions, never hand-pinned
 npx expo start -c --localhost
 ```
 
+The search and Discover screens read the two new user GSIs, and those index a
+user only once their record carries `entity_type`, `name_lowercase`, and the two
+counts. Those fields are written at provisioning time, so **users provisioned
+before this step won't appear in search or Discover until their record is
+rewritten** (any profile edit does it). On a fresh local database this is a
+non-issue: every user you sign in provisions with the fields already set.
+
 ## Deploy it
 
-This step **adds infrastructure**: one DynamoDB table (`brands`, read-only, no
-index), one **SSM SecureString** for the Firecrawl API key, and the grants to
-match. On a stack that is already up:
+This step **adds infrastructure**: two DynamoDB tables (`followers`, with a
+`FollowingIndex` GSI; `wishlist-loves`, no GSI), two GSIs on the existing users
+table (`NameSearchIndex`, `PopularUsersIndex`), and the matching IAM grants on
+the App Runner instance role. On a stack that is already up:
 
 ```bash
 cd infra
-# terraform.tfvars now also needs: firecrawl_api_key = "fc-..."
-terraform apply                                     # + brands table, + Firecrawl SSM secret, + IAM
-./scripts/deploy.sh                                 # rebuild :latest with the new routes
-AWS_REGION=us-east-1 ENVIRONMENT=production \
-  PHOTOS_BUCKET_NAME=$(terraform output -raw photos_bucket_name) \
-  ../backend/.venv/bin/python scripts/seed_brands.py   # 13 brands + 13 logos (idempotent)
+terraform apply        # + 2 tables, + 2 user GSIs, + IAM for both
+./scripts/deploy.sh    # rebuild :latest with the new routes
 ```
 
-The Firecrawl key follows the Clerk key's discipline exactly: it lives only in
-gitignored `infra/terraform.tfvars` (and your shell for a local run), reaches
-the container as a runtime secret from SSM, and is **never** committed or
-printed. Like `seed_storefronts.py`, `seed_brands.py` is **not optional**:
-without it `GET /brands` returns an empty list and the directory has nothing to
-browse. It uploads each brand's placeholder logo to the private photos bucket
-(no new S3 infrastructure: the logos ride the same bucket and read grant as the
-catalog images, served as short-lived signed URLs), so it takes
-`PHOTOS_BUCKET_NAME` exactly as `seed_storefronts.py` does. It is idempotent
-(upsert by id, overwrite each logo by key).
+Adding a GSI to a live, populated table is an **online backfill**: DynamoDB
+builds the index in the background and the table stays readable throughout, but
+the index returns partial results until the backfill finishes (seconds on a
+small table). There is no seed and no data-migration script: the new user fields
+land on each record the next time it is written, and the follow and love tables
+start empty.
 
-**Try it end to end:** open the **Wish Store** tab, tap **Browse real stores**
-to open the brand directory (real stores grouped by category). Tap one: the
-**in-app browser** opens on its website. Browse to an actual product page the
-ordinary way, then tap **Add to wishlist**. The page is scraped (title, image,
-price, and the price's currency), you pick a wishlist, and the product becomes a
-wish there. Open **My Stuff** to that wishlist: the new wish shows the scraped
-name, its price in the **store's own currency** (a rupee price reads `₹`, a
-dollar price `$`), and the **brand's logo as a corner badge** (the same badge a
-catalog wish wears for its store). A page that scrapes nothing still opens the
-modal, so you can add it and fill the details in by hand rather than dead-end.
+Deploying fresh? Follow step 03's staged bootstrap (registry, push, apply), then
+the deploy. There is nothing extra to seed for social.
+
+**Try it end to end:** open the **Discover** tab (the search icon in the right
+pill). With an empty box it shows the most-followed people; type a name to
+search. Tap someone to open their profile: their follower/following counts,
+their wishlists, and the wishlists they've loved. Tap **Follow** and the label
+flips instantly. Tap a follower count to walk the graph. Open one of their
+wishlists and tap the **heart** to love it, and the tally moves with you. Open a
+wishlist of your own and you'll see edit and delete where a stranger sees a heart.
 
 ## What's here
 
 ```
 backend/
-  app/routes/brands.py         + GET /brands: an auth-gated Scan over the seeded
-                                 real-store directory, ordered for display (the
-                                 storefronts/life-events read pattern again)
-  app/routes/scraping.py       + POST /scrape/firecrawl: the proxy that holds the
-                                 Firecrawl key server-side, so the app bundle never
-                                 does; a sync handler over httpx (threadpooled)
-  app/models/brands.py         + the Brand record (name, website_url, category,
-                                 country, logo_url); logo_url is signed on read,
-                                 exactly like a storefront's logo
-  app/models/scraping.py       + the scrape request/response envelope
-  app/models/wishes.py         + cost_currency on a wish (a plain ISO-code label,
-                                 not a Decimal): the currency a scraped price rode;
-                                 + brand_id, the origin a browser-captured wish is
-                                 badged by (the catalog's storefront_id twin)
-  app/routes/wishes.py         stores cost_currency and brand_id on create; both are
-                                 captured once at scrape time and not edited, so
-                                 update ignores them
-  app/main.py / database.py /  include the two new routers; the brands table
-    config.py                  handle and name; the required firecrawl_api_key
+  app/routes/followers.py       + follow / unfollow (idempotent conditional
+                                  writes) and the followers / following lists
+  app/routes/loves.py           + love / unlove a wishlist, the per-viewer love
+                                  status, and a user's loved-wishlists list
+                                  (two routers, /wishlists and /users, like wishes)
+  app/routes/users.py           + search (NameSearchIndex prefix), popular
+                                  (PopularUsersIndex), the public profile
+                                  GET /users/{id} with counts + is_following,
+                                  and a user's public wishlists; PUT /me now
+                                  keeps name_lowercase in sync on a rename
+  app/routes/wishlists.py       GET /wishlists/{id} is now a public read;
+                                  create seeds love_count = 0
+  app/routes/wishes.py          the wishlist-scoped wishes listing is now public
+  app/utils/user_access.py      + get_public_user: 404 for missing OR deleted,
+                                  the read guard the follow graph and loves share
+  app/utils/user_search.py      + name_lowercase: the search key derived in one
+                                  place (provisioning AND a rename)
+  app/utils/wishlist_access.py  + get_wishlist_or_404 (public read) beside
+                                  get_owned_wishlist (owner-only write)
+  app/utils/dynamo.py           + adjust_count (best-effort denormalized counter,
+                                  floored at 0) and batch_get_items (the N+1 fix)
+  app/utils/user_provisioning.py new users get entity_type, name_lowercase, and
+                                  follower_count / following_count = 0
+  app/models/{users,loves,wishlists}.py  UserWithCounts, LoveStatus, love_count
+  app/main.py / database.py / config.py  the new routers, table handles, names
 infra/
-  dynamodb.tf                  + the brands table (no index: a Scan feeds the one
-                                 GET, and the directory groups by category client-side)
-  ssm.tf                       + the Firecrawl key as a SecureString (the Clerk
-                                 secret's pattern, second instance)
-  apprunner.tf / iam.tf        inject FIRECRAWL_API_KEY from SSM; grant the running
-                                 role Scan on brands and read on both SSM secrets
-  variables.tf / tfvars.example + the firecrawl_api_key variable and its placeholder
-  scripts/seed_brands.py       + the directory seeder: 13 real brands across
-                                 categories and countries (₹/$/£/€/AED span), each
-                                 with a placeholder logo uploaded to the photos bucket
-frontend/                      step 08's app plus:
-  src/scrapers/                the scraper engine: scrapeProduct picks a brand
-                                 scraper by host or falls back to generic Firecrawl;
-                                 priceMatcher reads a price AND its currency; a few
-                                 brand scrapers (zara/nykaa/puma via the standard
-                                 factory, apple bespoke); README.md documents the shape
-  src/screens/BrandsScreen.tsx      the brand directory, grouped by category
-  src/screens/InAppBrowserScreen.tsx the WebView + its chrome + Add to wishlist
-  src/components/CatalogRow.tsx     the logo-or-glyph row both directories now share
-  src/hooks/useWishOrigin.ts        resolves a wish's storefront_id OR brand_id to
-                                 that source's name and logo for the badge
-  src/components/DirectoryLayout.tsx the directory-screen scaffold both now share
-  src/components/AddToWishlistModal.tsx generalized: a Product OR a scrape both
-                                 build one WishDraft it turns into a wish
-  src/constants/Currency.ts         the currency codes the matcher emits + their symbols
-  src/utils/formatCost.ts           now currency-aware (a code picks the symbol)
-  src/services/api.ts               + the brand and scrape contracts, cost_currency
-  src/components/{Navigation,WishCard,DetailTitleBlock,HeaderIconButton}.tsx,
-  src/screens/{ProductDetail,WishDetail}.tsx  the routes, the currency-on-cost,
-                                 the browser's disabled-able chrome buttons, and
-                                 the brand badge (via useWishOrigin) on a captured wish
-assets/brands/                 + 13 placeholder brand logos (initial-on-wash
-                                 wordmarks), license-clean, uploaded by seed_brands.py
+  dynamodb.tf                   + followers (FollowingIndex), wishlist-loves,
+                                  and the two user GSIs with their attributes
+  iam.tf                        + Query/BatchGetItem on users and its indexes,
+                                  and least-privilege statements for both new tables
+frontend/                       step 09's app plus:
+  src/screens/DiscoverScreen.tsx      the Discover tab: debounced search + popular
+  src/screens/UserProfileScreen.tsx   a public profile: counts, follow, wishlists, loved
+  src/screens/FollowListScreen.tsx    followers/following, one screen for both
+  src/components/FollowButton.tsx     the optimistic Follow / Following toggle
+  src/components/LoveButton.tsx       the heart with its live tally
+  src/components/Avatar.tsx           a circular avatar with an initial fallback
+  src/components/UserRow.tsx          the shared person row (search + follow lists)
+  src/components/WishlistGrid.tsx     the wishlist tile grid My Stuff and profiles share
+  src/hooks/useOptimisticToggle.ts    the flip-count-revert both buttons run
+  src/utils/{userName,pluralize}.ts   one spelling of a display name, one of a count
+  src/screens/WishlistDetailScreen.tsx  owner sees edit/delete/add, a viewer a heart
+  src/services/api.ts                 + the social contracts
+  src/components/{Navigation,TabNavigation}.tsx  the profile/list screens + Discover mount
 ```
 
 ## The ideas this step plants
 
-- **A third reference domain, the same shape as the first two.** Brands are a
-  seeded, auth-gated, read-only Scan table, exactly like life-events and
-  storefronts: one model, one GET, the running role granted Scan and nothing
-  else, seeding a developer-credential job. A new curated domain still costs two
-  files and an IAM statement, not a new pattern.
-- **The secret stays on the server.** The Firecrawl key can't ship in a public
-  app bundle, so the frontend never holds it: the in-app browser posts a URL to
-  `POST /scrape/firecrawl` and the backend attaches the key from SSM. The proxy
-  is a sync handler over `httpx` (FastAPI threadpools it), and it maps a slow
-  upstream to 504 and a bad one to 502, so the app can tell "try again" from
-  "type it in."
-- **The second directory screen revealed the scaffold.** BrandsScreen is the
-  Wish Store's twin (fetch a reference list, render it as logo-led rows). The
-  moment the second one existed, three shared pieces earned their place:
-  `CatalogRow` (both directories' rows, taking data so neither screen respells
-  the markup), `DirectoryLayout` (the header/sections/empty scaffold), and
-  `makeScraper` (every brand scraper's host-match + scrape shell). Each screen
-  is now a fetch, a row, and its sections.
-- **Currency travels with the price, end to end.** The matcher reports the
-  currency implied by the symbol it found; the scrape carries it into the wish
-  draft; the wish stores `cost_currency` beside `cost`; `formatCost` renders the
-  symbol for that code. No conversion, no stale rates: a price is shown in the
-  currency it was quoted in, and that is the honest whole of it.
+- **The edge is the truth, the count is a cache.** A follow is a row in the
+  followers table; the follower/following numbers on a profile are denormalized
+  copies kept by `adjust_count`. A conditional put makes the edge exist exactly
+  once, so a double-tap follow moves the count once and a repeat is a no-op. The
+  same shape drives loves. A lost increment leaves a count slightly low, never a
+  wrong graph, so the counter write is best-effort and the decrement is floored
+  at zero.
+- **One partition, sorted two ways.** Every user carries a constant
+  `entity_type = "USER"`. That single value is the partition key both user GSIs
+  hash on, so "all users, by name" and "all users, by follower count" are each a
+  single Query against one partition, never a Scan-and-sort. Search sorts on
+  `name_lowercase` and prefix-matches; Discover sorts on `follower_count`
+  descending.
+- **Reading is open, writing stays owned.** Social makes every wishlist publicly
+  viewable, so `get_wishlist_or_404` (404 only) now backs the reads while
+  `get_owned_wishlist` (404 + 403) still guards every write. One screen serves
+  both: it compares the wishlist's `created_by` to you and shows edit and delete
+  or a love heart accordingly.
+- **Extract on the second real caller, not before.** The follow and love buttons
+  are the same optimistic flip-count-revert, so that behavior is one hook they
+  both call. The wishlist tile grid became three callers the moment the profile
+  existed (My Stuff, and a profile's two grids), so it is one `WishlistGrid`.
+  Neither was built ahead of its second user.
 
 ## Gotchas
 
-- **A bespoke scraper and the store you point it at must agree on currency.**
-  The Apple scraper scans `₹` only, because `apple.com/in` quotes in rupees and
-  its pages are thick with `₹` EMI/financing lines it has to filter out (with a
-  magnitude floor: an amount under ₹10,000 on that catalog is an instalment, not
-  a price). Seeded first at `apple.com` (the US store, in `$`), that scraper
-  would have fed its rupee-only scan dollar prices it can't read. The captured
-  currency comes from the page, so a single-currency scraper's logic and its
-  brand's seeded `website_url` have to name the same storefront. The seed points
-  Apple at `apple.com/in`.
-- **A new screen re-creates the screen beside it.** BrandsScreen was modeled on
-  StorefrontsScreen, and jscpd flagged the identical import block, the row
-  shell, and the styles; the bespoke Apple scraper's `canHandle`/`scrape` was
-  byte-identical to the standard factory's. Each resolved into a shared piece
-  the moment the second caller existed, and the fix took a few rounds because
-  extracting a shared row first left the two screens' *imports* still identical
-  (two sibling list screens reach for the same toolkit). The clone cleared only
-  when the row took **data** instead of markup, so each screen imports a handful
-  of high-level pieces and nothing more, exactly as the grid screens lean on
-  `TileGrid`/`ProductCard`. A twin screen is a duplication suspect before it is
-  anything else.
-- **A scraper factory only earns its place at the second caller.** The standard
-  factory (`makeStandardScraper`) is shared by Zara, Nykaa, and Puma; Apple
-  deviates for real, so it is bespoke and drops to the lower-level `makeScraper`
-  shell directly. A "standard" brand whose extraction turned out byte-identical
-  to the factory once `logCapture` was stripped (Nike) was **not** kept as a
-  near-clone: it went to the generic Firecrawl path, and the directory still
-  seeds it. An abstraction with one honest caller is a defect; a clone dressed
-  as a brand is another.
-- **The in-app browser drags a native module Expo Go must match.**
-  `react-native-webview` is added with `npx expo install react-native-webview`,
-  never a hand-pinned range: the pinned version is the one Expo Go's renderer
-  expects, and any native dependency that skews from it crashes on launch.
-- **A second SSM secret, and the same provisioning race.** The Firecrawl key
-  follows the Clerk key exactly: a SecureString injected as `FIRECRAWL_API_KEY`,
-  with **both** parameter ARNs in the one `ssm:GetParameters` grant the App
-  Runner service `depends_on`. Add the second secret to `apprunner.tf` but not
-  to that grant and the service can't read it at provision time, which is a
-  `CREATE_FAILED` with no logs (cause #3 from step 04, one secret later).
+- **A new screen re-creates the grid next to it.** The profile's wishlist grid
+  was a byte-for-byte clone of My Stuff's card map, and jscpd failed the gate on
+  it. The fix wasn't to tweak one copy: the wishlist grid now has three real
+  callers, so it is one `WishlistGrid` and both screens call it. The same round
+  turned up three smaller twins the semantic reviewer caught: a hairline
+  `marginTop` used in three places (now `Spacing.hairlineGap`), the love button's
+  outlined pill already spelled by the life-event chip (now
+  `CommonScreenStyles.outlinedPill`), and a "3 followers"/"3 products" label
+  written twice (now a `pluralize` util). A screen modeled on an existing one is
+  a duplication suspect before it is anything else, and each fix exposes the next.
+- **A `/{user_id}` route will swallow `/search`.** FastAPI matches routes in
+  declaration order, so the literal `/users/search` and `/users/popular` must be
+  declared **before** the catch-all `/users/{user_id}`, or "search" is read as a
+  user id and 404s. They live together in users.py in that order, below the
+  `/me` routes for the same reason.
+- **A rename that forgets the search key drops you out of search.**
+  `name_lowercase` is what `NameSearchIndex` prefix-matches, so a profile name
+  change has to move it in the *same* write, rebuilt from the incoming field plus
+  the untouched one on the record. Derive it in one place (`user_search.py`) so
+  provisioning and the rename can't spell it differently.
+- **A friend's wish is display-only, not a dead tap.** A wishlist you view that
+  isn't yours shows its wishes, but a single wish's detail (with its fulfilled
+  toggle and edit/delete) stays owner-only. Rather than open a screen that would
+  403, the wish tiles on someone else's wishlist render without an `onPress`:
+  `ArtTileCard` and `WishCard` take an optional handler, pressable on your own
+  wishlist and a plain display tile on theirs.
+- **A public profile 404s a deleted account, never 403s it.** Your own guards
+  403 a soft-deleted current user (you're real, your account is gone). Looking at
+  someone else, a deleted account is simply not there, so `get_public_user`
+  returns 404, and a deletion can't be probed by the status code the profile
+  hands back.
 
 ## Done when
 
-- [ ] Open the **Wish Store** tab and tap **Browse real stores**: the seeded
-      brands show, grouped by category.
-- [ ] Tap a brand: the in-app browser opens on its website; back, forward, and
-      reload drive it, and close returns you to the directory.
-- [ ] Browse to a real product page and tap **Add to wishlist**: the scrape
-      fills the wish's name, price, and image, you pick a wishlist, and the
-      product becomes a wish in it.
-- [ ] Open that wish: its cost reads in the store's own currency (a rupee store
-      shows `₹`, a dollar store `$`), not the app default.
-- [ ] A page that scrapes nothing still opens the modal so you can add it by
-      hand, instead of dead-ending.
-- [ ] `curl $API/brands` with no token returns 401; with a valid token it
-      returns the seeded directory.
-- [ ] `curl -X POST $API/scrape/firecrawl` with a valid token and a `{"url": …}`
-      body returns the scraped `{success, data}` (or `success: false` when the
-      page yields nothing).
+- [ ] Open **Discover**: an empty box shows popular people; typing a name
+      searches, and each result opens that person's profile.
+- [ ] On another user's profile, **Follow** flips to **Following** instantly and
+      survives a screen refocus; tapping a follower/following count opens that
+      list, and its rows open more profiles.
+- [ ] Open one of their wishlists and tap the **heart**: it fills and the tally
+      moves; it shows their wishes as display-only tiles, no edit or add.
+- [ ] Open your own wishlist the same way: it shows edit, delete, and the add
+      tile, and no heart.
+- [ ] `curl $API/users/search?q=a` with a valid token returns matching users;
+      `curl $API/users/popular` returns them ranked by follower count.
+- [ ] `curl -X POST $API/users/<id>/follow` twice returns 204 both times and the
+      target's follower_count rises by exactly one.
 
-Next: `10-social`, a follow graph and Discover, so wishlists have an audience.
+Next: `11-notifications`, an SQS to Lambda pipeline so a follow or a love finally
+tells the person it happened.
+```

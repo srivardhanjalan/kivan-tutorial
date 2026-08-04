@@ -22,6 +22,15 @@ export interface User {
   updated_at: string;
 }
 
+/** A user's public profile: the record plus denormalized social counts and,
+    for the viewer, whether they follow this user (null when it's your own
+    profile). Returned by GET /users/{id} and the popular rail. */
+export interface UserWithCounts extends User {
+  follower_count: number;
+  following_count: number;
+  is_following: boolean | null;
+}
+
 /** The editable slice of the profile — send only what changed */
 export interface ProfileUpdate {
   first_name?: string;
@@ -162,6 +171,8 @@ export interface Wishlist {
   life_event_id: string;
   created_by: string;
   created_at: string;
+  /** Denormalized love tally (step 10) — how many users have loved it. */
+  love_count: number;
 }
 
 /** One item inside a wishlist. `completed` drives the got-it visual state.
@@ -422,4 +433,82 @@ export async function uploadToS3(
   if (!res.ok) {
     throw new Error(`S3 upload failed: ${res.status}`);
   }
+}
+
+// ── Social: users, the follow graph, and loves ─────────────────────────────
+
+/** Typeahead user search by name. The caller owns the empty-box rule (it shows
+    the popular rail and never calls this with a blank query), so this just asks. */
+export async function searchUsers(query: string): Promise<User[]> {
+  const res = await request(`/users/search?q=${encodeURIComponent(query)}`);
+  return res.json();
+}
+
+/** Discover's default rail: the most-followed users. */
+export async function fetchPopularUsers(): Promise<UserWithCounts[]> {
+  const res = await request('/users/popular');
+  return res.json();
+}
+
+/** Discover's "wishlists to love" rail: the most-loved wishlists. */
+export async function fetchPopularWishlists(): Promise<Wishlist[]> {
+  const res = await request('/wishlists/popular');
+  return res.json();
+}
+
+/** A user's public profile — counts, and whether you follow them. */
+export async function fetchUser(userId: string): Promise<UserWithCounts> {
+  const res = await request(`/users/${userId}`);
+  return res.json();
+}
+
+/** A user's wishlists, newest first (the backend sorts). */
+export async function fetchUserWishlists(userId: string): Promise<Wishlist[]> {
+  const res = await request(`/users/${userId}/wishlists`);
+  return res.json();
+}
+
+/** The wishlists a user has loved. */
+export async function fetchUserLovedWishlists(userId: string): Promise<Wishlist[]> {
+  const res = await request(`/users/${userId}/loved-wishlists`);
+  return res.json();
+}
+
+/** The users following a user. */
+export async function fetchFollowers(userId: string): Promise<User[]> {
+  const res = await request(`/users/${userId}/followers`);
+  return res.json();
+}
+
+/** The users a user follows. */
+export async function fetchFollowing(userId: string): Promise<User[]> {
+  const res = await request(`/users/${userId}/following`);
+  return res.json();
+}
+
+/** Follow a user. Idempotent server-side — a repeat is a no-op. */
+export async function followUser(userId: string): Promise<void> {
+  await request(`/users/${userId}/follow`, { method: 'POST' });
+}
+
+/** Unfollow a user. Idempotent server-side. */
+export async function unfollowUser(userId: string): Promise<void> {
+  await request(`/users/${userId}/unfollow`, { method: 'DELETE' });
+}
+
+/** Whether the current user loves a wishlist (the per-viewer bit). */
+export async function fetchLoveStatus(wishlistId: string): Promise<boolean> {
+  const res = await request(`/wishlists/${wishlistId}/love/status`);
+  const data = await res.json();
+  return data.is_loved;
+}
+
+/** Love a wishlist. Idempotent server-side. */
+export async function loveWishlist(wishlistId: string): Promise<void> {
+  await request(`/wishlists/${wishlistId}/love`, { method: 'POST' });
+}
+
+/** Unlove a wishlist. Idempotent server-side. */
+export async function unloveWishlist(wishlistId: string): Promise<void> {
+  await request(`/wishlists/${wishlistId}/love`, { method: 'DELETE' });
 }

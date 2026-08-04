@@ -14,7 +14,7 @@ from app.utils.s3_helpers import (
 )
 from app.utils.dynamo import get_item_or_404, query_all_pages, update_item_fields
 from app.utils.timestamps import utc_now_iso
-from app.utils.wishlist_access import get_owned_wishlist
+from app.utils.wishlist_access import get_owned_wishlist, get_wishlist_or_404
 
 router = APIRouter(prefix="/wishes", tags=["wishes"])
 
@@ -186,11 +186,13 @@ def _set_completed(wish_id: str, user_id: str, completed: bool) -> dict:
 
 @wishlist_wishes_router.get("/{wishlist_id}/wishes", response_model=list[Wish])
 def get_wishlist_wishes(
-    wishlist_id: str, user_id: str = Depends(get_current_user_id)
+    wishlist_id: str, _user_id: str = Depends(get_current_user_id)
 ):
-    """A wishlist's wishes in insertion order (created_at ASC). Access is the
-    wishlist's own 404/403 rule; the GSI has no range key, so the sort is here."""
-    get_owned_wishlist(wishlist_id, user_id)
+    """A wishlist's wishes in insertion order (created_at ASC). A public read
+    like GET /wishlists/{id} — you see the wishes of any wishlist you can view
+    (a friend's, off their profile). The GSI has no range key, so the sort is
+    here. Adding or editing a wish still requires ownership."""
+    get_wishlist_or_404(wishlist_id)
     wishes = query_all_pages(
         wishes_table,
         IndexName="WishlistIdIndex",

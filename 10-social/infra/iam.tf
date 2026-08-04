@@ -78,22 +78,33 @@ resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
     Version = "2012-10-17"
     Statement = [
       {
-        # Users: key-only get/put/update by id (JIT provisioning + profile)
+        # Users: get/put/update by id (JIT provisioning + profile), plus the
+        # social reads step 10 adds — Query on the search/Discover GSIs,
+        # BatchGetItem to resolve a follower/following id list to user records,
+        # and UpdateItem for the denormalized follower/following counts.
         Effect = "Allow"
         Action = [
           "dynamodb:GetItem",
+          "dynamodb:BatchGetItem",
           "dynamodb:PutItem",
-          "dynamodb:UpdateItem"
+          "dynamodb:UpdateItem",
+          "dynamodb:Query"
         ]
-        Resource = aws_dynamodb_table.users.arn
+        Resource = [
+          aws_dynamodb_table.users.arn,
+          "${aws_dynamodb_table.users.arn}/index/*"
+        ]
       },
       {
-        # Wishlists: get/put/delete by id, UpdateItem (PUT is a guarded
-        # field-scoped update — utils/dynamo.update_item_fields), and Query
-        # on CreatedByIndex (GET /wishlists/me + the account-deletion sweep).
+        # Wishlists: get/put/delete by id, UpdateItem (guarded field-scoped
+        # updates — utils/dynamo.update_item_fields — and the denormalized
+        # love_count), Query on CreatedByIndex (GET /wishlists/me, a user's
+        # public wishlists, the account-deletion sweep), and BatchGetItem to
+        # resolve a loved-wishlist id list to records.
         Effect = "Allow"
         Action = [
           "dynamodb:GetItem",
+          "dynamodb:BatchGetItem",
           "dynamodb:PutItem",
           "dynamodb:UpdateItem",
           "dynamodb:DeleteItem",
@@ -160,6 +171,34 @@ resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
           aws_dynamodb_table.products.arn,
           "${aws_dynamodb_table.products.arn}/index/*"
         ]
+      },
+      {
+        # Followers: put/delete a follow edge, GetItem for "am I following X",
+        # and Query on both the base table (who X follows) and FollowingIndex
+        # (who follows X).
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query"
+        ]
+        Resource = [
+          aws_dynamodb_table.followers.arn,
+          "${aws_dynamodb_table.followers.arn}/index/*"
+        ]
+      },
+      {
+        # Wishlist loves: put/delete a love edge, GetItem for "do I love this",
+        # and Query on the base table (a user's loved wishlists). No GSI.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query"
+        ]
+        Resource = aws_dynamodb_table.wishlist_loves.arn
       }
     ]
   })

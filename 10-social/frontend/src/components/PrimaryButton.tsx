@@ -5,6 +5,7 @@ import Typography, { ChromeMaxFontSizeMultiplier } from '../constants/Typography
 import BorderRadius from '../constants/BorderRadius';
 import Shadows from '../constants/Shadows';
 import Opacity from '../constants/Opacity';
+import { CommonScreenStyles } from '../constants/ScreenStyles';
 
 type Variant = 'primary' | 'secondary' | 'danger';
 
@@ -29,7 +30,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   variant = 'primary',
 }) => (
   <TouchableOpacity
-    style={[styles.button, variantStyles[variant], loading && styles.disabled]}
+    style={[styles.button, variantStyles[variant], loading && CommonScreenStyles.dimmed]}
     onPress={onPress}
     disabled={loading}
     activeOpacity={Opacity.pressed}
@@ -53,9 +54,6 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  disabled: {
-    opacity: Opacity.disabled,
   },
   text: {
     ...Typography.button,

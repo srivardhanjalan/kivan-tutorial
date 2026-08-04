@@ -61,5 +61,14 @@ class Settings(BaseSettings):
     def products_table(self) -> str:
         return f"kivan-{self.environment}-products"
 
+    @property
+    def followers_table(self) -> str:
+        return f"kivan-{self.environment}-followers"
+
+    @property
+    def wishlist_loves_table(self) -> str:
+        # Dashed name matches infra/dynamodb.tf (aws_dynamodb_table.wishlist_loves)
+        return f"kivan-{self.environment}-wishlist-loves"
+
 
 settings = Settings()

@@ -3,11 +3,18 @@ import logging
 import httpx
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.database import users_table, wishlists_table
+from app.database import followers_table, users_table, wishlists_table
 from app.dependencies.auth import get_current_user_id
-from app.models.users import AccountDeletionRequest, OnboardingStatus, User, UserUpdate
+from app.models.users import (
+    AccountDeletionRequest,
+    OnboardingStatus,
+    User,
+    UserUpdate,
+    UserWithCounts,
+)
+from app.models.wishlists import Wishlist
 from app.utils.clerk_api import CLERK_API, CLERK_TIMEOUT, clerk_headers
 from app.utils.s3_helpers import (
     claim_pending_photo,
@@ -17,7 +24,9 @@ from app.utils.s3_helpers import (
 )
 from app.utils.dynamo import get_item_or_404, query_all_pages
 from app.utils.timestamps import utc_now_iso
+from app.utils.user_access import get_public_user
 from app.utils.user_provisioning import forget_user
+from app.utils.user_search import name_lowercase
 from app.utils.wishlist_access import delete_wishlist_and_contents
 
 logger = logging.getLogger(__name__)
@@ -79,12 +88,19 @@ def update_current_user(
     update_parts = ["updated_at = :updated"]
     values: dict = {":updated": utc_now_iso()}
 
-    # Only read the current record when a photo is changing — we need the old
-    # URL to clean it up, and the read (like the guarded write below) 403s a
-    # deleted account and 404s a missing one before anything is claimed.
+    # Read the current record when a photo is changing (we need the old URL to
+    # clean it up) OR when a name is changing (name_lowercase is rebuilt from
+    # BOTH names, so a one-field rename needs the other from the record). The
+    # read — like the guarded write below — 403s a deleted account and 404s a
+    # missing one before anything is claimed.
+    name_changing = (
+        user_update.first_name is not None or user_update.last_name is not None
+    )
     current_data = (
         _get_active_user(user_id)
-        if user_update.image_url is not None or user_update.cover_photo is not None
+        if user_update.image_url is not None
+        or user_update.cover_photo is not None
+        or name_changing
         else None
     )
 
@@ -94,6 +110,22 @@ def update_current_user(
     if user_update.last_name is not None:
         update_parts.append("last_name = :ln")
         values[":ln"] = user_update.last_name
+    # A name change must move name_lowercase in the SAME write, or a renamed
+    # user drops out of typeahead search until their next edit. Rebuild from the
+    # incoming field plus the untouched one on the record.
+    if name_changing:
+        new_first = (
+            user_update.first_name
+            if user_update.first_name is not None
+            else current_data.get("first_name")
+        )
+        new_last = (
+            user_update.last_name
+            if user_update.last_name is not None
+            else current_data.get("last_name")
+        )
+        update_parts.append("name_lowercase = :nl")
+        values[":nl"] = name_lowercase(new_first, new_last)
     if user_update.birthday is not None:
         update_parts.append("birthday = :bd")
         values[":bd"] = user_update.birthday.isoformat()
@@ -280,3 +312,84 @@ def complete_onboarding(user_id: str = Depends(get_current_user_id)):
         raise
     # Echo the state the write just made true — no ceremony beyond that
     return OnboardingStatus(onboarding_completed=True)
+
+
+# ── Social reads (step 10) ──────────────────────────────────────────────────
+# These live below the /me routes so those literal paths match first, and above
+# the catch-all /{user_id} so "search"/"popular" are never read as a user id.
+
+
+def _active(users: list[dict]) -> list[dict]:
+    """Drop soft-deleted accounts from an index read — they stay in the table
+    for referential integrity but must never surface in search or Discover."""
+    return [u for u in users if not u.get("is_deleted", False)]
+
+
+@router.get("/search", response_model=list[User])
+def search_users(
+    q: str,
+    limit: int = Query(default=10, ge=1, le=50),
+    _viewer: str = Depends(get_current_user_id),
+):
+    """Typeahead search by name. A prefix Query on NameSearchIndex (all users
+    share the "USER" partition, name_lowercase is the sort key), never a Scan.
+    An empty query returns nothing — the client shows the popular rail instead."""
+    prefix = q.strip().lower()
+    if not prefix:
+        return []
+    response = users_table.query(
+        IndexName="NameSearchIndex",
+        KeyConditionExpression=Key("entity_type").eq("USER")
+        & Key("name_lowercase").begins_with(prefix),
+        Limit=limit,
+    )
+    return _active(response.get("Items", []))
+
+
+@router.get("/popular", response_model=list[UserWithCounts])
+def get_popular_users(
+    limit: int = Query(default=10, ge=1, le=50),
+    _viewer: str = Depends(get_current_user_id),
+):
+    """Discover's default rail: the most-followed users. A Query on
+    PopularUsersIndex in descending follower_count order returns them
+    pre-sorted; we read the index (small at this app's scale), drop deleted
+    accounts, and take the top `limit`. is_following is left unset here — the
+    rows navigate to a profile, where the real follow state is fetched."""
+    ranked = query_all_pages(
+        users_table,
+        IndexName="PopularUsersIndex",
+        KeyConditionExpression=Key("entity_type").eq("USER"),
+        ScanIndexForward=False,  # highest follower_count first
+    )
+    return [UserWithCounts(**u) for u in _active(ranked)[:limit]]
+
+
+@router.get("/{user_id}", response_model=UserWithCounts)
+def get_user(user_id: str, viewer_id: str = Depends(get_current_user_id)):
+    """A user's public profile: their record, denormalized counts, and — unless
+    you're looking at yourself — whether you follow them (a single GetItem on
+    the follow edge). 404 if the user is missing or a deleted account."""
+    user = get_public_user(user_id)
+    is_following = None
+    if viewer_id != user_id:
+        edge = followers_table.get_item(
+            Key={"follower_id": viewer_id, "following_id": user_id}
+        )
+        is_following = "Item" in edge
+    return UserWithCounts(**user, is_following=is_following)
+
+
+@router.get("/{user_id}/wishlists", response_model=list[Wishlist])
+def get_user_wishlists(user_id: str, _viewer: str = Depends(get_current_user_id)):
+    """A user's wishlists, newest first — the public read behind their profile.
+    Every wishlist is viewable this step (privacy is step 14); the same
+    CreatedByIndex Query as GET /wishlists/me, just for another user."""
+    get_public_user(user_id)
+    items = query_all_pages(
+        wishlists_table,
+        IndexName="CreatedByIndex",
+        KeyConditionExpression=Key("created_by").eq(user_id),
+    )
+    items.sort(key=lambda w: w["created_at"], reverse=True)
+    return items

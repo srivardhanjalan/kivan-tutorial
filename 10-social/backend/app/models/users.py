@@ -31,6 +31,18 @@ class User(BaseModel):
         return get_signed_url_for_s3(value)
 
 
+class UserWithCounts(User):
+    """A public profile: the user plus their denormalized social counts and,
+    for the viewer, whether they follow this user. The counts default to 0 so
+    a record provisioned before step 10 (no count attributes) still serializes.
+    is_following is None when it doesn't apply — the viewer looking at their
+    own profile — and a bool otherwise."""
+
+    follower_count: int = 0
+    following_count: int = 0
+    is_following: Optional[bool] = None
+
+
 class UserUpdate(BaseModel):
     """PUT /users/me body — every field optional; only the ones sent change.
     `birthday` must parse as a real date in the past. image_url/cover_photo

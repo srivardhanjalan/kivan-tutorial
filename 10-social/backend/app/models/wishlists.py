@@ -42,6 +42,9 @@ class Wishlist(BaseModel):
     life_event_id: str
     created_by: str
     created_at: str
+    # Denormalized love tally (step 10). Defaults 0 so a wishlist created before
+    # loves existed still serializes; maintained by adjust_count on love/unlove.
+    love_count: int = 0
 
     # The bucket is private, so the stored image_url is not directly fetchable
     # — re-sign it into a short-lived GET URL on every read. External URLs and

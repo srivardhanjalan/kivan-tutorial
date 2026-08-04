@@ -5,7 +5,7 @@ import Colors from '../constants/Colors';
 import BorderRadius from '../constants/BorderRadius';
 import Typography from '../constants/Typography';
 import Opacity from '../constants/Opacity';
-import { Spacing } from '../constants/ScreenStyles';
+import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 
 interface LifeEventSelectorProps {
   /** The chosen life-event id, or undefined for none */
@@ -41,7 +41,7 @@ const LifeEventSelector: React.FC<LifeEventSelectorProps> = ({ selectedId, onSel
             accessibilityRole="button"
             accessibilityState={{ selected }}
             accessibilityLabel={event.name}
-            style={[styles.chip, selected ? styles.chipSelected : styles.chipIdle]}
+            style={[styles.chip, selected ? styles.chipSelected : CommonScreenStyles.outlinedPill]}
           >
             {event.icon && <Text style={styles.emoji}>{event.icon}</Text>}
             <Text style={[styles.label, selected && styles.labelSelected]}>{event.name}</Text>
@@ -67,15 +67,10 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.full,
-  },
-  chipIdle: {
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.hairline,
   },
   chipSelected: {
     backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.full,
   },
   emoji: {
     fontSize: Typography.body.fontSize,

@@ -4,8 +4,10 @@ from fastapi.middleware.gzip import GZipMiddleware
 
 from app.routes import (
     brands,
+    followers,
     health,
     life_events,
+    loves,
     products,
     scraping,
     storefronts,
@@ -52,6 +54,12 @@ app.include_router(products.router)
 # that scrapes a browsed product page into a wish
 app.include_router(brands.router)
 app.include_router(scraping.router)
+# Social (step 10): the follow graph and loves. followers and the loved-list
+# hang off /users (their {user_id} paths are deeper than users.router's
+# catch-all, so they never collide); the love actions hang off /wishlists.
+app.include_router(followers.router)
+app.include_router(loves.love_router)
+app.include_router(loves.loved_router)
 
 
 @app.get("/")

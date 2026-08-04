@@ -1,5 +1,6 @@
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { useUser } from '@clerk/clerk-expo';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import EditDeleteHeaderButtons from '../components/EditDeleteHeaderButtons';
@@ -10,30 +11,35 @@ import WishCard from '../components/WishCard';
 import AddTileCard from '../components/AddTileCard';
 import ArtTile from '../components/ArtTile';
 import ConfirmModal from '../components/ConfirmModal';
+import LoveButton from '../components/LoveButton';
 import WishlistPlaceholderGlyph from '../components/WishlistPlaceholderGlyph';
 import useFetch from '../hooks/useFetch';
 import useLifeEvents from '../hooks/useLifeEvents';
 import useWishOrigin from '../hooks/useWishOrigin';
 import useConfirmedDelete from '../hooks/useConfirmedDelete';
-import { fetchWishlist, fetchWishes, deleteWishlist } from '../services/api';
+import { fetchWishlist, fetchWishes, deleteWishlist, fetchLoveStatus } from '../services/api';
 import pastelForLifeEvent from '../constants/lifeEventPastels';
 import Typography from '../constants/Typography';
 import { Spacing } from '../constants/ScreenStyles';
 
 /**
- * One wishlist: a pastel/image hero carrying its life event, then the grid of
- * its wishes with an add tile. Edit and delete live in the header; the wishes
- * refetch on focus so adds and edits show on return.
+ * One wishlist: a pastel/image hero carrying its life event, then its wishes.
+ * On YOUR wishlist, edit and delete live in the header and an add tile leads
+ * the grid. On someone ELSE'S (reached from their profile), a love heart takes
+ * the header's place and the wishes are display-only. Everything refetches on
+ * focus so a change shows on return.
  */
 export default function WishlistDetailScreen() {
   const navigation = useAppNavigation();
   const route = useAppRoute<'WishlistDetail'>();
   const { wishlistId } = route.params;
+  const { user } = useUser();
 
   const { data: wishlist, loading } = useFetch(() => fetchWishlist(wishlistId), {
     refetchOnFocus: true,
   });
   const { data: wishes } = useFetch(() => fetchWishes(wishlistId), { refetchOnFocus: true });
+  const { data: loved } = useFetch(() => fetchLoveStatus(wishlistId), { refetchOnFocus: true });
   const { lifeEventFor } = useLifeEvents();
   const { originFor } = useWishOrigin();
   const { requestDelete, confirmProps } = useConfirmedDelete(
@@ -42,6 +48,8 @@ export default function WishlistDetailScreen() {
   );
 
   const lifeEvent = wishlist ? lifeEventFor(wishlist.life_event_id) : undefined;
+  const isOwner = !!wishlist && wishlist.created_by === user?.id;
+  const addWish = () => navigation.navigate('WishForm', { wishlistId });
 
   return (
     <FloatingHeaderLayout
@@ -49,7 +57,7 @@ export default function WishlistDetailScreen() {
       loading={loading}
       showBack
       headerRight={
-        wishlist ? (
+        wishlist && isOwner ? (
           <EditDeleteHeaderButtons
             subject="wishlist"
             onEdit={() => navigation.navigate('WishlistForm', { wishlist })}
@@ -70,27 +78,43 @@ export default function WishlistDetailScreen() {
           />
           {lifeEvent && <Text style={styles.eventName}>{lifeEvent.name}</Text>}
 
+          {/* Someone else's wishlist: love it. Mounts once love status loads. */}
+          {!isOwner && loved !== null && (
+            <View style={styles.loveRow}>
+              <LoveButton
+                wishlistId={wishlistId}
+                initialLoved={loved}
+                initialCount={wishlist.love_count}
+              />
+            </View>
+          )}
+
           <SectionHeader title="Wishes" meta={wishes?.length ?? 0} />
           {wishes && wishes.length === 0 ? (
             <EmptyStateView
               icon="sparkles-outline"
               title="No wishes yet"
-              subtitle="Add the things you're hoping for to this wishlist."
-              actionLabel="Add a wish"
-              onAction={() => navigation.navigate('WishForm', { wishlistId })}
+              subtitle={
+                isOwner
+                  ? "Add the things you're hoping for to this wishlist."
+                  : "This wishlist doesn't have any wishes yet."
+              }
+              actionLabel={isOwner ? 'Add a wish' : undefined}
+              onAction={isOwner ? addWish : undefined}
             />
           ) : (
             <TileGrid>
-              <AddTileCard
-                label="New Wish"
-                onPress={() => navigation.navigate('WishForm', { wishlistId })}
-              />
+              {isOwner && <AddTileCard label="New Wish" onPress={addWish} />}
               {wishes?.map((wish) => (
                 <WishCard
                   key={wish.id}
                   wish={wish}
                   originLogo={originFor(wish)?.logoUrl}
-                  onPress={() => navigation.navigate('WishDetail', { wishId: wish.id })}
+                  onPress={
+                    isOwner
+                      ? () => navigation.navigate('WishDetail', { wishId: wish.id })
+                      : undefined
+                  }
                 />
               ))}
             </TileGrid>
@@ -112,5 +136,8 @@ const styles = StyleSheet.create({
   eventName: {
     ...Typography.bodySecondary,
     marginTop: Spacing.md,
+  },
+  loveRow: {
+    marginTop: Spacing.lg,
   },
 });

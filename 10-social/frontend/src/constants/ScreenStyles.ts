@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
 import Colors from './Colors';
 import BorderRadius from './BorderRadius';
+import Opacity from './Opacity';
 
 /**
  * Spacing + chrome metrics. The chrome numbers are a single source of truth
@@ -8,6 +9,10 @@ import BorderRadius from './BorderRadius';
  * A value joins when a component first uses it, never in advance.
  */
 export const Spacing = {
+  // The hairline gap under a primary line before its muted second line — a
+  // tile's subtitle, a user row's, a profile stat's label. Sub-scale on
+  // purpose (tighter than xs), and shared, so it's a token, not a literal.
+  hairlineGap: 2,
   // The tight sub-scale step: a pill's inner padding and a store card's
   // name/blurb/count gaps all want this same 4pt
   xs: 4,
@@ -78,5 +83,20 @@ export const CommonScreenStyles = StyleSheet.create({
     padding: Spacing.lg,
     borderWidth: 1,
     borderColor: Colors.hairline,
+  },
+  /** The same outlined surface as a fully-rounded pill — the quiet idle chip
+      (life-event selector) and the love button share it. Callers add their own
+      padding and layout; this owns only the surface, border, and round. */
+  outlinedPill: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.hairline,
+  },
+  /** The one dim every button in flight wears — composed in with `loading && `.
+      One spelling of "this control is busy/disabled", the CTA, OAuth, follow,
+      love, and tile cards all share. */
+  dimmed: {
+    opacity: Opacity.disabled,
   },
 });

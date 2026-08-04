@@ -17,6 +17,7 @@ from app.config import settings
 from app.database import users_table
 from app.utils.clerk_api import CLERK_API, CLERK_TIMEOUT, clerk_headers
 from app.utils.timestamps import utc_now_iso
+from app.utils.user_search import name_lowercase
 
 logger = logging.getLogger(__name__)
 
@@ -134,14 +135,24 @@ def _create_user_record(user_id: str, profile: dict) -> None:
         )
 
     now = utc_now_iso()
+    first_name = profile.get("first_name")
+    last_name = profile.get("last_name")
 
     new_user = {
         "id": user_id,
         "email": email,
-        "first_name": profile.get("first_name"),
-        "last_name": profile.get("last_name"),
+        "first_name": first_name,
+        "last_name": last_name,
         "image_url": profile.get("image_url"),
         "onboarding_completed": False,
+        # Social (step 10): entity_type is the constant partition key both user
+        # GSIs hash on — set it at creation or the search/Discover indexes stay
+        # empty. name_lowercase backs the typeahead prefix search, and the two
+        # counts are the denormalized caches profiles and the popular rail read.
+        "entity_type": "USER",
+        "name_lowercase": name_lowercase(first_name, last_name),
+        "follower_count": 0,
+        "following_count": 0,
         "created_at": now,
         "updated_at": now,
     }

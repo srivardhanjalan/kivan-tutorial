@@ -16,6 +16,8 @@ import StorefrontDetailScreen from '../screens/StorefrontDetailScreen';
 import ProductDetailScreen from '../screens/ProductDetailScreen';
 import BrandsScreen from '../screens/BrandsScreen';
 import InAppBrowserScreen from '../screens/InAppBrowserScreen';
+import UserProfileScreen from '../screens/UserProfileScreen';
+import FollowListScreen from '../screens/FollowListScreen';
 import {
   setAuthTokenGetter,
   fetchOnboardingCompleted,
@@ -41,6 +43,11 @@ export type RootStackParamList = {
   Brands: undefined;
   /** The in-app browser opened on one real store (the brand is passed) */
   InAppBrowser: { brand: Brand };
+  /** A user's public profile, reached from Discover or a follow list. Only the
+      id is passed — the profile fetches the record. */
+  UserProfile: { userId: string };
+  /** The followers or following list behind a profile's counts */
+  FollowList: { userId: string; mode: 'followers' | 'following' };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -113,6 +120,8 @@ export default function Navigation() {
           <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
           <Stack.Screen name="Brands" component={BrandsScreen} />
           <Stack.Screen name="InAppBrowser" component={InAppBrowserScreen} />
+          <Stack.Screen name="UserProfile" component={UserProfileScreen} />
+          <Stack.Screen name="FollowList" component={FollowListScreen} />
         </Stack.Navigator>
       </NavigationContainer>
       <OnboardingTutorial visible={showOnboarding} onDismiss={handleOnboardingDismiss} />
