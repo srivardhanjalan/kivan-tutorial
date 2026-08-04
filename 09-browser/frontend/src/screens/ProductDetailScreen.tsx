@@ -51,9 +51,20 @@ export default function ProductDetailScreen() {
         <DetailAction title="Add to Wishlist" onPress={() => setPicking(true)} loading={checking} />
       )}
 
+      {/* Catalog products carry no currency, so the draft omits it: the cost
+          reads in the app default symbol (the browser scrape path is what
+          supplies a captured currency). storefront_id and the product photo do
+          ride along, so the wish keeps its store badge and image. */}
       <AddToWishlistModal
         visible={picking}
-        product={product}
+        draft={{
+          name: product.name,
+          cost: product.price,
+          link_url: product.link_url,
+          description: product.description,
+          image_url: product.image_url,
+          storefront_id: product.storefront_id,
+        }}
         onAdded={() => setAdded(true)}
         onClose={() => setPicking(false)}
       />

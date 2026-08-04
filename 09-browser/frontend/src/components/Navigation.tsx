@@ -14,12 +14,14 @@ import WishFormScreen from '../screens/WishFormScreen';
 import WishDetailScreen from '../screens/WishDetailScreen';
 import StorefrontDetailScreen from '../screens/StorefrontDetailScreen';
 import ProductDetailScreen from '../screens/ProductDetailScreen';
+import BrandsScreen from '../screens/BrandsScreen';
+import InAppBrowserScreen from '../screens/InAppBrowserScreen';
 import {
   setAuthTokenGetter,
   fetchOnboardingCompleted,
   completeOnboarding,
 } from '../services/api';
-import type { Wishlist, Wish, Storefront, Product } from '../services/api';
+import type { Wishlist, Wish, Storefront, Product, Brand } from '../services/api';
 
 /** The signed-in stack: the tab shell, plus every screen pushed over it */
 export type RootStackParamList = {
@@ -35,6 +37,10 @@ export type RootStackParamList = {
   StorefrontDetail: { storefront: Storefront };
   /** One catalog product, with the add-to-wishlist action */
   ProductDetail: { product: Product };
+  /** The real-store directory, grouped by category */
+  Brands: undefined;
+  /** The in-app browser opened on one real store (the brand is passed) */
+  InAppBrowser: { brand: Brand };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -105,6 +111,8 @@ export default function Navigation() {
           <Stack.Screen name="WishDetail" component={WishDetailScreen} />
           <Stack.Screen name="StorefrontDetail" component={StorefrontDetailScreen} />
           <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
+          <Stack.Screen name="Brands" component={BrandsScreen} />
+          <Stack.Screen name="InAppBrowser" component={InAppBrowserScreen} />
         </Stack.Navigator>
       </NavigationContainer>
       <OnboardingTutorial visible={showOnboarding} onDismiss={handleOnboardingDismiss} />

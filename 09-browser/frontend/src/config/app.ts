@@ -11,9 +11,12 @@ const AppConfig = {
     /** The mark's display size wherever it appears full-size */
     logoSize: 120,
   },
-  /** The single currency wishes are priced in. One symbol for the whole app:
-      every cost adornment reads it, so pricing in a different currency changes
-      exactly this one constant. */
+  /** The DEFAULT cost symbol: what a cost with no captured currency reads in
+      (a catalog product, a manually-entered wish). Step 09 captures a per-wish
+      currency from scraped stores and displays each cost in its own symbol
+      (see constants/Currency.ts); this stays the fallback for costs that carry
+      none. A per-user display currency plus live conversion is a later concern.
+      Every default-currency adornment reads this, so that swap lands once. */
   currencySymbol: '₹',
 } as const;
 

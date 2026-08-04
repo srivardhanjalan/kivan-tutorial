@@ -8,28 +8,48 @@ import { useToast } from './ToastProvider';
 import { useAppNavigation } from '../hooks/useAppNavigation';
 import useAsyncAction from '../hooks/useAsyncAction';
 import { createWish, fetchMyWishlists } from '../services/api';
-import type { Product, Wishlist } from '../services/api';
+import type { Wishlist } from '../services/api';
+import type { CurrencyCode } from '../constants/Currency';
 import Colors from '../constants/Colors';
 import Typography from '../constants/Typography';
 import { Spacing } from '../constants/ScreenStyles';
 
+/** The lightweight wish draft this modal turns into a wish. Both add-paths
+    build one: the catalog product detail (from a Product) and the in-app
+    browser (from a scrape). Only `name` is required; the rest ride along when
+    the source has them. `storefront_id` (catalog) and `brand_id` (browser) are
+    the wish's origin, stamped so the tiles can badge it with that source's logo;
+    a draft carries at most one. */
+export interface WishDraft {
+  name: string;
+  cost?: number | null;
+  cost_currency?: CurrencyCode | null;
+  link_url?: string | null;
+  description?: string | null;
+  image_url?: string | null;
+  storefront_id?: string | null;
+  brand_id?: string | null;
+}
+
 interface AddToWishlistModalProps {
   visible: boolean;
-  product: Product;
+  draft: WishDraft;
   onClose: () => void;
-  /** Fired after the product lands as a wish, so the detail screen can flip to
-      its "already saved" state without a refetch. */
-  onAdded: () => void;
+  /** Fired after the draft lands as a wish, so the catalog product detail can
+      flip to its "already saved" state without a refetch. The browser scrape
+      path has nothing to flip, so it omits this. */
+  onAdded?: () => void;
 }
 
 /**
- * The bridge from the catalog into collections: pick one of your wishlists and
- * the product lands there as a wish (name, price → cost, link carried straight
- * over: the same POST /wishes the manual form uses). Loads your wishlists each
- * time it opens and preselects the first; with none yet, it routes you to
- * create one instead of dead-ending.
+ * The one bridge into collections: pick a wishlist and the draft lands there
+ * as a wish (the same POST /wishes the manual form uses). Both add-paths raise
+ * this modal (the catalog product detail and the in-app browser scrape), so
+ * the wishlist picker and the quick-create-first fallback live here once.
+ * Loads your wishlists each time it opens and preselects the first; with none
+ * yet, it routes you to create one instead of dead-ending.
  */
-export default function AddToWishlistModal({ visible, product, onClose, onAdded }: AddToWishlistModalProps) {
+export default function AddToWishlistModal({ visible, draft, onClose, onAdded }: AddToWishlistModalProps) {
   const navigation = useAppNavigation();
   const toast = useToast();
   const { loading: adding, run } = useAsyncAction();
@@ -62,20 +82,25 @@ export default function AddToWishlistModal({ visible, product, onClose, onAdded 
   const add = () => {
     if (!selectedId) return;
     run(async () => {
+      // Only send the fields the draft actually carries; a scrape may miss the
+      // price or image, and createWish leaves an omitted field unset.
       await createWish({
         wishlist_id: selectedId,
-        name: product.name,
-        ...(product.description ? { description: product.description } : {}),
-        cost: product.price,
-        link_url: product.link_url,
-        // Carry the product's photo onto the wish, and stamp which store it came
-        // from so the wish tiles can badge it with that store's logo
-        ...(product.image_url ? { image_url: product.image_url } : {}),
-        storefront_id: product.storefront_id,
+        name: draft.name,
+        ...(draft.description ? { description: draft.description } : {}),
+        ...(draft.cost != null ? { cost: draft.cost } : {}),
+        ...(draft.cost_currency ? { cost_currency: draft.cost_currency } : {}),
+        ...(draft.link_url ? { link_url: draft.link_url } : {}),
+        ...(draft.image_url ? { image_url: draft.image_url } : {}),
+        // Stamp where the wish came from so the tiles can badge it with that
+        // source's logo: a storefront_id from the catalog, a brand_id from the
+        // in-app browser (a draft carries at most one).
+        ...(draft.storefront_id ? { storefront_id: draft.storefront_id } : {}),
+        ...(draft.brand_id ? { brand_id: draft.brand_id } : {}),
       });
       const savedTo = wishlists?.find((w) => w.id === selectedId)?.name;
       toast.show(savedTo ? `Added to ${savedTo}` : 'Added to your wishlist');
-      onAdded();
+      onAdded?.();
       onClose();
     }, 'Could not add this to your wishlist');
   };
@@ -89,7 +114,7 @@ export default function AddToWishlistModal({ visible, product, onClose, onAdded 
     <ModalCard
       visible={visible}
       title="Add to a wishlist"
-      message={`Pick a wishlist for "${product.name}".`}
+      message={`Pick a wishlist for "${draft.name}".`}
     >
       {wishlists === null ? (
         <ActivityIndicator color={Colors.primary} style={styles.loading} />

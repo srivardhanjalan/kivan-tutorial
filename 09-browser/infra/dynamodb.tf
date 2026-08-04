@@ -109,6 +109,25 @@ resource "aws_dynamodb_table" "storefronts" {
   }
 }
 
+# Brands table: the real-store directory the in-app browser opens. Reference
+# data like storefronts and life-events, read by a full Scan (GET /brands); no
+# GSI, no query key (the directory screen groups by category client-side).
+# Populated by infra/scripts/seed_brands.py.
+resource "aws_dynamodb_table" "brands" {
+  name         = "${local.project_name}-${local.environment}-brands"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "id"
+
+  attribute {
+    name = "id"
+    type = "S"
+  }
+
+  tags = {
+    Name = "${local.project_name}-${local.environment}-brands"
+  }
+}
+
 # Products table: one row per catalog product, each belonging to a storefront.
 # StorefrontIdIndex serves the storefront-scoped listing
 # (GET /storefronts/{id}/products) without a Scan. Seeded alongside the

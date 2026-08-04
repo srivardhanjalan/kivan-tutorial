@@ -1,3 +1,5 @@
+import type { CurrencyCode } from '../constants/Currency';
+
 /**
  * The API client. EXPO_PUBLIC_API_URL comes from frontend/.env.local
  * (gitignored) — your App Runner URL once deployed, or http://localhost:8000
@@ -163,17 +165,22 @@ export interface Wishlist {
 }
 
 /** One item inside a wishlist. `completed` drives the got-it visual state.
-    `storefront_id` is set only on wishes added from the catalog; the wish tiles
-    read it back to badge the wish with that store's logo. */
+    A wish carries at most one origin the tiles badge with a logo: `storefront_id`
+    on a wish added from the catalog, or `brand_id` on one captured in the in-app
+    browser (useWishOrigin resolves either to that source's logo). `cost_currency`
+    is the code a browser scrape captured (step 09); it is null on a manual or
+    catalog wish, whose cost reads in the app default symbol. */
 export interface Wish {
   id: string;
   wishlist_id: string;
   name: string;
   description: string | null;
   cost: number | null;
+  cost_currency: CurrencyCode | null;
   link_url: string | null;
   image_url: string | null;
   storefront_id: string | null;
+  brand_id: string | null;
   completed: boolean;
   created_at: string;
 }
@@ -188,20 +195,23 @@ export interface WishlistCreate {
 }
 
 /** POST /wishes/ body — wishlist_id and name required, the rest optional.
-    `storefront_id` is sent only by the catalog add-flow, so a wish from the
-    store carries which store it came from. */
+    `storefront_id` rides along from the catalog add-flow and `brand_id` from the
+    in-app browser, so a sourced wish records where it came from; `cost_currency`
+    rides along when a browser scrape captured one. */
 export interface WishCreate {
   wishlist_id: string;
   name: string;
   description?: string;
   cost?: number;
+  cost_currency?: CurrencyCode | null;
   link_url?: string;
   image_url?: string;
   storefront_id?: string;
+  brand_id?: string;
 }
 
-/** PUT /wishes/{id} body — send only what changed. An omitted field is left
-    untouched; an explicit null clears description, cost, or link_url. */
+/** PUT /wishes/{id} body. Send only what changed; an omitted field is left
+    untouched, while an explicit null clears description, cost, or link_url. */
 export interface WishUpdate {
   name?: string;
   description?: string | null;
@@ -347,6 +357,47 @@ export async function fetchStorefrontProducts(
   storefrontId: string
 ): Promise<Product[]> {
   const res = await request(`/storefronts/${storefrontId}/products`);
+  return res.json();
+}
+
+// ── Brands: the real-store directory + the scrape proxy ─────────────────────
+
+/** A real store in the browse-and-capture directory. The in-app browser opens
+    `website_url`; `country` is a display hint and signals the currency a scrape
+    from that store is likely to quote. `logo_url` is the brand's mark, rendered
+    in the directory row and (via useWishOrigin) as the badge on a wish captured
+    while browsing that brand; the seed uploads each placeholder logo to the
+    private photos bucket and the backend re-signs it on read, exactly like a
+    storefront's logo. */
+export interface Brand {
+  id: string;
+  name: string;
+  description: string | null;
+  website_url: string;
+  category: string;
+  country: string;
+  logo_url: string | null;
+}
+
+/** The real-store directory, ordered by the backend's (display_order, name)
+    and grouped by category on the client. (display_order sorts server-side, so
+    like a storefront the type does not carry it.) */
+export async function fetchBrands(): Promise<Brand[]> {
+  const res = await request('/brands');
+  return res.json();
+}
+
+/** Scrape a browsed product page through the backend's Firecrawl proxy (the
+    API key stays server-side). Returns Firecrawl's {success, data} envelope
+    untouched; the scrapers module owns extracting title/price/image from
+    `data`. A failed scrape resolves with success:false, not a throw. */
+export async function scrapeUrl(
+  url: string
+): Promise<{ success: boolean; data?: any }> {
+  const res = await request('/scrape/firecrawl', {
+    method: 'POST',
+    body: JSON.stringify({ url }),
+  });
   return res.json();
 }
 

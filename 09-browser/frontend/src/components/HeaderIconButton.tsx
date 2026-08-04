@@ -10,6 +10,9 @@ interface HeaderIconButtonProps {
   /** What the button does — icons carry no text, so screen readers need this */
   accessibilityLabel: string;
   onPress: () => void;
+  /** Dims the glyph and blocks presses; the browser's back/forward controls
+      use it when there is no history to move through */
+  disabled?: boolean;
 }
 
 /**
@@ -17,14 +20,16 @@ interface HeaderIconButtonProps {
  * the visible affordance. Every screen's right-side header buttons are this
  * component, so they all look and align identically.
  */
-const HeaderIconButton: React.FC<HeaderIconButtonProps> = ({ icon, accessibilityLabel, onPress }) => (
+const HeaderIconButton: React.FC<HeaderIconButtonProps> = ({ icon, accessibilityLabel, onPress, disabled = false }) => (
   <Pressable
     onPress={onPress}
+    disabled={disabled}
     accessibilityRole="button"
     accessibilityLabel={accessibilityLabel}
+    accessibilityState={{ disabled }}
     style={({ pressed }) => [CommonScreenStyles.center, styles.button, pressed && styles.pressed]}
   >
-    <Ionicons name={icon} size={Spacing.chromeIconSize} color={Colors.dark} />
+    <Ionicons name={icon} size={Spacing.chromeIconSize} color={disabled ? Colors.textMuted : Colors.dark} />
   </Pressable>
 );
 

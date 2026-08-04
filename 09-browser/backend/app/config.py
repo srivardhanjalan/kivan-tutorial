@@ -15,6 +15,12 @@ class Settings(BaseSettings):
     # Required on purpose: a missing key should fail at startup naming the
     # variable, not as a 401/503 on every request
     clerk_secret_key: str
+    # Same required-at-startup discipline as clerk_secret_key: the scrape proxy
+    # is useless without it, so a missing key should fail loudly at boot naming
+    # the variable, not as a 500 on the first scrape. Injected from SSM as
+    # FIRECRAWL_API_KEY (see infra/apprunner.tf); locally it comes from your
+    # shell (firecrawl.dev → API keys).
+    firecrawl_api_key: str
     # The photos bucket name is global (S3 names are unique across all of
     # AWS), so unlike the tables it can't be derived from `environment` — it
     # carries an account-id suffix. infra/s3.tf owns the one true name and
@@ -44,6 +50,12 @@ class Settings(BaseSettings):
     @property
     def storefronts_table(self) -> str:
         return f"kivan-{self.environment}-storefronts"
+
+    @property
+    def brands_table(self) -> str:
+        # The real-store directory the in-app browser opens; reference data
+        # seeded by infra/scripts/seed_brands.py, read by GET /brands
+        return f"kivan-{self.environment}-brands"
 
     @property
     def products_table(self) -> str:

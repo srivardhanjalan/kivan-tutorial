@@ -14,7 +14,7 @@ interface ArtTileProps {
       no image, so that rule lives here, not at every call site */
   placeholder?: React.ReactNode;
   /** True overlays that ride on top of photo and placeholder alike (the wish
-      check badge, the add tile's plus) */
+      check badge, the origin logo badge) */
   children?: React.ReactNode;
 }
 

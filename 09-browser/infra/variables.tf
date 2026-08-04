@@ -28,4 +28,10 @@ variable "clerk_secret_key" {
   sensitive   = true
 }
 
+variable "firecrawl_api_key" {
+  description = "Firecrawl API key (fc-...) for the backend's scrape proxy; it scrapes a browsed product page"
+  type        = string
+  sensitive   = true
+}
+
 
