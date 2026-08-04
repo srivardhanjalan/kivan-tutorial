@@ -1,0 +1,55 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  :root{--primary:#FF385C;--dark:#1A1A1A;--text2:#6E6E73}
+  html,body{margin:0;padding:0}
+  body{width:1500px;height:750px;overflow:hidden;font-family:-apple-system,'Segoe UI',Roboto,sans-serif}
+  .hero{width:1500px;height:750px;position:relative;
+    background:linear-gradient(115deg,#FFE8EC 0%,#FDFFFF 42%,#E7F1F8 100%)}
+  .copy{position:absolute;left:96px;top:74px;max-width:720px}
+  .eyebrow{font-size:15px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--primary);margin-bottom:18px}
+  .title{font-size:78px;font-weight:800;letter-spacing:-2px;line-height:1.02;color:var(--dark)}
+  .sub{font-size:22px;color:var(--text2);line-height:1.45;margin-top:18px;max-width:610px}
+  .chips{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap;max-width:600px}
+  .chip{height:40px;border-radius:999px;background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.07);
+    display:flex;align-items:center;padding:0 18px;font-size:15.5px;font-weight:700;color:var(--dark);white-space:nowrap}
+  .term{position:absolute;left:96px;top:470px;width:840px;border-radius:14px;
+    background:#1D1E24;box-shadow:0 30px 70px rgba(20,20,30,.28);overflow:hidden}
+  .tbar{height:38px;background:#2A2B33;display:flex;align-items:center;padding:0 16px;gap:8px}
+  .dot2{width:12px;height:12px;border-radius:6px}
+  .ttitle{flex:1;text-align:center;color:#8A8B94;font-size:13px;font-weight:600;font-family:'SF Mono',Menlo,monospace;margin-right:44px}
+  .tbody{padding:15px 24px 17px;font-family:'SF Mono',Menlo,monospace;font-size:13.5px;line-height:1.6;color:#D6D7DE}
+  .g{color:#4ADE80}.r{color:#FF6B6B}.dim{color:#8A8B94}
+  .shot{position:absolute;right:118px;top:52px;width:316px;border-radius:40px;overflow:hidden;
+    box-shadow:0 30px 70px rgba(20,20,30,.26);border:1px solid #e6e6ea;background:#fff}
+  .shot img{width:100%;display:block}
+</style></head><body>
+<div class="hero">
+  <div class="copy">
+    <div class="eyebrow">Zero to Shipped &#183; 10 &#183; Social</div>
+    <div class="title">Look,&nbsp;don't&nbsp;touch.</div>
+    <div class="sub">Follow anyone, find them by name, and love their wishlists. Every profile and list is open to read, and locked to its owner to change.</div>
+    <div class="chips">
+      <span class="chip">React Native</span><span class="chip">FastAPI</span>
+      <span class="chip">DynamoDB</span><span class="chip">Terraform</span>
+    </div>
+  </div>
+  <div class="term">
+    <div class="tbar">
+      <span class="dot2" style="background:#FF5F57"></span>
+      <span class="dot2" style="background:#FEBC2E"></span>
+      <span class="dot2" style="background:#28C840"></span>
+      <span class="ttitle">10-social &#183; open to read, owned to write</span>
+    </div>
+    <div class="tbody">
+      <span class="dim">$</span> curl -s -H "$AUTH" "$API/users/search?q=bella" | jq -r '.[].first_name'<br>
+      <span class="g">Bella</span>&nbsp;&nbsp;<span class="dim">&#8592; one prefix query on NameSearchIndex, never a Scan</span><br>
+      <span class="dim">$</span> curl -s -o /dev/null -w '%{http_code}' -H "$AUTH" $API/wishlists/$LIST<br>
+      <span class="g">200</span>&nbsp;&nbsp;<span class="dim">&#8592; any signed-in user can READ someone else's wishlist</span><br>
+      <span class="dim">$</span> curl -s -o /dev/null -w '%{http_code}' -H "$AUTH" -X PUT $API/wishlists/$LIST -d @edit.json<br>
+      <span class="r">403</span>&nbsp;&nbsp;<span class="dim">&#8592; but only its owner can CHANGE it</span>
+    </div>
+  </div>
+  <div class="shot">
+    <img src="file:///private/tmp/claude-501/-Users-srivardhanjalan-workspace/0abc66bd-8772-48ab-b994-f3ae3c0c4c7f/scratchpad/e2e10/a-06-discover.png">
+  </div>
+</div>
+</body></html>

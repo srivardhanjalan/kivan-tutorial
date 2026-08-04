@@ -15,6 +15,7 @@ Code is best browsed [on GitHub](https://github.com/srivardhanjalan/kivan-tutori
 - [07 · Whose Wish Is It Anyway?](medium/07-collections.html)
 - [08 · Off the Shelf](medium/08-storefronts.html)
 - [09 · The Price Is Right](medium/09-browser.html)
+- [10 · Look, Don't Touch](medium/10-social.html)
 
 ## The mocks (interactive — real design tokens)
 
@@ -24,7 +25,7 @@ Code is best browsed [on GitHub](https://github.com/srivardhanjalan/kivan-tutori
 
 ## The covers
 
-- [Series hero](mocks/hero.html) · [01](mocks/hero-01.html) · [02](mocks/hero-02.html) · [03](mocks/hero-03.html) · [04](mocks/hero-04.html) · [05](mocks/hero-05.html) · [06](mocks/hero-06.html) · [07](mocks/hero-07.html) · [08](mocks/hero-08.html) · [09](mocks/hero-09.html)
+- [Series hero](mocks/hero.html) · [01](mocks/hero-01.html) · [02](mocks/hero-02.html) · [03](mocks/hero-03.html) · [04](mocks/hero-04.html) · [05](mocks/hero-05.html) · [06](mocks/hero-06.html) · [07](mocks/hero-07.html) · [08](mocks/hero-08.html) · [09](mocks/hero-09.html) · [10](mocks/hero-10.html)
 
 ## LinkedIn carousels (browser-rendered slides; PDF + post copy on GitHub)
 
