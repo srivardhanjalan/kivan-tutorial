@@ -1,37 +1,36 @@
-<!doctype html>
-<html><head><meta charset="utf-8"><title>Zero to Shipped 04 — hero</title>
-<link rel="stylesheet" href="mocks.css">
-<style>
-  body{margin:0;padding:0;background:#fff}
-  .hero{width:1500px;height:750px;overflow:hidden;position:relative;
+<!doctype html><html><head><meta charset="utf-8"><style>
+  :root{--primary:#FF385C;--dark:#1A1A1A;--text2:#6E6E73}
+  html,body{margin:0;padding:0}
+  body{width:1500px;height:750px;overflow:hidden;font-family:-apple-system,'Segoe UI',Roboto,sans-serif}
+  .hero{width:1500px;height:750px;position:relative;
     background:linear-gradient(115deg,#FFE8EC 0%,#FDFFFF 42%,#E7F1F8 100%)}
-  .copy{position:absolute;left:96px;top:82px;max-width:660px}
+  .copy{position:absolute;left:96px;top:70px;max-width:680px}
   .eyebrow{font-size:15px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--primary);margin-bottom:18px}
-  .title{font-size:66px;font-weight:800;letter-spacing:-2px;line-height:1.04;color:var(--dark)}
-  .sub{font-size:22px;color:var(--text2);line-height:1.45;margin-top:16px}
-  .chips{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap;max-width:620px}
+  .title{font-size:72px;font-weight:800;letter-spacing:-2px;line-height:1.02;color:var(--dark)}
+  .chips{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap;max-width:600px}
   .chip{height:40px;border-radius:999px;background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.07);
     display:flex;align-items:center;padding:0 18px;font-size:15.5px;font-weight:700;color:var(--dark);white-space:nowrap}
   .chip.hot{background:var(--primary);color:#fff;border-color:var(--primary)}
-  .term{position:absolute;left:96px;bottom:66px;width:648px;border-radius:14px;
-    background:#1D1E24;box-shadow:0 26px 60px rgba(20,20,30,.26);overflow:hidden}
-  .tbar{height:36px;background:#2A2B33;display:flex;align-items:center;padding:0 16px;gap:8px}
+  /* terminal */
+  .term{position:absolute;left:96px;top:416px;width:812px;border-radius:14px;
+    background:#1D1E24;box-shadow:0 30px 70px rgba(20,20,30,.28);overflow:hidden}
+  .tbar{height:38px;background:#2A2B33;display:flex;align-items:center;padding:0 16px;gap:8px}
   .dot2{width:12px;height:12px;border-radius:6px}
-  .ttitle{flex:1;text-align:center;color:#8A8B94;font-size:13px;font-weight:600;font-family:"SF Mono",Menlo,monospace;margin-right:44px}
-  .tbody{padding:18px 24px 20px;font-family:"SF Mono",Menlo,monospace;font-size:14.5px;line-height:1.72;color:#D6D7DE}
+  .ttitle{flex:1;text-align:center;color:#8A8B94;font-size:13px;font-weight:600;font-family:'SF Mono',Menlo,monospace;margin-right:44px}
+  .tbody{padding:18px 24px 20px;font-family:'SF Mono',Menlo,monospace;font-size:15px;line-height:1.74;color:#D6D7DE}
   .g{color:#4ADE80}.r{color:#FF6B6B}.p{color:#FF6B8A}.dim{color:#8A8B94}
-  .shot{position:absolute;right:100px;top:50%;transform:translateY(-50%);width:344px;border-radius:38px;overflow:hidden;
-    box-shadow:0 34px 80px rgba(20,20,30,.30);border:1px solid #e6e6ea}
-  .shot img{display:block;width:100%}
+  /* phone: the real sign-in screen, framed as a floated screenshot */
+  .shot{position:absolute;right:150px;top:47px;width:312px;border-radius:40px;overflow:hidden;
+    box-shadow:0 30px 70px rgba(20,20,30,.26);border:1px solid #e6e6ea;background:#fff}
+  .shot img{width:100%;display:block}
 </style></head><body>
 <div class="hero">
   <div class="copy">
-    <div class="eyebrow">Zero to Shipped · 04 — Auth &amp; Onboarding</div>
-    <div class="title">Signed, sealed, delivered.</div>
-    <div class="sub">The app learns who you are — Clerk sign-in, JWKS-verified tokens, and a user record the client is never allowed to create.</div>
+    <div class="eyebrow">Zero to Shipped &#183; 04 &#183; Auth</div>
+    <div class="title">Signed&nbsp;in.</div>
     <div class="chips">
-      <span class="chip hot">verified live</span><span class="chip">Clerk</span>
-      <span class="chip">JWKS</span><span class="chip">DynamoDB</span><span class="chip">JIT provisioning</span>
+      <span class="chip">React Native</span><span class="chip">FastAPI</span><span class="chip">Clerk</span>
+      <span class="chip">DynamoDB</span><span class="chip">Terraform</span>
     </div>
   </div>
   <div class="term">
@@ -39,14 +38,17 @@
       <span class="dot2" style="background:#FF5F57"></span>
       <span class="dot2" style="background:#FEBC2E"></span>
       <span class="dot2" style="background:#28C840"></span>
-      <span class="ttitle">signed in — and the record is already yours</span>
+      <span class="ttitle">04-auth &#183; who the backend lets in</span>
     </div>
     <div class="tbody">
-<span class="dim">$</span> <span class="p">curl -H "Authorization: Bearer &lt;clerk jwt&gt;" $API/users/me</span><br>
-{ "first_name": <span class="g">"Kivan"</span>, "onboarding_completed": <span class="g">true</span> }<br>
-<span class="dim">&nbsp;&nbsp;↑ the row the backend wrote for you — the client never sent one</span>
+      <span class="dim">$</span> curl $API/users/me<br>
+      &nbsp;&nbsp;<span class="r">401</span>&nbsp;&nbsp;No authentication credentials provided&nbsp;&nbsp;&nbsp;<span class="dim">&#8592; no token: your move</span><br>
+      <span class="dim">$</span> curl -H <span class="g">"Authorization: Bearer $JWT"</span> $API/users/me<br>
+      &nbsp;&nbsp;<span class="g">200</span>&nbsp;&nbsp;<span class="dim">the record the backend wrote itself, from Clerk:</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"email": <span class="g">"you@example.com"</span>,<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"onboarding_completed": <span class="p">false</span>
     </div>
   </div>
-  <div class="shot"><img src="shot-04-home.png"></div>
+  <div class="shot"><img src="shot-04-signin.png"></div>
 </div>
 </body></html>

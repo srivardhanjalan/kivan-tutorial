@@ -34,6 +34,7 @@ Code is best browsed [on GitHub](https://github.com/srivardhanjalan/kivan-tutori
 - [05 · Two Places at Once: slides](linkedin/05-profiles/carousel.html) · [PDF + post copy](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/linkedin/05-profiles)
 - [06 · Photos Without the Exposure: slides](linkedin/06-media/carousel.html) · [PDF + post copy](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/linkedin/06-media)
 - [07 · Whose Wish Is It Anyway?: slides](linkedin/07-collections/carousel.html) · [PDF + post copy](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/linkedin/07-collections)
+- [08 · Off the Shelf: slides](linkedin/08-storefronts/carousel.html) · [PDF + post copy](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/linkedin/08-storefronts)
 
 ## The code (on GitHub)
 
@@ -44,4 +45,5 @@ Code is best browsed [on GitHub](https://github.com/srivardhanjalan/kivan-tutori
   [04-auth](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/04-auth) ·
   [05-profiles](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/05-profiles) ·
   [06-media](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/06-media) ·
-  [07-collections](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/07-collections)
+  [07-collections](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/07-collections) ·
+  [08-storefronts](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/08-storefronts)

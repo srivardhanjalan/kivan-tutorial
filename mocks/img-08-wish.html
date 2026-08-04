@@ -30,7 +30,7 @@
       </defs>
       <line x1="150" y1="69" x2="286" y2="69" stroke="#FF385C" stroke-width="2.1" marker-end="url(#h)"/>
       <text class="al hot" x="218" y="55" text-anchor="middle">POST /wishes</text>
-      <text class="al hot" x="218" y="88" text-anchor="middle">name, price, link, blurb</text>
+      <text class="al hot" x="218" y="88" text-anchor="middle">name, price, link, photo, store</text>
       <line x1="425" y1="69" x2="561" y2="69" stroke="#5b6172" stroke-width="1.8" marker-end="url(#s)"/>
       <text class="al" x="493" y="55" text-anchor="middle">one wish, in your list</text>
     </svg>
@@ -38,6 +38,6 @@
     <div class="node" style="left:275px"><img src="apprunner.svg"><div class="lbl">Backend</div><div class="tag">the wishes route</div></div>
     <div class="node" style="left:540px"><img src="dynamodb.svg"><div class="lbl">DynamoDB</div><div class="tag">wishes</div></div>
   </div>
-  <div class="foot">The catalog fills a wish's fields and calls the same endpoint the manual form does. It never touches how wishlists are stored or owned, so deleting the storefronts code would leave collections untouched.</div>
+  <div class="foot">The catalog fills a wish's fields and calls the same endpoint the manual form does, carrying the product's photo and its storefront_id so the wish can wear the store's badge. It never touches how wishlists are stored or owned. A duplicate guard reads GET /wishes/mine first and blocks a second copy of the same product.</div>
 </div>
 </body></html>
