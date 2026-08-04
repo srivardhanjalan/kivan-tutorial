@@ -47,4 +47,6 @@ Code is best browsed [on GitHub](https://github.com/srivardhanjalan/kivan-tutori
   [05-profiles](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/05-profiles) ·
   [06-media](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/06-media) ·
   [07-collections](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/07-collections) ·
-  [08-storefronts](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/08-storefronts)
+  [08-storefronts](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/08-storefronts) ·
+  [09-browser](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/09-browser) ·
+  [10-social](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/10-social)
