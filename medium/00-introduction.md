@@ -1,6 +1,6 @@
 # Zero to Shipped
 
-*Build a real social product — iPhone, iPad, Android, and a live AWS backend — in 16 deployable steps. This is the series introduction.*
+*Build a real social product — iPhone, iPad, Android, and a live AWS backend — in 17 deployable steps. This is the series introduction.*
 
 ---
 
@@ -53,7 +53,7 @@ The app is deliberately split into two kinds of code:
 - A domain-agnostic **platform**: the app shell and design system, auth and onboarding, profiles, media handling, the social graph, notifications, sharing, admin, and operations. None of it knows what a "wishlist" is.
 - Swappable **domain modules** 🧩: collections (wishlists and wishes), storefronts, in-app browser acquisition, and events.
 
-The modules plug into the platform like jigsaw pieces, and the final step of the series documents each piece's contract. Swap *wishlists + wish stores* for *notes*, or *trips + destinations*, or any collection-shaped domain you can think of — and the platform (accounts, photos, follows, notifications, sharing, admin) comes along for free.
+The modules plug into the platform like jigsaw pieces, and the finished application in `final/` documents each piece's contract. Swap *wishlists + wish stores* for *notes*, or *trips + destinations*, or any collection-shaped domain you can think of — and the platform (accounts, photos, follows, notifications, sharing, admin) comes along for free.
 
 You're not just building Kivan. You're building a platform you'll reuse for your next three ideas.
 
@@ -61,7 +61,7 @@ You're not just building Kivan. You're building a platform you'll reuse for your
 
 The GitHub repository is structured so that **the git history is the curriculum**:
 
-- **One folder per step, named for what it builds** (`01-prerequisites` through `16-operations`). The first sets up your machine and accounts; every folder from `02-app-shell` on is a **complete, runnable, deployable snapshot** of the app at that stage. You never need another folder to run a step.
+- **One folder per step, named for what it builds** (`01-prerequisites` through `17-polish`). The first sets up your machine and accounts; every folder from `02-app-shell` through `16-operations` is a **complete, runnable, deployable snapshot** of the app at that stage. You never need another folder to run a step. `17-polish` is the exception for now, a written scope spec that ships last.
 - **Each step lands as a pull request** (on top of a baseline copy of the previous step's folder). The PR's *Files changed* view **is** what the feature costs — and you can ask questions right on the lines. A second small PR carries each step's post and imagery.
 - **`final/`** is the finished application, including `MODULES.md` — the jigsaw contract documentation.
 - **Zero bloat**: every step contains exactly the code that stage needs. No dead files, no "we'll use this later," no scaffolding you have to ignore.
@@ -70,7 +70,7 @@ Every step from 03 onward ends in a deployable state: `terraform apply`, push th
 
 ## The roadmap
 
-Sixteen steps, four of them jigsaw modules 🧩 — and each will get its own post in this series:
+Seventeen steps, four of them jigsaw modules 🧩, and each will get its own post in this series:
 
 1. **Prerequisites** — one setup script (it even handles the Android toolchain), and the short list of accounts a script can't create for you
 2. **App shell & design system** — config-driven identity (name, scheme, theme, tabs), the glass chrome, shared components; a fully themed app that runs standalone
@@ -88,6 +88,7 @@ Sixteen steps, four of them jigsaw modules 🧩 — and each will get its own po
 14. **Sharing** — `kivan://` deep links and the share-modal family
 15. **Admin** — role enforcement plus a dashboard for brands, life events, storefronts, products, and users
 16. **Operations** — CloudWatch alarms and dashboards, cost management, CI/CD references
+17. **UI polish**: converge every screen on the finished design shown at the top of this post, and trim every unnecessary tap
 
 ## Start here
 
