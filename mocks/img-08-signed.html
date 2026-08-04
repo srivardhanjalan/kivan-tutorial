@@ -1,0 +1,43 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  html,body{margin:0;padding:0}
+  body{background:transparent;
+    font-family:-apple-system,'Segoe UI',Roboto,sans-serif;padding:44px 48px;
+    width:872px;height:500px;box-sizing:border-box;overflow:hidden}
+  .card{max-width:776px;margin:0 auto;background:transparent;border-radius:22px;
+    box-shadow:none;padding:30px 40px 28px}
+  .k{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+    color:#5b6172;background:#eef0f4;padding:4px 12px;border-radius:20px}
+  h1{font-size:23px;font-weight:800;color:#1f2430;margin:11px 0 3px;letter-spacing:-.01em}
+  .sub{font-size:14px;color:#8a90a0;margin:0;line-height:1.45}
+  .stage{position:relative;width:700px;height:206px;margin:16px auto 0}
+  .node{position:absolute;top:44px;width:150px;display:flex;flex-direction:column;align-items:center;z-index:2}
+  .node img,.node .ic{width:60px;height:60px;border-radius:12px}
+  .node .lbl{margin-top:8px;font-size:12.5px;font-weight:800;color:#2b3040}
+  .node .tag{font-size:11px;color:#9aa0b0;font-family:Menlo,monospace;margin-top:1px;text-align:center}
+  svg.wires{position:absolute;inset:0;width:700px;height:206px;z-index:1;overflow:visible}
+  .al{font-size:12px;fill:#5b6172;font-weight:600}.al.hot{fill:#FF385C;font-weight:700}
+  .foot{font-size:12px;color:#9aa0b0;text-align:center;margin:12px auto 0;max-width:680px;line-height:1.45}
+</style></head><body>
+<div class="card">
+  <span class="k">Serve</span>
+  <h1>Signed on read, like any wish photo</h1>
+  <p class="sub">The row stores the bucket URL; the backend signs it on read and the app renders a short-lived link.</p>
+  <div class="stage">
+    <svg class="wires" viewBox="0 0 700 206">
+      <defs>
+        <marker id="s" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto"><path d="M0,0 L6.5,3 L0,6 Z" fill="#5b6172"/></marker>
+        <marker id="h" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto"><path d="M0,0 L6.5,3 L0,6 Z" fill="#FF385C"/></marker>
+      </defs>
+      <line x1="150" y1="74" x2="286" y2="74" stroke="#5b6172" stroke-width="1.8" marker-end="url(#s)"/>
+      <text class="al" x="218" y="60" text-anchor="middle">stored bucket URL</text>
+      <line x1="425" y1="74" x2="561" y2="74" stroke="#FF385C" stroke-width="2.1" marker-end="url(#h)"/>
+      <text class="al hot" x="493" y="60" text-anchor="middle">sign on read</text>
+      <text class="al hot" x="493" y="95" text-anchor="middle">short-lived signed URL</text>
+    </svg>
+    <div class="node" style="left:10px"><img src="s3-arch.svg"><div class="lbl">S3 photos bucket</div><div class="tag">catalog/ object, private</div></div>
+    <div class="node" style="left:275px"><img src="apprunner.svg"><div class="lbl">Backend</div><div class="tag">field_serializer signs</div></div>
+    <div class="node" style="left:540px"><img src="mobile.svg"><div class="lbl">The app</div><div class="tag">renders the image</div></div>
+  </div>
+  <div class="foot">A catalog object is shared: many wishes point at one photo, and none owns it. So it is exempt from the per-record rules, referenced freely, never claimed, never deleted by a wish's delete. Only the seed manages the catalog keyspace.</div>
+</div>
+</body></html>
