@@ -1,0 +1,227 @@
+# IAM Role for App Runner ECR Access (pull images from ECR)
+resource "aws_iam_role" "apprunner_ecr_access" {
+  name = "${local.project_name}-apprunner-ecr-access-${local.environment}"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "build.apprunner.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${local.project_name}-apprunner-ecr-access-role"
+  }
+}
+
+# IAM Policy for App Runner to access ECR
+resource "aws_iam_role_policy" "apprunner_ecr_access" {
+  name = "${local.project_name}-apprunner-ecr-access-policy-${local.environment}"
+  role = aws_iam_role.apprunner_ecr_access.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        # The only ECR action that requires "*" — it issues the registry
+        # login token, not access to any repository
+        Effect   = "Allow"
+        Action   = ["ecr:GetAuthorizationToken"]
+        Resource = "*"
+      },
+      {
+        # Image pulls are scoped to this service's one repository
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:DescribeImages"
+        ]
+        Resource = aws_ecr_repository.backend.arn
+      }
+    ]
+  })
+}
+
+# IAM Policy for the running backend to resolve its secrets from SSM: the
+# Clerk key (JWKS + profile calls) and the Firecrawl key (the scrape proxy).
+# App Runner resolves runtime_environment_secrets through this one grant, so
+# both parameter ARNs are listed here.
+resource "aws_iam_role_policy" "apprunner_instance_ssm" {
+  name = "${local.project_name}-apprunner-ssm-policy-${local.environment}"
+  role = aws_iam_role.apprunner_instance.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["ssm:GetParameters"]
+        Resource = [
+          aws_ssm_parameter.clerk_secret_key.arn,
+          aws_ssm_parameter.firecrawl_api_key.arn
+        ]
+      }
+    ]
+  })
+}
+
+# IAM Policy for the running backend to reach its DynamoDB tables
+resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
+  name = "${local.project_name}-apprunner-dynamodb-policy-${local.environment}"
+  role = aws_iam_role.apprunner_instance.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        # Users: get/put/update by id (JIT provisioning + profile), plus the
+        # social reads step 10 adds: Query on the search/Discover GSIs,
+        # BatchGetItem to resolve a follower/following id list to user records,
+        # and UpdateItem for the denormalized follower/following counts.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:BatchGetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:Query"
+        ]
+        Resource = [
+          aws_dynamodb_table.users.arn,
+          "${aws_dynamodb_table.users.arn}/index/*"
+        ]
+      },
+      {
+        # Wishlists: get/put/delete by id, UpdateItem (guarded field-scoped
+        # updates, utils/dynamo.update_item_fields, and the denormalized
+        # love_count), Query on CreatedByIndex (GET /wishlists/me, a user's
+        # public wishlists, the account-deletion sweep), and BatchGetItem to
+        # resolve a loved-wishlist id list to records.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:BatchGetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query"
+        ]
+        Resource = [
+          aws_dynamodb_table.wishlists.arn,
+          "${aws_dynamodb_table.wishlists.arn}/index/*"
+        ]
+      },
+      {
+        # Wishes: item CRUD (UpdateItem flips `completed`), Query on
+        # WishlistIdIndex (listing + cascade delete), and BatchWriteItem for
+        # the cascade's batched deletes.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+          "dynamodb:BatchWriteItem"
+        ]
+        Resource = [
+          aws_dynamodb_table.wishes.arn,
+          "${aws_dynamodb_table.wishes.arn}/index/*"
+        ]
+      },
+      {
+        # Life events: reference data the app reads with a full-table Scan
+        # (GET /life-events) and nothing more. The running role only Scans;
+        # seeding writes under local developer credentials, not this role, so
+        # GetItem/PutItem are deliberately withheld. Scan is granted on this
+        # table and nowhere else.
+        Effect   = "Allow"
+        Action   = ["dynamodb:Scan"]
+        Resource = aws_dynamodb_table.life_events.arn
+      },
+      {
+        # Storefronts: the curated catalog read with a full-table Scan
+        # (GET /storefronts) and nothing more, the same reference-data pattern
+        # life-events set. Seeding writes under developer credentials, so the
+        # running role gets Scan alone (no Get/Put).
+        Effect   = "Allow"
+        Action   = ["dynamodb:Scan"]
+        Resource = aws_dynamodb_table.storefronts.arn
+      },
+      {
+        # Brands: the real-store directory read with a full-table Scan
+        # (GET /brands) and nothing more, the same reference-data pattern
+        # storefronts and life-events set. Seeding writes under developer
+        # credentials, so the running role gets Scan alone (no Get/Put).
+        Effect   = "Allow"
+        Action   = ["dynamodb:Scan"]
+        Resource = aws_dynamodb_table.brands.arn
+      },
+      {
+        # Products: read-only and storefront-scoped. A Query on
+        # StorefrontIdIndex (GET /storefronts/{id}/products) and nothing else;
+        # seeding is a developer-credential job, so no Put here either.
+        Effect = "Allow"
+        Action = ["dynamodb:Query"]
+        Resource = [
+          aws_dynamodb_table.products.arn,
+          "${aws_dynamodb_table.products.arn}/index/*"
+        ]
+      },
+      {
+        # Followers: put/delete a follow edge, GetItem for "am I following X",
+        # and Query on both the base table (who X follows) and FollowingIndex
+        # (who follows X).
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query"
+        ]
+        Resource = [
+          aws_dynamodb_table.followers.arn,
+          "${aws_dynamodb_table.followers.arn}/index/*"
+        ]
+      },
+      {
+        # Wishlist loves: put/delete a love edge, GetItem for "do I love this",
+        # and Query on the base table (a user's loved wishlists). No GSI.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query"
+        ]
+        Resource = aws_dynamodb_table.wishlist_loves.arn
+      }
+    ]
+  })
+}
+
+# IAM Role for App Runner Instance
+resource "aws_iam_role" "apprunner_instance" {
+  name = "${local.project_name}-apprunner-instance-role-${local.environment}"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "tasks.apprunner.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${local.project_name}-apprunner-instance-role"
+  }
+}

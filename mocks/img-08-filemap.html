@@ -2,8 +2,8 @@
   html,body{margin:0;padding:0}
   body{background:transparent;
     font-family:-apple-system,'Segoe UI',Roboto,sans-serif;padding:56px;
-    width:1052px;box-sizing:border-box;overflow:hidden}
-  .card{max-width:940px;margin:0 auto;background:transparent;border-radius:22px;
+    width:1108px;box-sizing:border-box;overflow:hidden}
+  .card{max-width:996px;margin:0 auto;background:transparent;border-radius:22px;
     box-shadow:none;padding:40px 44px}
   h1{font-size:23px;font-weight:800;color:#1f2430;margin:0 0 4px;letter-spacing:-.01em}
   .sub{font-size:14px;color:#8a90a0;margin:0 0 26px}
@@ -30,36 +30,37 @@
   <h1>What we touch this step
     <span class="legend"><span><span class="dot new"></span>new</span><span><span class="dot mod"></span>modified</span></span>
   </h1>
-  <p class="sub">Fourteen new files carry the feature; the modified ones wire it in. Each build section below takes one area.</p>
+  <p class="sub">Twenty new files carry the feature; the modified ones wire it in. Each build section below takes one area.</p>
   <div class="cols">
     <div class="grp">
-      <h2>Backend &#183; the catalog reads</h2>
+      <h2>Backend &#183; the catalog reads, and signs its images</h2>
       <div class="folder">app/routes/</div>
-      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">storefronts.py</span><span class="note"># GET /storefronts: auth-gated Scan, sorted</span></span></div>
-      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">products.py</span><span class="note"># GET /storefronts/{id}/products: GSI Query</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">storefronts.py &#183; products.py</span><span class="note"># Scan the stores, GSI Query a store's products</span></span></div>
+      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">wishes.py</span><span class="note"># + storefront_id on create, + GET /wishes/mine guard</span></span></div>
       <div class="folder">app/models/</div>
-      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">storefronts.py &#183; products.py</span><span class="note"># the two records; price Decimal &#8594; float</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">storefronts.py &#183; products.py</span><span class="note"># the records; sign logo_url/image_url on read</span></span></div>
+      <div class="folder">app/utils/</div>
+      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">s3_helpers.py</span><span class="note"># catalog/ prefix exempt from claim + delete</span></span></div>
       <div class="folder">app/</div>
       <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">main.py &#183; database.py &#183; config.py</span><span class="note"># include routers, two table handles + names</span></span></div>
     </div>
     <div class="grp">
       <h2>Frontend &#183; the Wish Store</h2>
       <div class="folder">src/screens/</div>
-      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">StorefrontsScreen.tsx</span><span class="note"># the Wish Store tab: the store list</span></span></div>
-      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">StorefrontDetailScreen.tsx &#183; ProductDetailScreen.tsx</span><span class="note"># a store's products, then a product</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">StorefrontsScreen &#183; StorefrontDetailScreen &#183; ProductDetailScreen</span><span class="note"># the store list, a store's grid + filter, a product + guard</span></span></div>
       <div class="folder">src/components/</div>
-      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">ProductCard.tsx &#183; AddToWishlistModal.tsx</span><span class="note"># the product tile, and the picker &#8594; POST /wishes</span></span></div>
-      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">ArtTileCard.tsx &#183; DetailTitleBlock.tsx &#183; DetailAction.tsx</span><span class="note"># the shared card and detail pieces</span></span></div>
-      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">WishCard.tsx &#183; WishDetailScreen.tsx &#183; &#8230;</span><span class="note"># the wish screens now use those shared pieces</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">ProductCard &#183; AddToWishlistModal</span><span class="note"># the product tile, and the picker &#8594; POST /wishes</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">ArtTileCard &#183; PhotoDetailHero &#183; DetailTitleBlock &#183; DetailStatusRow &#183; DetailAction</span><span class="note"># the shared tile, photo hero, title, status, action</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">SelectableRow &#183; SelectableList &#183; CategoryFilterModal</span><span class="note"># the shared picker row, and the category funnel</span></span></div>
       <div class="folder">src/hooks/ &#183; src/services/</div>
-      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">useOpenExternalLink.ts</span><span class="note"># the one link-open both details share</span></span></div>
-      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">api.ts &#183; Navigation.tsx &#183; TabNavigation.tsx</span><span class="note"># contracts, the two pushed screens, the tab mount</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">useOpenExternalLink &#183; useStorefronts</span><span class="note"># the shared link-open; resolve a wish's store for its badge</span></span></div>
+      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">WishCard &#183; WishDetailScreen &#183; api.ts &#183; Navigation &#183; &#8230;</span><span class="note"># badge the wish, share the pieces, contracts + routes</span></span></div>
     </div>
     <div class="grp wide">
-      <h2>Infra &#183; two tables and the seed</h2>
+      <h2>Infra &#183; two tables, a grant, and the seed</h2>
       <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">dynamodb.tf</span><span class="note"># + storefronts (no index), products (StorefrontIdIndex)</span></span></div>
-      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">iam.tf</span><span class="note"># + per-table read-only grant: Scan storefronts, Query products</span></span></div>
-      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">scripts/seed_storefronts.py</span><span class="note"># 4 stores, 15 products, idempotent upsert</span></span></div>
+      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">iam.tf &#183; outputs.tf</span><span class="note"># + per-table read-only grant; + photos_bucket_name output</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">scripts/seed_storefronts.py</span><span class="note"># 4 stores, 15 products, 19 images, idempotent upsert</span></span></div>
     </div>
   </div>
 </div>

@@ -1,0 +1,48 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  html,body{margin:0;padding:0}
+  body{width:860px;height:624px;box-sizing:border-box;
+    background:transparent;padding:0;overflow:hidden;
+    font-family:-apple-system,'Segoe UI',Roboto,sans-serif}
+  .card{width:860px;margin:0;background:#0d1117;border-radius:12px;
+    box-shadow:none;overflow:hidden}
+  .bar{height:34px;background:#161b22;display:flex;align-items:center;padding:0 14px;gap:7px}
+  .d{width:11px;height:11px;border-radius:50%}
+  .fname{color:#8b949e;font:600 12px 'SF Mono',Menlo,Consolas,monospace;margin-left:8px}
+  .code{padding:20px 22px}
+  .code pre{margin:0;font:12.5px/22px 'SF Mono',Menlo,Consolas,monospace;
+    color:#e6edf3;white-space:pre;overflow-x:auto}
+  .code pre span{font-size:12.5px !important}
+</style></head><body>
+  <div class="card">
+    <div class="bar"><span class="d" style="background:#FF5F57"></span>
+      <span class="d" style="background:#FEBC2E"></span><span class="d" style="background:#28C840"></span>
+      <span class="fname">app/dependencies/auth.py</span></div>
+    <div class="code"><div class="highlight" style="background: #0d1117"><pre style="line-height: 125%;"><span></span>    <span style="color: #FF7B72">try</span><span style="color: #E6EDF3">:</span>
+        <span style="color: #E6EDF3">signing_key</span> <span style="color: #FF7B72; font-weight: bold">=</span> <span style="color: #E6EDF3">_get_jwks_client()</span><span style="color: #FF7B72; font-weight: bold">.</span><span style="color: #E6EDF3">get_signing_key_from_jwt(token)</span>
+        <span style="color: #E6EDF3">decoded</span> <span style="color: #FF7B72; font-weight: bold">=</span> <span style="color: #E6EDF3">pyjwt</span><span style="color: #FF7B72; font-weight: bold">.</span><span style="color: #E6EDF3">decode(</span>
+            <span style="color: #E6EDF3">token,</span>
+            <span style="color: #E6EDF3">signing_key</span><span style="color: #FF7B72; font-weight: bold">.</span><span style="color: #E6EDF3">key,</span>
+            <span style="color: #E6EDF3">algorithms</span><span style="color: #FF7B72; font-weight: bold">=</span><span style="color: #E6EDF3">[</span><span style="color: #A5D6FF">&quot;RS256&quot;</span><span style="color: #E6EDF3">],</span>
+            <span style="color: #E6EDF3">options</span><span style="color: #FF7B72; font-weight: bold">=</span><span style="color: #E6EDF3">{</span>
+                <span style="color: #A5D6FF">&quot;verify_aud&quot;</span><span style="color: #E6EDF3">:</span> <span style="color: #79C0FF">False</span><span style="color: #E6EDF3">,</span>  <span style="color: #8B949E; font-style: italic"># Clerk session tokens carry azp, not aud</span>
+                <span style="color: #A5D6FF">&quot;require&quot;</span><span style="color: #E6EDF3">:</span> <span style="color: #E6EDF3">[</span><span style="color: #A5D6FF">&quot;exp&quot;</span><span style="color: #E6EDF3">,</span> <span style="color: #A5D6FF">&quot;sub&quot;</span><span style="color: #E6EDF3">],</span>  <span style="color: #8B949E; font-style: italic"># absent claims must fail, not skip</span>
+            <span style="color: #E6EDF3">},</span>
+            <span style="color: #E6EDF3">leeway</span><span style="color: #FF7B72; font-weight: bold">=</span><span style="color: #A5D6FF">5</span><span style="color: #E6EDF3">,</span>  <span style="color: #8B949E; font-style: italic"># small clock-skew allowance for nbf/iat/exp</span>
+        <span style="color: #E6EDF3">)</span>
+    <span style="color: #FF7B72">except</span> <span style="color: #E6EDF3">pyjwt</span><span style="color: #FF7B72; font-weight: bold">.</span><span style="color: #E6EDF3">PyJWKClientConnectionError</span> <span style="color: #FF7B72">as</span> <span style="color: #E6EDF3">e:</span>
+        <span style="color: #E6EDF3">logger</span><span style="color: #FF7B72; font-weight: bold">.</span><span style="color: #E6EDF3">error(</span><span style="color: #79C0FF">f</span><span style="color: #A5D6FF">&quot;JWKS fetch failed: {</span><span style="color: #E6EDF3">e</span><span style="color: #A5D6FF">}&quot;</span><span style="color: #E6EDF3">)</span>
+        <span style="color: #FF7B72">raise</span> <span style="color: #E6EDF3">HTTPException(</span>
+            <span style="color: #E6EDF3">status_code</span><span style="color: #FF7B72; font-weight: bold">=</span><span style="color: #E6EDF3">status</span><span style="color: #FF7B72; font-weight: bold">.</span><span style="color: #E6EDF3">HTTP_503_SERVICE_UNAVAILABLE,</span>
+            <span style="color: #E6EDF3">detail</span><span style="color: #FF7B72; font-weight: bold">=</span><span style="color: #A5D6FF">&quot;Authentication service temporarily unavailable&quot;</span><span style="color: #E6EDF3">,</span>
+        <span style="color: #E6EDF3">)</span>
+    <span style="color: #FF7B72">except</span> <span style="color: #E6EDF3">pyjwt</span><span style="color: #FF7B72; font-weight: bold">.</span><span style="color: #E6EDF3">PyJWTError</span> <span style="color: #FF7B72">as</span> <span style="color: #E6EDF3">e:</span>
+        <span style="color: #E6EDF3">logger</span><span style="color: #FF7B72; font-weight: bold">.</span><span style="color: #E6EDF3">info(</span><span style="color: #79C0FF">f</span><span style="color: #A5D6FF">&quot;Rejected token: {</span><span style="color: #E6EDF3">e</span><span style="color: #A5D6FF">}&quot;</span><span style="color: #E6EDF3">)</span>
+        <span style="color: #FF7B72">raise</span> <span style="color: #E6EDF3">HTTPException(</span>
+            <span style="color: #E6EDF3">status_code</span><span style="color: #FF7B72; font-weight: bold">=</span><span style="color: #E6EDF3">status</span><span style="color: #FF7B72; font-weight: bold">.</span><span style="color: #E6EDF3">HTTP_401_UNAUTHORIZED,</span>
+            <span style="color: #E6EDF3">detail</span><span style="color: #FF7B72; font-weight: bold">=</span><span style="color: #A5D6FF">&quot;Invalid authentication token&quot;</span><span style="color: #E6EDF3">,</span>
+            <span style="color: #E6EDF3">headers</span><span style="color: #FF7B72; font-weight: bold">=</span><span style="color: #E6EDF3">{</span><span style="color: #A5D6FF">&quot;WWW-Authenticate&quot;</span><span style="color: #E6EDF3">:</span> <span style="color: #A5D6FF">&quot;Bearer&quot;</span><span style="color: #E6EDF3">},</span>
+        <span style="color: #E6EDF3">)</span>
+</pre></div>
+</div>
+  </div>
+</body></html>

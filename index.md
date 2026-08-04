@@ -14,6 +14,7 @@ Code is best browsed [on GitHub](https://github.com/srivardhanjalan/kivan-tutori
 - [06 · Photos Without the Exposure](medium/06-media.html)
 - [07 · Whose Wish Is It Anyway?](medium/07-collections.html)
 - [08 · Off the Shelf](medium/08-storefronts.html)
+- [09 · The Price Is Right](medium/09-browser.html)
 - [10 · Look, Don't Touch](medium/10-social.html)
 
 ## The mocks (interactive — real design tokens)
@@ -24,7 +25,7 @@ Code is best browsed [on GitHub](https://github.com/srivardhanjalan/kivan-tutori
 
 ## The covers
 
-- [Series hero](mocks/hero.html) · [01](mocks/hero-01.html) · [02](mocks/hero-02.html) · [03](mocks/hero-03.html) · [04](mocks/hero-04.html) · [05](mocks/hero-05.html) · [06](mocks/hero-06.html) · [07](mocks/hero-07.html) · [08](mocks/hero-08.html) · [10](mocks/hero-10.html)
+- [Series hero](mocks/hero.html) · [01](mocks/hero-01.html) · [02](mocks/hero-02.html) · [03](mocks/hero-03.html) · [04](mocks/hero-04.html) · [05](mocks/hero-05.html) · [06](mocks/hero-06.html) · [07](mocks/hero-07.html) · [08](mocks/hero-08.html) · [09](mocks/hero-09.html) · [10](mocks/hero-10.html)
 
 ## LinkedIn carousels (browser-rendered slides; PDF + post copy on GitHub)
 
@@ -34,6 +35,7 @@ Code is best browsed [on GitHub](https://github.com/srivardhanjalan/kivan-tutori
 - [05 · Two Places at Once: slides](linkedin/05-profiles/carousel.html) · [PDF + post copy](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/linkedin/05-profiles)
 - [06 · Photos Without the Exposure: slides](linkedin/06-media/carousel.html) · [PDF + post copy](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/linkedin/06-media)
 - [07 · Whose Wish Is It Anyway?: slides](linkedin/07-collections/carousel.html) · [PDF + post copy](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/linkedin/07-collections)
+- [08 · Off the Shelf: slides](linkedin/08-storefronts/carousel.html) · [PDF + post copy](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/linkedin/08-storefronts)
 
 ## The code (on GitHub)
 
@@ -44,4 +46,5 @@ Code is best browsed [on GitHub](https://github.com/srivardhanjalan/kivan-tutori
   [04-auth](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/04-auth) ·
   [05-profiles](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/05-profiles) ·
   [06-media](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/06-media) ·
-  [07-collections](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/07-collections)
+  [07-collections](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/07-collections) ·
+  [08-storefronts](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/08-storefronts)
