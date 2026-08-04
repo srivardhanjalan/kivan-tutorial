@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  html,body{margin:0;padding:0}
+  body{width:860px;height:228px;box-sizing:border-box;
+    background:transparent;padding:0;overflow:hidden;
+    font-family:-apple-system,'Segoe UI',Roboto,sans-serif}
+  .card{width:860px;margin:0;background:#0d1117;border-radius:12px;
+    box-shadow:none;overflow:hidden}
+  .bar{height:34px;background:#161b22;display:flex;align-items:center;padding:0 14px;gap:7px}
+  .d{width:11px;height:11px;border-radius:50%}
+  .fname{color:#8b949e;font:600 12px 'SF Mono',Menlo,Consolas,monospace;margin-left:8px}
+  .code{padding:20px 22px}
+  .code pre{margin:0;font:12.5px/22px 'SF Mono',Menlo,Consolas,monospace;
+    color:#e6edf3;white-space:pre;overflow-x:auto}
+  .code pre span{font-size:12.5px !important}
+</style></head><body>
+  <div class="card">
+    <div class="bar"><span class="d" style="background:#FF5F57"></span>
+      <span class="d" style="background:#FEBC2E"></span><span class="d" style="background:#28C840"></span>
+      <span class="fname">04-auth/infra</span></div>
+    <div class="code"><div class="highlight" style="background: #0d1117"><pre style="line-height: 125%;"><span></span>cp<span style="color: #6E7681"> </span>terraform.tfvars.example<span style="color: #6E7681"> </span>terraform.tfvars<span style="color: #6E7681">     </span><span style="color: #8B949E; font-style: italic"># add your sk_test_... Clerk key</span>
+terraform<span style="color: #6E7681"> </span>init
+terraform<span style="color: #6E7681"> </span>apply<span style="color: #6E7681"> </span>-target<span style="color: #FF7B72; font-weight: bold">=</span>aws_ecr_repository.backend
+./scripts/deploy.sh<span style="color: #6E7681">                              </span><span style="color: #8B949E; font-style: italic"># build amd64 on colima-rosetta, push</span>
+terraform<span style="color: #6E7681"> </span>apply<span style="color: #6E7681">                                  </span><span style="color: #8B949E; font-style: italic"># table, SSM SecureString, IAM, service</span>
+./scripts/deploy.sh<span style="color: #6E7681">                              </span><span style="color: #8B949E; font-style: italic"># tag the log groups (instant)</span>
+terraform<span style="color: #6E7681"> </span>output<span style="color: #6E7681"> </span>-raw<span style="color: #6E7681"> </span>apprunner_ecr_service_url<span style="color: #6E7681">  </span><span style="color: #8B949E; font-style: italic"># -&gt; frontend/.env.local</span>
+</pre></div>
+</div>
+  </div>
+</body></html>
