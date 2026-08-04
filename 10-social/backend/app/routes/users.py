@@ -86,6 +86,7 @@ def update_current_user(
 ):
     """Update the profile fields the body actually carries — nothing else."""
     update_parts = ["updated_at = :updated"]
+    remove_parts: list[str] = []
     values: dict = {":updated": utc_now_iso()}
 
     # Read the current record when a photo is changing (we need the old URL to
@@ -112,7 +113,9 @@ def update_current_user(
         values[":ln"] = user_update.last_name
     # A name change must move name_lowercase in the SAME write, or a renamed
     # user drops out of typeahead search until their next edit. Rebuild from the
-    # incoming field plus the untouched one on the record.
+    # incoming field plus the untouched one on the record. NameSearchIndex is
+    # sparse and its key cannot hold "", so clearing the name REMOVEs the
+    # attribute (dropping the user from name search) instead of writing "".
     if name_changing:
         new_first = (
             user_update.first_name
@@ -124,8 +127,12 @@ def update_current_user(
             if user_update.last_name is not None
             else current_data.get("last_name")
         )
-        update_parts.append("name_lowercase = :nl")
-        values[":nl"] = name_lowercase(new_first, new_last)
+        new_name_lowercase = name_lowercase(new_first, new_last)
+        if new_name_lowercase:
+            update_parts.append("name_lowercase = :nl")
+            values[":nl"] = new_name_lowercase
+        else:
+            remove_parts.append("name_lowercase")
     if user_update.birthday is not None:
         update_parts.append("birthday = :bd")
         values[":bd"] = user_update.birthday.isoformat()
@@ -171,10 +178,13 @@ def update_current_user(
             to_delete.append(delete_url)
 
     values[":active"] = False
+    update_expression = "SET " + ", ".join(update_parts)
+    if remove_parts:
+        update_expression += " REMOVE " + ", ".join(remove_parts)
     try:
         result = users_table.update_item(
             Key={"id": user_id},
-            UpdateExpression="SET " + ", ".join(update_parts),
+            UpdateExpression=update_expression,
             ExpressionAttributeValues=values,
             # update_item is an upsert by default — never invent a record,
             # and never let a deleted account keep editing

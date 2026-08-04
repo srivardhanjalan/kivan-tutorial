@@ -146,16 +146,24 @@ def _create_user_record(user_id: str, profile: dict) -> None:
         "image_url": profile.get("image_url"),
         "onboarding_completed": False,
         # Social (step 10): entity_type is the constant partition key both user
-        # GSIs hash on — set it at creation or the search/Discover indexes stay
-        # empty. name_lowercase backs the typeahead prefix search, and the two
-        # counts are the denormalized caches profiles and the popular rail read.
+        # GSIs hash on. Set it at creation or the search/Discover indexes stay
+        # empty. The two counts are the denormalized caches that profiles and
+        # the popular rail read.
         "entity_type": "USER",
-        "name_lowercase": name_lowercase(first_name, last_name),
         "follower_count": 0,
         "following_count": 0,
         "created_at": now,
         "updated_at": now,
     }
+    # name_lowercase backs the typeahead prefix search, but NameSearchIndex is
+    # sparse and its key attribute cannot hold "". Email/password sign-up
+    # collects no name, so writing name_lowercase="" would make DynamoDB reject
+    # the entire PutItem and leave the user un-provisionable. Omit the attribute
+    # when the name is empty: a nameless user simply is not findable by name
+    # until they set one.
+    nl = name_lowercase(first_name, last_name)
+    if nl:
+        new_user["name_lowercase"] = nl
 
     try:
         users_table.put_item(
