@@ -56,7 +56,7 @@ if not BUCKET:
 # Committed placeholder images live in this step's assets/catalog/ (two levels
 # up from infra/scripts/). Each store logo is `<store-id>-logo.png` and each
 # product photo is `<product-id>.png`.
-ASSETS_DIR = Path(__file__).resolve().parents[1] / "assets" / "catalog"
+ASSETS_DIR = Path(__file__).resolve().parents[2] / "assets" / "catalog"
 
 # Catalog images upload to one shared, read-only keyspace:
 # catalog/storefronts/<id>.png and catalog/products/<id>.png. The App Runner
