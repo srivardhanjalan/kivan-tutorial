@@ -101,6 +101,7 @@ own. You're not just building Kivan; you're building a platform you can reuse.
 | `14-sharing` | Sharing — `kivan://` deep links + the share-modal family, co-owned wishlists | share wishlists, profiles, events |
 | `15-admin` | Admin — the user `role` field lands with its first readers (a safe default covers records provisioned earlier), role enforcement + an admin dashboard (brands, life events, storefronts & products, users) | operate the app's catalog |
 | `16-operations` | Operations — CloudWatch alarms & dashboards, cost management, CI/CD references | run it like production |
+| `17-polish` | UI polish: converge the app's screens on the source design, with image-forward layouts, refined detail screens, and minimal-click workflows | use the app at its full visual polish |
 | `final/` | The complete application | the finished product + `MODULES.md` |
 
 ## Prerequisites
