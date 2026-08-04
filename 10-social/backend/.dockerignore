@@ -1,0 +1,9 @@
+# Keep dev-only artifacts out of the runtime image. The Dockerfile's `COPY . .`
+# would otherwise bake the test suite, its dev deps, and any local virtualenv
+# into the App Runner image: none of which the running service uses.
+tests/
+requirements-dev.txt
+.venv/
+.venv*/
+__pycache__/
+.pytest_cache/
