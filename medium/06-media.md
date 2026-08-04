@@ -154,6 +154,6 @@ Step 7, Collections: the wishlists and wishes the whole app exists for. Photos r
 - **04 · [Signed, Sealed, Delivered](https://medium.com/@srivardhanjalan/signed-sealed-delivered-a481a02ac392)**
 - **05 · [Two Places at Once](https://medium.com/@srivardhanjalan/two-places-at-once-1e00bb46354b)**
 - **06 · Photos Without the Exposure** (you are here)
-- **07 · Collections** (coming soon)
+- **07 · Whose Wish Is It Anyway?** (coming soon)
 
 **[All the code on GitHub](https://github.com/srivardhanjalan/kivan-tutorial)**
