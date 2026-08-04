@@ -74,7 +74,7 @@ The search route is then a single query, capped and prefix-matched, never a scan
 
 [![users.py: search is a prefix query on NameSearchIndex, all users under the USER partition and name_lowercase the sort key, capped and never a Scan](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-10-code-search.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/10-social/backend/app/routes/users.py)
 
-![The constant-partition index: every user record is stamped entity_type USER, so a single index gathers them all under one partition and keeps them sorted by its range key, turning all users, in name order into one prefix query and all users, most followed first into one descending query](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-10-index.png?v=PLACEHOLDER)
+![The constant-partition pattern: every user record is stamped entity_type USER, so that one shared tag gathers them all under one partition, and two indexes keep them sorted by their range keys, turning all users, in name order into one prefix query and all users, most followed first into one descending query](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-10-index.png?v=PLACEHOLDER)
 
 One honest caveat: a single constant partition is a hot partition, and at a very large scale you would spread the tag across a handful of shards. At this app's scale the whole index is small and the read is cheap, so we keep the one partition and note where it would bend. The wishlist rail rides the identical pattern, `entity_type = "WISHLIST"` ranked by `love_count`, so Discover's two rails and its search are one idea used three times.
 

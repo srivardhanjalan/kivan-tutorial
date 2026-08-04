@@ -27,7 +27,7 @@
 <div class="card">
   <span class="k">Index</span>
   <h1>One partition, sorted</h1>
-  <p class="sub">Every user carries the same constant tag, so a single index gathers the whole table under one key and hands it back in order.</p>
+  <p class="sub">Every user carries the same constant tag, so a single partition gathers the whole table under one key, and two indexes hand it back in order: by name and by count.</p>
   <div class="stage">
     <svg class="wires" viewBox="0 0 680 236">
       <defs>
@@ -46,7 +46,7 @@
     <div class="rec" style="left:0;top:16px"><div class="n">Aria Ash</div><div class="tag">entity_type: USER</div></div>
     <div class="rec" style="left:0;top:98px"><div class="n">Bella Bloom</div><div class="tag">entity_type: USER</div></div>
     <div class="rec" style="left:0;top:180px"><div class="n">Cass Cole</div><div class="tag">entity_type: USER</div></div>
-    <div class="part" style="left:255px;top:92px"><div class="t">One partition</div><div class="s">the "USER" index</div></div>
+    <div class="part" style="left:255px;top:92px"><div class="t">One partition</div><div class="s">the "USER" tag</div></div>
     <div class="out" style="left:472px;top:22px"><div class="t">Prefix search</div><div class="s">name_lowercase begins_with(q)</div></div>
     <div class="out" style="left:472px;top:166px"><div class="t">Popular rail</div><div class="s">follower_count, descending</div></div>
   </div>
