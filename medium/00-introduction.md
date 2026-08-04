@@ -1,6 +1,6 @@
 # Zero to Shipped
 
-*Build a real social product — iPhone, iPad, Android, and a live AWS backend — in 16 deployable steps. This is the series introduction.*
+*Build a real social product — iPhone, iPad, Android, and a live AWS backend — in 17 deployable steps. This is the series introduction.*
 
 ---
 
@@ -88,7 +88,7 @@ Seventeen steps, four of them jigsaw modules 🧩, and each will get its own pos
 14. **Sharing** — `kivan://` deep links and the share-modal family
 15. **Admin** — role enforcement plus a dashboard for brands, life events, storefronts, products, and users
 16. **Operations** — CloudWatch alarms and dashboards, cost management, CI/CD references
-17. **UI polish**: converge every screen on the finished design the mocks show, and trim every unnecessary tap
+17. **UI polish**: converge every screen on the finished design shown at the top of this post, and trim every unnecessary tap
 
 ## Start here
 
