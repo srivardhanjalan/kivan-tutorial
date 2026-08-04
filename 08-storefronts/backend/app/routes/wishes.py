@@ -4,7 +4,7 @@ from decimal import Decimal
 from boto3.dynamodb.conditions import Key
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.database import wishes_table
+from app.database import wishes_table, wishlists_table
 from app.dependencies.auth import get_current_user_id
 from app.models.wishes import Wish, WishCreate, WishUpdate
 from app.utils.s3_helpers import (
@@ -52,6 +52,9 @@ def create_wish(wish: WishCreate, user_id: str = Depends(get_current_user_id)):
         "cost": Decimal(str(wish.cost)) if wish.cost is not None else None,
         "link_url": wish.link_url,
         "image_url": stored,
+        # null for a hand-typed wish; the catalog add-flow carries the product's
+        # storefront so the wish tiles can badge it with that store's logo
+        "storefront_id": wish.storefront_id,
         "completed": False,
         "created_at": utc_now_iso(),
     }
@@ -59,6 +62,32 @@ def create_wish(wish: WishCreate, user_id: str = Depends(get_current_user_id)):
     if to_claim:
         claim_pending_photo(to_claim)
     return item
+
+
+# Declared before /{wish_id} so the literal path wins over the id capture.
+@router.get("/mine", response_model=list[Wish])
+def get_my_wishes(user_id: str = Depends(get_current_user_id)):
+    """Every wish across all the caller's own wishlists, flattened. The catalog's
+    duplicate guard reads this once to tell whether a product is already saved
+    (it matches on link_url), so this is the whole-account view the per-wishlist
+    listing can't give. Owned wishlists come off CreatedByIndex, then each one's
+    wishes off WishlistIdIndex, paged to the end; ordering doesn't matter to the
+    membership check, so none is imposed."""
+    wishlists = query_all_pages(
+        wishlists_table,
+        IndexName="CreatedByIndex",
+        KeyConditionExpression=Key("created_by").eq(user_id),
+    )
+    wishes: list[dict] = []
+    for wishlist in wishlists:
+        wishes.extend(
+            query_all_pages(
+                wishes_table,
+                IndexName="WishlistIdIndex",
+                KeyConditionExpression=Key("wishlist_id").eq(wishlist["id"]),
+            )
+        )
+    return wishes
 
 
 @router.get("/{wish_id}", response_model=Wish)

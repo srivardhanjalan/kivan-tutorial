@@ -3,18 +3,23 @@
 A wish no longer has to be typed from scratch. This step adds a **curated
 catalog**: a handful of seeded stores, each holding a few products, browsable
 from the **Wish Store** tab. Tap a store, tap a product, pick one of your
-wishlists, and the product lands there as a wish with its name, price, and link
-already filled in. It is the second read-only reference domain in the app (the
+wishlists, and the product lands there as a wish with its name, price, link, and
+photo already filled in, badged with the store it came from. It is the second
+read-only reference domain in the app (the
 life-events taxonomy was the first), and it plugs into step 07's collections
 through exactly one seam: the same `POST /wishes` the manual form already uses.
 
 The catalog is deliberately thin. Stores and products are **seeded reference
-data**, read through two auth-gated endpoints and nothing more. There is no
-store or product creation, no ownership or admin roles, no images, no
-categories, no per-store currency: those belong to later steps (the admin
-dashboard in step 15, real store websites and multi-currency scraping in step
-09). What ships here is the smallest honest thing that lets a wish come from a
-catalog.
+data**, read through auth-gated endpoints and nothing more. Each store carries
+a logo and each product a photo and a category (the images are honest,
+license-clean placeholders committed under `assets/catalog/`; the seed uploads
+them to the private photos bucket and the backend serves them as short-lived
+signed URLs, exactly like an uploaded wish photo), so the store directory, the
+product tiles, and the category filter all run on real image and grouping data. What is still absent belongs to later
+steps: no store or product creation, no ownership or admin roles, no uploading
+your own logos and photos (the admin dashboard, step 15), and no per-store
+currency (multi-currency scraping, step 09). What ships here is the smallest
+honest thing that lets a wish come from a catalog.
 
 **The exact delta this step adds:**
 [PR #71 · Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/71/files)
@@ -44,21 +49,27 @@ npx expo start -c --localhost
 This step **adds infrastructure**: two DynamoDB tables (`storefronts`,
 `products`, the latter with a `StorefrontIdIndex` GSI) and a per-table IAM grant
 on the App Runner instance role (Scan on storefronts, Query on products, nothing
-that can write). On a stack that is already up, `terraform apply` creates them,
-the image redeploys, and then a one-time seed populates the catalog:
+that can write). The catalog images reuse the existing photos bucket and its
+read grant from step 06, so this step adds no S3 infrastructure. On a stack that
+is already up, `terraform apply` creates the tables, the image redeploys, and
+then a one-time seed uploads the images and populates the catalog:
 
 ```bash
 cd infra
 terraform apply                                     # + 2 tables, + per-table IAM
 ./scripts/deploy.sh                                 # rebuild :latest with the new routes
 AWS_REGION=us-east-1 ENVIRONMENT=production \
-  ../backend/.venv/bin/python scripts/seed_storefronts.py   # 4 stores, 15 products (idempotent)
+  PHOTOS_BUCKET_NAME=$(terraform output -raw photos_bucket_name) \
+  ../backend/.venv/bin/python scripts/seed_storefronts.py   # 4 stores, 15 products, 19 images (idempotent)
 ```
 
 (The seed runs on the backend venv from "Run it locally"; create that first if
 you came straight here to deploy. `ENVIRONMENT` must match your terraform
 `environment` and `AWS_REGION` its `aws_region`: `production` / `us-east-1` are
-the series defaults, so change both sides of a pair or neither.)
+the series defaults, so change both sides of a pair or neither.
+`PHOTOS_BUCKET_NAME` is the private photos bucket the seed uploads the catalog
+images to; `terraform output -raw photos_bucket_name` prints it, the same value
+App Runner injects into the container.)
 
 Deploying fresh? Follow step 03's staged bootstrap (registry, push, apply), then
 the same three lines. Like the life-events seed, `seed_storefronts.py` is **not

@@ -162,7 +162,9 @@ export interface Wishlist {
   created_at: string;
 }
 
-/** One item inside a wishlist. `completed` drives the got-it visual state. */
+/** One item inside a wishlist. `completed` drives the got-it visual state.
+    `storefront_id` is set only on wishes added from the catalog; the wish tiles
+    read it back to badge the wish with that store's logo. */
 export interface Wish {
   id: string;
   wishlist_id: string;
@@ -171,6 +173,7 @@ export interface Wish {
   cost: number | null;
   link_url: string | null;
   image_url: string | null;
+  storefront_id: string | null;
   completed: boolean;
   created_at: string;
 }
@@ -184,7 +187,9 @@ export interface WishlistCreate {
   life_event_id?: string;
 }
 
-/** POST /wishes/ body — wishlist_id and name required, the rest optional */
+/** POST /wishes/ body — wishlist_id and name required, the rest optional.
+    `storefront_id` is sent only by the catalog add-flow, so a wish from the
+    store carries which store it came from. */
 export interface WishCreate {
   wishlist_id: string;
   name: string;
@@ -192,6 +197,7 @@ export interface WishCreate {
   cost?: number;
   link_url?: string;
   image_url?: string;
+  storefront_id?: string;
 }
 
 /** PUT /wishes/{id} body — send only what changed. An omitted field is left
@@ -252,6 +258,14 @@ export async function fetchWishes(wishlistId: string): Promise<Wish[]> {
   return res.json();
 }
 
+/** Every wish across all the caller's wishlists. The catalog's duplicate guard
+    reads this to tell whether a product is already saved (matched on link_url),
+    which the per-wishlist listing can't answer on its own. */
+export async function fetchMyWishes(): Promise<Wish[]> {
+  const res = await request('/wishes/mine');
+  return res.json();
+}
+
 /** Create a wish. Trailing slash required for the same reason as wishlists. */
 export async function createWish(body: WishCreate): Promise<Wish> {
   const res = await request('/wishes/', {
@@ -292,25 +306,33 @@ export async function uncompleteWish(id: string): Promise<Wish> {
 // ── Storefronts: the curated catalog wishes can be added from ───────────────
 
 /** A curated store in the catalog. `product_count` is the denormalized count
-    the store card shows; the seeded stores carry no logo (step 15's admin
-    uploader adds those), so the card renders a storefront glyph. */
+    the store card shows; `logo_url` is the store's mark, rendered in the store
+    directory in place of a glyph (the seed points it at a committed placeholder;
+    admin logo uploads arrive in step 15). */
 export interface Storefront {
   id: string;
   name: string;
   description: string | null;
+  logo_url: string | null;
   product_count: number;
 }
 
 /** One product in a storefront. `price` is in the app's single currency
     (formatCost renders it); adding the product to a wishlist carries name,
-    price, and link_url straight onto a new wish (the field is named to match a
-    wish's own link_url). Seeded products carry no image (a step-15 concern), so
-    the product tile shows a placeholder glyph. */
+    price, link_url, and image_url straight onto a new wish (each field named to
+    match the wish's own). `image_url` is the product photo the tile and detail
+    hero render (the seed points it at a committed placeholder; a placeholder
+    glyph still stands in when it is null). `category` groups the store's
+    products so the store screen can filter by it. `storefront_id` is stamped
+    onto the wish so it can be badged with the store's logo. */
 export interface Product {
   id: string;
+  storefront_id: string;
   name: string;
   description: string | null;
   price: number;
+  category: string;
+  image_url: string | null;
   link_url: string;
 }
 

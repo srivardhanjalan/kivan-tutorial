@@ -30,6 +30,12 @@ class WishCreate(BaseModel):
     # 2048 is the practical URL ceiling browsers/CDNs honor
     link_url: Optional[str] = Field(default=None, max_length=2048)
     image_url: Optional[str] = Field(default=None, max_length=2048)
+    # Stamped only when the wish is added from the catalog (the product's
+    # storefront); a manually-typed wish leaves it null. The home/wishlist tiles
+    # read it back to badge the wish with that store's logo. Same char cap as a
+    # storefront id (a seeded slug, well under it); get_item_or_404 is the byte
+    # backstop wherever it is looked up.
+    storefront_id: Optional[str] = Field(default=None, max_length=2048)
 
 
 class WishUpdate(BaseModel):
@@ -60,6 +66,8 @@ class Wish(BaseModel):
     cost: Optional[float] = None
     link_url: Optional[str] = None
     image_url: Optional[str] = None
+    # Present only on catalog-sourced wishes; drives the store-logo badge
+    storefront_id: Optional[str] = None
     completed: bool = False
     created_at: str
 

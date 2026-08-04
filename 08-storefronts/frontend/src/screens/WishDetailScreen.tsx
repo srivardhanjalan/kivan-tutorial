@@ -1,21 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import EditDeleteHeaderButtons from '../components/EditDeleteHeaderButtons';
 import DetailAction from '../components/DetailAction';
+import DetailStatusRow from '../components/DetailStatusRow';
 import ConfirmModal from '../components/ConfirmModal';
-import ArtTile from '../components/ArtTile';
-import ImagePlaceholderGlyph from '../components/ImagePlaceholderGlyph';
+import PhotoDetailHero from '../components/PhotoDetailHero';
 import DetailTitleBlock from '../components/DetailTitleBlock';
 import useFetch from '../hooks/useFetch';
 import useAsyncAction from '../hooks/useAsyncAction';
 import useConfirmedDelete from '../hooks/useConfirmedDelete';
 import useOpenExternalLink from '../hooks/useOpenExternalLink';
+import useStorefronts from '../hooks/useStorefronts';
 import { fetchWish, completeWish, uncompleteWish, deleteWish } from '../services/api';
 import type { Wish } from '../services/api';
-import Colors from '../constants/Colors';
+import BorderRadius from '../constants/BorderRadius';
 import Typography from '../constants/Typography';
 import { Spacing } from '../constants/ScreenStyles';
 
@@ -35,6 +35,7 @@ export default function WishDetailScreen() {
   // the complete/uncomplete toggle instant feedback, and a focus refetch then
   // reconciles it with the server's persisted state.
   const { data } = useFetch(() => fetchWish(wishId), { refetchOnFocus: true });
+  const { storefrontFor } = useStorefronts();
   const [wish, setWish] = useState<Wish | null>(null);
   useEffect(() => {
     if (data) setWish(data);
@@ -57,6 +58,10 @@ export default function WishDetailScreen() {
     if (wish?.link_url) openExternalLink(wish.link_url);
   };
 
+  // The store a catalog wish came from, resolved for its logo and name; a
+  // hand-typed wish has no storefront_id, so this stays undefined and no row shows.
+  const store = wish ? storefrontFor(wish.storefront_id) : undefined;
+
   return (
     <FloatingHeaderLayout
       title={wish?.name ?? ''}
@@ -74,17 +79,18 @@ export default function WishDetailScreen() {
     >
       {wish && (
         <>
-          <ArtTile
-            height={Spacing.detailHeroHeight}
-            color={Colors.subtleFill}
-            imageUrl={wish.image_url}
-            placeholder={<ImagePlaceholderGlyph size={Spacing.detailHeroGlyphSize} />}
-          />
+          <PhotoDetailHero imageUrl={wish.image_url} />
 
           {wish.completed && (
-            <View style={styles.fulfilledRow}>
-              <Ionicons name="checkmark-circle" size={22} color={Colors.success} />
-              <Text style={styles.fulfilledText}>Fulfilled</Text>
+            <DetailStatusRow label="Fulfilled" />
+          )}
+
+          {store && (
+            <View style={styles.storeRow}>
+              {store.logo_url && (
+                <Image source={{ uri: store.logo_url }} style={styles.storeLogo} resizeMode="cover" />
+              )}
+              <Text style={styles.storeName}>From {store.name}</Text>
             </View>
           )}
 
@@ -114,14 +120,18 @@ export default function WishDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  fulfilledRow: {
+  storeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
     marginTop: Spacing.lg,
   },
-  fulfilledText: {
+  storeLogo: {
+    width: 24,
+    height: 24,
+    borderRadius: BorderRadius.full,
+  },
+  storeName: {
     ...Typography.bodySecondaryStrong,
-    color: Colors.success,
   },
 });

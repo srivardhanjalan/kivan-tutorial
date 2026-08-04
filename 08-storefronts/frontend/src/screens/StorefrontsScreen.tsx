@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppNavigation } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
@@ -14,10 +14,11 @@ import Typography from '../constants/Typography';
 import Opacity from '../constants/Opacity';
 import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 
-/** One curated store as a row: a glyph, the name, its blurb, and how many
-    products it holds. Tapping opens the store's products. */
+/** One curated store as a row: its logo (a storefront glyph when it has none),
+    the name, its blurb, and how many products it holds. Tapping opens the
+    store's products. */
 function StorefrontRow({ storefront, onPress }: { storefront: Storefront; onPress: () => void }) {
-  const { name, description, product_count } = storefront;
+  const { name, description, logo_url, product_count } = storefront;
   return (
     <TouchableOpacity
       style={[CommonScreenStyles.outlinedSurface, styles.row]}
@@ -26,8 +27,12 @@ function StorefrontRow({ storefront, onPress }: { storefront: Storefront; onPres
       accessibilityRole="button"
       accessibilityLabel={name}
     >
-      <View style={[CommonScreenStyles.center, styles.glyph]}>
-        <Ionicons name="storefront-outline" size={Spacing.tileGlyphSize} color={Colors.primary} />
+      <View style={[CommonScreenStyles.center, styles.logo]}>
+        {logo_url ? (
+          <Image source={{ uri: logo_url }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        ) : (
+          <Ionicons name="storefront-outline" size={Spacing.tileGlyphSize} color={Colors.primary} />
+        )}
       </View>
       <View style={styles.info}>
         <Text style={styles.name} numberOfLines={1}>{name}</Text>
@@ -88,11 +93,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.lg,
   },
-  glyph: {
+  logo: {
     width: 56,
     height: 56,
     borderRadius: BorderRadius.md,
     backgroundColor: Colors.subtleFill,
+    overflow: 'hidden',
   },
   info: {
     flex: 1,
