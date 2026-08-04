@@ -1,8 +1,8 @@
 # Off the Shelf
 
-*Zero to Shipped, step 8. A store inside the app. Tap a product and the wish fills itself in, name, price, and link. The app can read the catalog but never change it.*
+*Zero to Shipped, step 8. A store inside the app, product photos and all. Tap a product and the wish fills itself in: name, price, link, and photo, badged with the store it came from. The app reads the catalog but can never write it.*
 
-![Zero to Shipped 08 hero: the Wish Store tab listing four curated stores with product counts, beside a terminal where GET /storefronts with no token returns 401, with a token returns the seeded stores, and a store's products come back in display order](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-08.png?v=PLACEHOLDER)
+![Zero to Shipped 08 hero: the Wish Store tab listing four curated stores, each with its own logo and product count, beside a terminal where GET /storefronts with no token returns 401, with a token returns the seeded stores in display order, and a store's products come back with signed image URLs](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-hero-08.png?v=PLACEHOLDER)
 
 *Step 08 of [**Zero to Shipped**](https://medium.com/@srivardhanjalan/zero-to-shipped-2c13ce7e20e9), a production social-wishlist app built one shippable step at a time on Expo, FastAPI, and AWS.*
 
@@ -10,37 +10,37 @@
 
 ## The problem
 
-Every wish in the app so far is typed by hand. Step 7 built the form, and it works. But a wishlist starts empty and stays empty until you type in a name, a price, and a link for every item you want. This step lets a wish come from a catalog instead: browse a store, tap a product, and it lands in a wishlist already filled in. Drawing the store list is the easy part. Making the catalog real is four problems at once.
+Every wish in the app so far is typed by hand. Step 7 built the form, and it works. But a wishlist starts empty and stays empty until you type a name, a price, and a link for every item you want. This step lets a wish come from a catalog instead: browse a store, tap a product, and it lands in a wishlist already filled in, photo and all. Drawing the store list is the easy part. Making the catalog real is four problems at once.
 
-- **The catalog is data the app must never be able to overwrite.** Stores and products are shared reference data, the same for every user. If the code that serves them can also write them, one bug or one breach rewrites the whole catalog for everyone.
-- **A product's fields have to become a wish's fields with nothing in between.** Name, price, store link, blurb: each needs a home on a wish. Any gap between the two shapes forces a translation layer, and that layer breaks the first time either side changes.
-- **The seam between the two can't couple them.** The store lives in its own world; a wishlist lives in step 7's. Wire them together the wrong way and a change to one can corrupt the other.
-- **Every new browse screen sits next to one you already built.** A product card is a wish card with a different label. A product detail is a wish detail. Copy each one and you now maintain two of everything, and they drift the first time you touch only one.
+- **The catalog is data the app must never overwrite.** Stores, products, and now their images are shared reference data, the same for every user. If the code that serves them can also write them, one bug or one breach rewrites the catalog for everyone.
+- **A product's fields have to become a wish's fields with nothing in between.** Name, price, store link, blurb, photo, and which store it came from: each needs a home on a wish. Any gap between the two shapes forces a translation layer, and that layer breaks the first time either side changes.
+- **The catalog's images have to be real without a second pipeline.** A product photo must be served as safely as a user's own upload, from the same private bucket, signed on read. But a catalog image is shared: many wishes point at one object, and no record owns it. So it can't ride the own-it-then-delete-it rules step 6 built for a user's photo.
+- **Every new browse screen sits next to one you already built.** A product card is a wish card. A product detail is a wish detail. The category filter's row is the wishlist picker's row. Copy each one and you now maintain two of everything, and they drift the first time you touch only one.
 
 ## What we build
 
-A curated catalog: a handful of seeded stores, each holding a few products, browsable from the **Wish Store** tab. Tap a store, tap a product, pick one of your wishlists, and the product becomes a wish there with its name, price, link, and blurb already set.
+A curated catalog: a handful of seeded stores, each with a logo, each holding a few products with photos and a category. Browse it from the **Wish Store** tab. Tap a store, filter to a category if you like, tap a product, pick one of your wishlists, and the product becomes a wish there with its name, price, link, blurb, and photo already set, badged with the store it came from.
 
-One idea answers all four: the catalog is read-only shared data, and it creates a wish through the same endpoint the manual form already uses, without touching how wishlists work inside.
+One idea runs through all of it: the catalog is read-only shared data, its rows and its images both, and it fills a wish through machinery the app already has, without owning or being able to write any of it.
 
 - **It is reference data, seeded like step 7's occasions.** Two DynamoDB tables the app can read and its running role can't write: a Scan for the small set of stores, an index Query for a store's products. Nothing at runtime seeds or edits them; that runs once, from your own credentials.
-- **The fields already line up.** A product's name, price, and store URL drop onto a wish's name, cost, and `link_url` with nothing translated, because the app names every stored URL with the same `_url` suffix. No mapping layer to rot.
-- **The seam is the public endpoint.** A product becomes a wish through the same `POST /wishes` the manual form uses. The catalog knows how to fill a wish's fields; it never touches how a wishlist is stored or owned. Delete the storefronts code tomorrow and wishlists keep working.
-- **The screens that would have been copies share one shape instead.** The tile card, the detail block, and the open-a-link behavior each moved into one place. That happened the moment the product screens became their second caller, so the product and wish screens can't drift apart.
+- **The fields already line up.** A product's name, price, store URL, and photo drop onto a wish's name, cost, `link_url`, and `image_url` with nothing translated, because the app names every stored URL with the same `_url` suffix. A new `storefront_id` rides along so the wish can wear its store's badge. No mapping layer to rot.
+- **The images reuse step 6's pipeline, not a new one.** The seed uploads each committed placeholder image to the private photos bucket and stores its bucket URL on the row; the backend signs it on read, exactly as it serves an uploaded wish photo. A catalog object is shared, so it sits outside the per-record ownership rules: referenced freely, never claimed, never deleted by a record's delete.
+- **The screens that would have been copies share one shape instead.** The image tile, the photo hero, the status line, the picker row: each moved into one place the moment a second screen wanted it, so the product and wish screens can't drift apart.
 
-One thing this step deliberately skips: it is a read-only catalog and nothing more. No store or product creation, no admin roles, no product images, no per-store currency. Creating catalog entries is the admin dashboard in step 15; real store websites and prices scraped in each store's own currency are step 9. What ships here is the smallest honest thing that lets a wish come from a store.
+One thing this step still isn't: a catalog you can manage. The stores, products, images, and categories are all seeded reference data, read by the app and never written. Creating catalog entries, and uploading your own store logos and product photos, is the admin dashboard in step 15. Prices are all in the app's single currency; per-store currency and real scraped storefronts are step 9. What ships here is the smallest honest thing that lets a wish come from a store, pictures and all.
 
-**What we need:** step 7 complete, an AWS account, and the step-3 deploy in place. The catalog is two real DynamoDB tables, so like step 7 this step wants a real backend: a deployed stack, or a local one with the tables applied and seeded.
+**What we need:** step 7 complete, an AWS account, and the step-3 deploy in place. The catalog is two real DynamoDB tables and a set of images in the photos bucket, so like step 7 this step wants a real backend: a deployed stack, or a local one with the tables applied and seeded.
 
 **Time:** about 45 to 75 minutes, most of it the deploy and the one-time seed.
 
-**The code:** the snippets below are shown as images; the full, copyable source is [the step folder on `main`](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/08-storefronts), organized by the file paths shown in each caption. [PR #71: Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/71/files) is the build's story.
+**The code:** the snippets below are shown as images; the full, copyable source is [the step folder on `main`](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/08-storefronts), organized by the file paths shown in each caption. The build came in two parts: [PR #71](https://github.com/srivardhanjalan/kivan-tutorial/pull/71/files) stood the read-only catalog up, and [PR #76](https://github.com/srivardhanjalan/kivan-tutorial/pull/76/files) gave it images, a store badge, a category filter, and a duplicate guard.
 
 ## What we touch this step
 
-Fourteen new files carry the feature, wired into the existing components, screens, config, and infra around them. Each build section below takes one area.
+Twenty new files carry the feature, wired into the existing components, screens, config, and infra around them. Each build section below takes one area.
 
-![What we touch this step, fourteen new files grouped by folder and the existing ones they wire into: the backend catalog routes and models, the frontend Wish Store screens and the shared tile and detail pieces the wish screens now share too, and the infra two tables with a per-table read-only grant and the seeder; each file marked new or modified](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-filemap.png?v=PLACEHOLDER)
+![What we touch this step, twenty new files grouped by folder and the existing ones they wire into: the backend catalog routes and models that sign their images on read, the shared photo helper that exempts catalog objects from a record's delete, the frontend Wish Store screens and the shared tile, hero, status, and picker-row pieces the wish screens now share too, and the infra two tables with a per-table read-only grant and the seeder that uploads the images; each file marked new or modified](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-filemap.png?v=PLACEHOLDER)
 
 ## Seed a catalog nothing at runtime can write
 
@@ -56,11 +56,31 @@ Then the grant that makes the split real. The App Runner instance role gets `Sca
 
 [![The per-table IAM grant: Scan on storefronts, Query on products and its index, no write](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-code-iam.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/08-storefronts/infra/iam.tf)
 
-The catalog itself is a seed script that runs on your own credentials, never the container's. Four stores, fifteen products, an idempotent upsert by id so re-running is harmless. It writes each store with a denormalized `product_count`, so a store card can show a count without a per-store query:
+The catalog itself is a seed script that runs on your own credentials, never the container's. Four stores, fifteen products, and nineteen images: a logo for each store and a photo for each product, honest license-clean placeholders committed under `assets/catalog/`. The seed uploads each image to the private photos bucket under a stable `catalog/` key, then writes each row with that object's bucket URL. It upserts by id and overwrites each image by key, so a re-run is a safe no-op. Each store row carries a denormalized `product_count`, so a store card can show a count without a per-store query:
 
-[![The catalog seed: four stores, fifteen products, idempotent upsert, product_count denormalized onto the store row](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-code-seed.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/08-storefronts/infra/scripts/seed_storefronts.py)
+[![The catalog seed: four stores, fifteen products, nineteen images uploaded to the photos bucket, idempotent upsert, product_count denormalized onto the store row](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-code-seed.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/08-storefronts/infra/scripts/seed_storefronts.py)
 
-![The catalog the runtime can't write: seeding runs on your own developer credentials and writes both tables, while the App Runner instance role gets read-only access, Scan on storefronts and Query on products, and no write path at all](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-seed.png?v=PLACEHOLDER)
+![The catalog the runtime can't write: seeding runs on your own developer credentials and both uploads the images to the photos bucket and writes the two tables, while the App Runner instance role gets read-only access, a Scan on storefronts and a Query on products, and signs the images on read, with no write path to any of it](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-seed.png?v=PLACEHOLDER)
+
+The bucket name is the one thing the seed can't derive. The tables are named from `ENVIRONMENT`, but the bucket is account-suffixed and global, so the seed reads it from `PHOTOS_BUCKET_NAME`, the same value App Runner injects into the container. `terraform output -raw photos_bucket_name` prints it. Miss it and the seed refuses to run rather than upload nowhere.
+
+Apply this and the catalog exists but the images are just bytes in a private bucket. Next we make the app able to show them without being able to touch them.
+
+## Serve the images the app reads but can't own
+
+A catalog image lives in the same private photos bucket a user's wish photo does. The bucket is locked shut from step 6: no public read, every object reached through a short-lived signed URL. So a store logo and a product photo are served the exact same way a wish photo is. The store row and product model each sign their URL on read, and the app renders whatever comes back. Nothing new gets built for the catalog; it borrows the pipeline that already exists.
+
+[![The product model signs its image on read: image_url and category fields, a field_serializer that returns a short-lived signed URL](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-code-productmodel.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/08-storefronts/backend/app/models/products.py)
+
+The one real difference is ownership, and it is where a naive reuse would have gone wrong. A user's photo belongs to one record. When that wish is deleted or its photo replaced, step 6's rules reap the old object so nothing orphans. A catalog image is the opposite: it is shared. Adding a product to a wishlist carries the product's photo onto the new wish, so many wishes legitimately point at one object, and none of them owns it.
+
+Run the shared image through the per-record rules and the first wish delete would blank that product for every other wish pointing at it. So a catalog object is exempt. Everything under the `catalog/` key prefix is skipped by the delete-the-old-object logic and the claim-this-upload logic alike: a wish that references a catalog image stores its canonical bucket URL and nothing more. Only the seed manages that keyspace.
+
+[![The photos helper exempts the catalog prefix: a catalog key is stored as-is, never claimed and never marked for deletion, so a wish delete can't reap a shared image](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-code-s3catalog.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/08-storefronts/backend/app/utils/s3_helpers.py)
+
+![Serving the catalog's images: the seed uploads each placeholder to the photos bucket under the catalog prefix, the backend signs that URL on read like any wish photo, and because the object is shared reference data it is exempt from the per-record claim and delete rules, so a wish delete never reaps an image other wishes still point at](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-signed.png?v=PLACEHOLDER)
+
+With the images served, the reads that fetch them are next.
 
 ## Read the stores, then a store's products
 
@@ -76,62 +96,79 @@ The second hop is a store's products, and it is not a Scan. Scanning the whole c
 
 ![Reading the catalog in two hops: the Wish Store tab GETs the stores with a Scan of the whole small set, then opening one GETs that store's products with a Query on StorefrontIdIndex, scoped to the single store and never a Scan of the whole catalog](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-read.png?v=PLACEHOLDER)
 
-One detail lives in the product model, and it is why turning a product into a wish later costs nothing. A price is a `Decimal` in DynamoDB and a `float` on read. DynamoDB rejects `float` outright, so the seed keeps every price as a string and writes `Decimal(price)`; the model coerces it back to a float on read. That is the exact path a wish's `cost` already takes. A product's price and a wish's cost end up the same type after the same round trip, so a price drops straight onto a cost with no conversion at all.
+One detail lives in the product model, and it is why turning a product into a wish later costs nothing. A price is a `Decimal` in DynamoDB and a `float` on read. DynamoDB rejects `float` outright, so the seed keeps every price as a string and writes `Decimal(price)`; the model coerces it back to a float on read. That is the exact path a wish's `cost` already takes. A product's price and a wish's cost end up the same type after the same round trip, so a price drops straight onto a cost with no conversion at all. Each product also carries a `category`, and the store screen uses it to build a filter, which we get to next.
 
 ## Browse it without cloning the screen next door
 
-The **Wish Store** tab, empty since step 2, now mounts the store list. Tap a store to see its products in the same grid the wishes ride, and tap a product for its detail. Three new screens, and every one of them is a sibling of a screen step 7 already built. That is exactly the trap.
+The **Wish Store** tab, empty since step 2, now mounts the store list, each row wearing its store's logo. Tap a store to see its products in the same grid the wishes ride, each tile a photo with a category pill. Tap a product for its detail. If a store spans more than one category, a funnel in the header filters the grid to one. Every one of these screens is a sibling of a screen step 7 already built, and that is exactly the trap.
 
-A product card is a wish card: an image tile, a name, a price below. A product detail leads with the same title, price, and blurb a wish detail does, and jumps to a link the same way. Built as copies, they would be near-identical pieces, drifting apart on the first one-sided edit. So none of them is a copy. Each shared shape moved into one place the moment the product screen became its second real caller, and here is where each one went.
+A product card is a wish card: an image tile, a name, a price below. A product detail leads with the same photo hero, title, price, and blurb a wish detail does. The picker that adds a product and the funnel that filters a store both raise the same single-select list of rows. Built as copies, these would be near-identical pieces, drifting apart on the first one-sided edit. So none of them is a copy. Each earned its extraction at its second caller, and here is where each one went.
 
-The tile went first, because it had the most callers waiting. `ArtTileCard` is the one pressable tile-and-caption that the wishlist card, the wish card, and now the product card all render. The add tile behind both New Wishlist and New Wish folded into it the same round, so one component draws the whole tile family.
+The image tile went first, because it had the most callers waiting. `ArtTileCard` is the one pressable tile-and-caption that the wishlist card, the wish card, and now the product card all render. The photo fills its art block; when a record has none, a placeholder glyph stands in. The product tile and the wish tile are now the same component with different data.
 
-Then the detail block. Both detail screens open with the same three lines: a big name, a brand-accent price, a muted blurb beneath it. `DetailTitleBlock` owns those lines. The one difference: a wish can carry no cost, and a product always has one. So the price is a nullable prop, not a second component. Pass a cost and the price line renders; pass none and it does not.
+Then the photo hero. Both the product detail and the wish detail open with a big image and a title-price-blurb block below. `PhotoDetailHero` owns the image; `DetailTitleBlock` owns the three lines under it. The wishlist detail's hero is a different flavor, a life-event pastel and emoji, so it stays bespoke; the other two share.
 
-Then the link-open. A wish detail jumps to its source link and a product detail jumps to its store link the same way: open the URL, and toast `Could not open the link` when the platform won't. `useOpenExternalLink` is that one call and its failure copy, a hook both screens reach for so the error text can't drift between them.
+Then the status line. A fulfilled wish shows a green check and "Fulfilled". A product already saved shows the same green check and "Already in Wishlist". That is one affirmative status with two labels, so `DetailStatusRow` is the check, the accent, and the layout in one place, and only the word changes.
 
-The timing is the rule. We extract on the second caller, never the first. With one caller, you are building a component for a future that may never come. That is a defect, the same as dead code. Two callers is a duplication you can point at. So nothing here was pulled out ahead of the product screen that needed it.
+Then the picker row. The add-to-wishlist picker and the category funnel both stack a single-select list: an outlined row, a label, a checkmark when chosen. `SelectableRow` and `SelectableList` are that row and its column, extracted the moment the funnel became the second caller. The funnel itself is `CategoryFilterModal`, and it filters the grid client-side: the categories come from the products already fetched, so it needs no extra request and can never list a category the grid can't show.
 
-[![ArtTileCard: the one pressable tile-and-caption the whole tile family shares](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-code-arttilecard.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/08-storefronts/frontend/src/components/ArtTileCard.tsx)
+[![WishCard: the shared image tile, now wearing the store-logo badge when a wish came from the catalog](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-code-wishcard.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/08-storefronts/frontend/src/components/WishCard.tsx)
+
+![A store's products, browsed: each tile is the product's placeholder photo with a category pill, its name and price below, and the header funnel filters the grid to one category client-side from the products already fetched](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-fig-catalog.png?v=PLACEHOLDER)
+
+The timing is the rule. We extract on the second caller, never the first. With one caller, you are building a component for a future that may never come. That is a defect, the same as dead code. Two callers is a duplication you can point at. So nothing here was pulled out ahead of the screen that needed it. That done, the browse screens are set. The one thing left is the seam that turns what you are browsing into a wish.
 
 ## Turn a product into a wish
 
-This is the one seam between the catalog and step 7's collections, and it is deliberately narrow. A product detail's **Add to Wishlist** opens a picker that loads your wishlists, preselects the first, and on confirm creates a wish through the same `POST /wishes` the manual form calls. It copies the product's name, its price, its store link, and its blurb (when it has one) straight onto the new wish. The catalog fills a wish; it never touches how a wishlist is stored or owned.
+This is the one place the catalog reaches into step 7's collections, and it is deliberately narrow. A product detail's **Add to Wishlist** opens a picker that loads your wishlists, preselects the first, and on confirm creates a wish through the same `POST /wishes` the manual form calls. It copies the product's name, its price, its store link, its blurb, and its photo straight onto the new wish, plus a `storefront_id` that stamps which store it came from. The catalog fills a wish; it never touches how a wishlist is stored or owned. Delete the storefronts code tomorrow and wishlists keep working.
 
-That last field carries over as cleanly as the rest, thanks to the naming convention. A product's store URL is `link_url`, the same field name a wish uses, so the call is a straight copy. The price is the same free ride from the read section, a `float` landing on a `float`. There is no adapter between a product and a wish; there is one endpoint and four fields that already match.
+Those fields carry over cleanly because of the naming convention. A product's store URL is `link_url` and its picture is `image_url`, the same field names a wish uses, so the copy is straight. The price is the same free ride from the read section, a `float` landing on a `float`. There is no adapter between a product and a wish; there is one endpoint and the fields already match.
 
-[![AddToWishlistModal: pick a wishlist and create a wish through the same POST /wishes the manual form uses](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-code-addwish.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/08-storefronts/frontend/src/components/AddToWishlistModal.tsx)
+[![AddToWishlistModal: pick a wishlist and create a wish through the same POST /wishes the manual form uses, carrying the product's photo and storefront_id onto it](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-code-addwish.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/08-storefronts/frontend/src/components/AddToWishlistModal.tsx)
 
-![Adding a product to a wishlist: the product detail opens the picker, you choose a wishlist, and the app creates a wish through the same POST /wishes the manual form uses, carrying the product's name, price, link, and its blurb when it has one onto it](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-wish.png?v=PLACEHOLDER)
+The `storefront_id` earns its keep on the way back out. A wish that came from a store wears that store's logo as a corner badge on its tile, and its detail reads "From Nestwell" above the title. A hand-typed wish carries no `storefront_id`, so it wears no badge. One `useStorefronts` hook resolves the id back to its store wherever a wish shows, so the badge can't drift between the grid and the detail.
 
-The picker also refuses to dead-end, and that is a design decision, not an accident. Open it with no wishlists yet and it routes you to create one instead of leaving you stuck with nothing to pick. Because the confirm always has a preselected target, there is no silent no-op where you tap Add and the app does nothing.
+![A catalog wish, back in your list: the tile wears the store's logo badge in the corner, and the wish detail reads "From Nestwell" above the title, both resolved from the storefront_id the add-flow stamped on](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-fig-badge.png?v=PLACEHOLDER)
+
+The add flow also refuses to save the same thing twice. A product detail reads every wish across your lists once, through a new `GET /wishes/mine`, and if this product's link is already saved it shows "Already in Wishlist" instead of the add button. The match is on `link_url`, the field a catalog wish carries over, so the same product from the same store is caught wherever you filed it. The whole-account read is what the per-wishlist listing can't give: a wish could be in any of your lists, so the guard needs to see all of them at once.
+
+[![The wishes route: create stamps storefront_id, and GET /wishes/mine flattens every wish across your lists for the duplicate guard, declared before the id route so the literal path wins](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-code-mine.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/08-storefronts/backend/app/routes/wishes.py)
+
+![Adding a product to a wishlist through the one seam: the product detail opens the picker, you choose a wishlist, and the app creates a wish through the same POST /wishes the manual form uses, carrying the product's name, price, link, photo, and storefront_id onto it](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-wish.png?v=PLACEHOLDER)
+
+The picker also refuses to dead-end. Open it with no wishlists yet and it routes you to create one instead of leaving you stuck with nothing to pick. Because the confirm always has a preselected target, there is no silent no-op where you tap Add and the app does nothing.
 
 ![Adding a product with no wishlists yet: the picker preselects a wishlist and creates a wish through POST /wishes when you have lists, and routes you to the New Wishlist screen when you have none, so it never dead-ends on an empty picker](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-empty.png?v=PLACEHOLDER)
 
 ## Deploy it
 
-This step adds infrastructure: two DynamoDB tables and a per-table read-only grant on the instance role. Deploy on a stack that is already up, then run the seed once so the catalog has something in it:
+This step adds infrastructure: two DynamoDB tables and a per-table read-only grant on the instance role. The catalog images reuse step 6's photos bucket and its read grant, so no S3 infrastructure is added. Deploy on a stack that is already up, then run the seed once so the catalog has both rows and images:
 
-[![The three deploy commands: terraform apply, the image rebuild, and the one-time catalog seed](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-code-deploy.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/08-storefronts/infra)
+[![The three deploy commands: terraform apply, the image rebuild, and the one-time catalog seed with PHOTOS_BUCKET_NAME set](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-08-code-deploy.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/08-storefronts/infra)
 
-Like the life-events seed, `seed_storefronts.py` is not optional: without it, `GET /storefronts` returns an empty list and the Wish Store tab has nothing to browse. It is idempotent, so a re-run is harmless. And if a fresh `terraform apply` dies with a bare `CREATE_FAILED` and no logs, run the apply again. App Runner's service creation is intermittently flaky. Terraform taints the failed service and replaces it on the next apply, so a plain retry brings it up on identical config. Nothing is wrong in the config, so don't go hunting for it.
+Like the life-events seed, `seed_storefronts.py` is not optional: without it, `GET /storefronts` returns an empty list and the Wish Store tab has nothing to browse. Pass it `PHOTOS_BUCKET_NAME` from `terraform output` so it knows where to upload the images. It is idempotent, so a re-run is harmless. And if a fresh `terraform apply` dies with a bare `CREATE_FAILED` and no logs, run the apply again. App Runner's service creation is intermittently flaky. Terraform taints the failed service and replaces it on the next apply, so a plain retry brings it up on identical config. Nothing is wrong in the config, so don't go hunting for it.
 
 ## What bit me
 
-Two things cost me time here, and both were build-time, not runtime. A read-only catalog that reuses machinery step 7 already shipped had fewer live failures than the photo-delete of step 6 or the float-500 of step 7. What it had was a gate that kept finding work: a duplication that cascaded, and a token that had to earn its callers before it landed.
+Three things cost me time here. One waited for the first real end-to-end run and then failed loudly; the other two the gate caught before anything ran at all.
 
-**Adding a screen re-created the one next to it.** Every browse screen I added started as a copy of the wish screen beside it, and the copies did not announce themselves. jscpd caught the byte-for-byte ones. The semantic pass caught the ones that only matched in shape. The picker had hand-rolled its own confirm-and-cancel button stack. But `ConfirmCancelButtons` already owned exactly that, over in `ConfirmModal` and the Settings screen. Swapping it in dropped a now-dead `PrimaryButton` import the hand-rolled version had pulled in. The draining part was the cascade. Extract the shared tile, and the shared detail block is the next duplicate standing. Extract that, and the duplicated link-open is what's left. Each fix uncovered the next, so I re-ran the gate after every one and only stopped when a full pass found nothing. A new screen modeled on an old one is a likely duplicate, so check it before anything else.
+**The seed died reaching for its own images.** I wrote the seed to load each placeholder from this step's `assets/catalog/`, two levels up from `infra/scripts/`, and I wrote that fact into a comment right above the line. Then the line itself resolved one level too few: `parents[1]` instead of `parents[2]`, which points at `infra/assets/`, a directory that does not exist. Nothing caught it, because a bad path is not a syntax error or a type error. It waited until the first real run, when the seed opened the first image and threw `FileNotFoundError` at a path I could see was wrong the moment I read it. The fix was one character. What stung was that my own comment, sitting one line above, had described the correct path all along; the code had quietly drifted off its own spec. The comment was right and the code was wrong, which is the one direction you never expect.
 
-**A token I reached for did not exist, then earned its way in.** Porting these screens, I reached for `Spacing.xs` and `Typography.caption`, and neither was in this codebase. This codebase adds a token the moment a component first needs it, never before. tsc caught both instantly. For the caption I used what was already there, `Typography.bodySecondary`. It never found a second use, so it stayed, and it still is not a `caption`. For a 4pt gap I dropped a bare literal, because one use does not earn a token. Then the audit gate found that same 4pt in three places at once: the store card's two gaps and the tab bar's pill padding. That is exactly the "a value used twice becomes a token" bar. So `Spacing.xs` landed with its three real callers, not on my first wish for it. The hairline under a tile's name stayed a bare 2px, smaller than any scale step, because the code only ever asks for it once.
+**Adding a screen re-created the one next to it.** Every browse screen I added started as a copy of the wish screen beside it, and the copies did not announce themselves. jscpd caught the byte-for-byte ones. The semantic pass caught the ones that only matched in shape. The picker had hand-rolled its own confirm-and-cancel button stack, but `ConfirmCancelButtons` already owned exactly that, over in `ConfirmModal` and the Settings screen. Swapping it in dropped a now-dead `PrimaryButton` import the hand-rolled version had pulled in. The draining part was the cascade. Extract the shared tile, and the shared detail block is the next duplicate standing. Extract that, and the duplicated link-open is what's left. Each fix uncovered the next, so I re-ran the gate after every one and only stopped when a full pass found nothing. The parity pass that added images and the store badge later hit the same pattern again: `PhotoDetailHero`, `DetailStatusRow`, and the picker's `SelectableRow` each earned extraction on their own second caller, the gate re-run after each. A new screen modeled on an old one is a likely duplicate, so I learned to check it before anything else.
+
+**A token I reached for did not exist, then earned its way in.** Porting these screens, I reached for `Spacing.xs` and `Typography.caption`, and neither was in this codebase. This codebase adds a token the moment a component first needs it, never before. tsc caught both instantly. For the caption I used what was already there, `Typography.bodySecondary`. It never found a second use, so it stayed, and it still is not a `caption`. For a 4pt gap I dropped a bare literal, because one use does not earn a token. Then the audit gate found that same 4pt in three places at once: the store card's two gaps and the tab bar's pill padding. That is exactly the "a value used twice becomes a token" bar. So `Spacing.xs` landed with its three real callers, not on my first wish for it.
 
 ## You're done when
 
-- [ ] The **Wish Store** tab lists the seeded stores, each with its product count.
-- [ ] Opening a store shows its products in the grid, and opening a product shows its detail.
-- [ ] **Add to Wishlist** on a product, then picking a wishlist, drops it in as a wish with the product's price as its cost and the store link as its link.
+- [ ] The **Wish Store** tab lists the seeded stores, each with its logo and its product count.
+- [ ] Opening a store shows its products as tiles with photos and category pills, and opening a product shows its detail with the photo.
+- [ ] A store with more than one category shows a filter in the header, and picking one narrows the grid to it.
+- [ ] **Add to Wishlist** on a product, then picking a wishlist, drops it in as a wish with the product's price, link, and photo, and its tile wears the store's logo badge.
+- [ ] Opening that wish shows "From" its store above the title.
+- [ ] Re-opening the same product shows "Already in Wishlist" instead of the add button.
 - [ ] With no wishlists yet, the picker routes you to create one instead of dead-ending.
-- [ ] `curl $API/storefronts` with no token returns 401; with a valid token it returns the seeded stores.
-- [ ] `curl $API/storefronts/nestwell/products` with a valid token returns that store's products in display order.
+- [ ] `curl $API/storefronts` with no token returns 401; with a valid token it returns the seeded stores, each with a signed `logo_url`.
+- [ ] `curl $API/storefronts/nestwell/products` with a valid token returns that store's products in display order, each with a `category` and a signed `image_url`.
 
 ## What's next
 
