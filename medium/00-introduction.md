@@ -53,7 +53,7 @@ The app is deliberately split into two kinds of code:
 - A domain-agnostic **platform**: the app shell and design system, auth and onboarding, profiles, media handling, the social graph, notifications, sharing, admin, and operations. None of it knows what a "wishlist" is.
 - Swappable **domain modules** 🧩: collections (wishlists and wishes), storefronts, in-app browser acquisition, and events.
 
-The modules plug into the platform like jigsaw pieces, and the final step of the series documents each piece's contract. Swap *wishlists + wish stores* for *notes*, or *trips + destinations*, or any collection-shaped domain you can think of — and the platform (accounts, photos, follows, notifications, sharing, admin) comes along for free.
+The modules plug into the platform like jigsaw pieces, and the finished application in `final/` documents each piece's contract. Swap *wishlists + wish stores* for *notes*, or *trips + destinations*, or any collection-shaped domain you can think of — and the platform (accounts, photos, follows, notifications, sharing, admin) comes along for free.
 
 You're not just building Kivan. You're building a platform you'll reuse for your next three ideas.
 
