@@ -16,7 +16,7 @@ interface LoveButtonProps {
 
 /**
  * The heart on a wishlist you're viewing: love it, and the count moves with
- * you. Optimistic — the fill and tally flip on tap and roll back with a toast
+ * you. Optimistic: the fill and tally flip on tap and roll back with a toast
  * if the request fails. Mounts once the wishlist and love status are loaded,
  * so its initial fill and count are known.
  */

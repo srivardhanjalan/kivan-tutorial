@@ -44,7 +44,7 @@ export type RootStackParamList = {
   /** The in-app browser opened on one real store (the brand is passed) */
   InAppBrowser: { brand: Brand };
   /** A user's public profile, reached from Discover or a follow list. Only the
-      id is passed — the profile fetches the record. */
+      id is passed: the profile fetches the record. */
   UserProfile: { userId: string };
   /** The followers or following list behind a profile's counts */
   FollowList: { userId: string; mode: 'followers' | 'following' };

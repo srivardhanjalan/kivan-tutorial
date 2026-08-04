@@ -9,13 +9,13 @@ from app.utils.dynamo import adjust_count, batch_get_items, query_all_pages
 from app.utils.user_access import get_public_user
 
 # The follow graph hangs off /users/{id}, so it shares that prefix but keeps its
-# own file — following is one concern, the profile CRUD in users.py another.
+# own file: following is one concern, the profile CRUD in users.py another.
 router = APIRouter(prefix="/users", tags=["followers"])
 
 
 def _users_for_ids(ids: list[str]) -> list[User]:
     """Resolve a list of user ids to public User records in the given order,
-    dropping soft-deleted accounts. One BatchGetItem instead of N GetItems —
+    dropping soft-deleted accounts. One BatchGetItem instead of N GetItems:
     the id list comes from an edge query, so this is the join back to profiles."""
     unique_ids = list(dict.fromkeys(ids))  # dedupe, preserve first-seen order
     if not unique_ids:
@@ -52,11 +52,11 @@ def follow_user(user_id: str, follower_id: str = Depends(get_current_user_id)):
         )
     except ClientError as e:
         if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
-            return  # already following — idempotent success, counts untouched
+            return  # already following: idempotent success, counts untouched
         raise
 
     # The edge is new: bump the followed user's followers and the caller's
-    # following (best-effort — the edge above is the source of truth)
+    # following (best-effort: the edge above is the source of truth)
     adjust_count(users_table, {"id": user_id}, "follower_count", 1)
     adjust_count(users_table, {"id": follower_id}, "following_count", 1)
 
@@ -73,7 +73,7 @@ def unfollow_user(user_id: str, follower_id: str = Depends(get_current_user_id))
         )
     except ClientError as e:
         if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
-            return  # not following — idempotent success, counts untouched
+            return  # not following: idempotent success, counts untouched
         raise
 
     adjust_count(users_table, {"id": user_id}, "follower_count", -1)
@@ -95,7 +95,7 @@ def get_followers(user_id: str, _viewer: str = Depends(get_current_user_id)):
 
 @router.get("/{user_id}/following", response_model=list[User])
 def get_following(user_id: str, _viewer: str = Depends(get_current_user_id)):
-    """Who this user follows — a Query on the base table, where follower_id is
+    """Who this user follows: a Query on the base table, where follower_id is
     the partition key."""
     get_public_user(user_id)
     edges = query_all_pages(

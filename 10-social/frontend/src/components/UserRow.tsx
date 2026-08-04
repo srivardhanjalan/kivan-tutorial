@@ -7,13 +7,13 @@ import Opacity from '../constants/Opacity';
 import { Spacing } from '../constants/ScreenStyles';
 import type { User } from '../services/api';
 
-/** The avatar diameter in a list row — this row's own metric */
+/** The avatar diameter in a list row: this row's own metric */
 const ROW_AVATAR_SIZE = 48;
 
 interface UserRowProps {
   user: Pick<User, 'first_name' | 'last_name' | 'email' | 'image_url'>;
   onPress: () => void;
-  /** A muted second line — a follower tally on the Discover rail. Omit for none. */
+  /** A muted second line: a follower tally on the Discover rail. Omit for none. */
   subtitle?: string;
 }
 

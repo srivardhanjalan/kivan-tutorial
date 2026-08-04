@@ -35,8 +35,8 @@ class UserWithCounts(User):
     """A public profile: the user plus their denormalized social counts and,
     for the viewer, whether they follow this user. The counts default to 0 so
     a record provisioned before step 10 (no count attributes) still serializes.
-    is_following is None when it doesn't apply — the viewer looking at their
-    own profile — and a bool otherwise."""
+    is_following is None when it doesn't apply (the viewer looking at their
+    own profile) and a bool otherwise."""
 
     follower_count: int = 0
     following_count: int = 0

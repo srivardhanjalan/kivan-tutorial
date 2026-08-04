@@ -9,7 +9,7 @@ import Opacity from './Opacity';
  * A value joins when a component first uses it, never in advance.
  */
 export const Spacing = {
-  // The hairline gap under a primary line before its muted second line — a
+  // The hairline gap under a primary line before its muted second line: a
   // tile's subtitle, a user row's, a profile stat's label. Sub-scale on
   // purpose (tighter than xs), and shared, so it's a token, not a literal.
   hairlineGap: 2,
@@ -84,7 +84,7 @@ export const CommonScreenStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.hairline,
   },
-  /** The same outlined surface as a fully-rounded pill — the quiet idle chip
+  /** The same outlined surface as a fully-rounded pill: the quiet idle chip
       (life-event selector) and the love button share it. Callers add their own
       padding and layout; this owns only the surface, border, and round. */
   outlinedPill: {
@@ -93,7 +93,7 @@ export const CommonScreenStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.hairline,
   },
-  /** The one dim every button in flight wears — composed in with `loading && `.
+  /** The one dim every button in flight wears: composed in with `loading && `.
       One spelling of "this control is busy/disabled", the CTA, OAuth, follow,
       love, and tile cards all share. */
   dimmed: {

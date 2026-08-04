@@ -171,7 +171,7 @@ export interface Wishlist {
   life_event_id: string;
   created_by: string;
   created_at: string;
-  /** Denormalized love tally (step 10) — how many users have loved it. */
+  /** Denormalized love tally (step 10): how many users have loved it. */
   love_count: number;
 }
 
@@ -456,7 +456,7 @@ export async function fetchPopularWishlists(): Promise<Wishlist[]> {
   return res.json();
 }
 
-/** A user's public profile — counts, and whether you follow them. */
+/** A user's public profile: counts, and whether you follow them. */
 export async function fetchUser(userId: string): Promise<UserWithCounts> {
   const res = await request(`/users/${userId}`);
   return res.json();
@@ -486,7 +486,7 @@ export async function fetchFollowing(userId: string): Promise<User[]> {
   return res.json();
 }
 
-/** Follow a user. Idempotent server-side — a repeat is a no-op. */
+/** Follow a user. Idempotent server-side: a repeat is a no-op. */
 export async function followUser(userId: string): Promise<void> {
   await request(`/users/${userId}/follow`, { method: 'POST' });
 }

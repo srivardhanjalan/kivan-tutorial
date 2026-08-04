@@ -1,8 +1,8 @@
-"""Public access to another user's profile — the read side of the social step.
+"""Public access to another user's profile: the read side of the social step.
 
 Distinct from users.py's own-account guards: those 403 a soft-deleted CURRENT
 user (the caller is real, their account is gone). Looking at SOMEONE ELSE, a
-deleted account is simply not there — 404, never 403, so a deletion can't be
+deleted account is simply not there: 404, never 403, so a deletion can't be
 probed by the status code it returns.
 """
 from fastapi import HTTPException, status

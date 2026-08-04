@@ -11,7 +11,7 @@ import { searchUsers, fetchPopularUsers, fetchPopularWishlists } from '../servic
 import { pluralize } from '../utils/pluralize';
 import type { User } from '../services/api';
 
-/** How long the box sits still before a search fires — one request per pause,
+/** How long the box sits still before a search fires: one request per pause,
     not per keystroke. */
 const SEARCH_DEBOUNCE_MS = 300;
 

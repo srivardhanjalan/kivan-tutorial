@@ -189,7 +189,7 @@ def get_wishlist_wishes(
     wishlist_id: str, _user_id: str = Depends(get_current_user_id)
 ):
     """A wishlist's wishes in insertion order (created_at ASC). A public read
-    like GET /wishlists/{id} — you see the wishes of any wishlist you can view
+    like GET /wishlists/{id}: you see the wishes of any wishlist you can view
     (a friend's, off their profile). The GSI has no range key, so the sort is
     here. Adding or editing a wish still requires ownership."""
     get_wishlist_or_404(wishlist_id)

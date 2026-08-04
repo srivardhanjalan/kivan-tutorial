@@ -12,7 +12,7 @@ from app.utils.wishlist_access import get_wishlist_or_404
 
 # Loves span two nouns: the action is wishlist-scoped (POST /wishlists/{id}/love)
 # and the collection is user-scoped (a user's loved wishlists). One concern, two
-# prefixes — the same split-router shape wishes.py uses; main.py includes both.
+# prefixes: the same split-router shape wishes.py uses; main.py includes both.
 love_router = APIRouter(prefix="/wishlists", tags=["loves"])
 loved_router = APIRouter(prefix="/users", tags=["loves"])
 
@@ -21,8 +21,8 @@ loved_router = APIRouter(prefix="/users", tags=["loves"])
 # blocking I/O off the event loop.
 @love_router.post("/{wishlist_id}/love", status_code=status.HTTP_204_NO_CONTENT)
 def love_wishlist(wishlist_id: str, user_id: str = Depends(get_current_user_id)):
-    """Love a wishlist. Idempotent via a conditional put — exactly the follow
-    edge's discipline — so the denormalized love_count moves only on the first
+    """Love a wishlist. Idempotent via a conditional put, exactly the follow
+    edge's discipline, so the denormalized love_count moves only on the first
     love and a repeat is a harmless 204."""
     get_wishlist_or_404(wishlist_id)  # 404 a love aimed at nothing
 
@@ -33,7 +33,7 @@ def love_wishlist(wishlist_id: str, user_id: str = Depends(get_current_user_id))
         )
     except ClientError as e:
         if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
-            return  # already loved — idempotent, count untouched
+            return  # already loved: idempotent, count untouched
         raise
 
     adjust_count(wishlists_table, {"id": wishlist_id}, "love_count", 1)
@@ -50,7 +50,7 @@ def unlove_wishlist(wishlist_id: str, user_id: str = Depends(get_current_user_id
         )
     except ClientError as e:
         if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
-            return  # not loved — idempotent, count untouched
+            return  # not loved: idempotent, count untouched
         raise
 
     adjust_count(wishlists_table, {"id": wishlist_id}, "love_count", -1)
@@ -58,7 +58,7 @@ def unlove_wishlist(wishlist_id: str, user_id: str = Depends(get_current_user_id
 
 @love_router.get("/{wishlist_id}/love/status", response_model=LoveStatus)
 def get_love_status(wishlist_id: str, user_id: str = Depends(get_current_user_id)):
-    """Whether the current user loves this wishlist — the per-viewer bit the
+    """Whether the current user loves this wishlist: the per-viewer bit the
     detail screen needs, a single GetItem on the composite (user, wishlist) key."""
     response = wishlist_loves_table.get_item(
         Key={"user_id": user_id, "wishlist_id": wishlist_id}
@@ -70,7 +70,7 @@ def get_love_status(wishlist_id: str, user_id: str = Depends(get_current_user_id
 def get_loved_wishlists(user_id: str, _viewer: str = Depends(get_current_user_id)):
     """The wishlists a user has loved. A Query on the base loves table (user_id
     partitions it), then one BatchGetItem to the wishlists. A loved wishlist
-    later deleted simply drops out — the love edge outlived it, and this join
+    later deleted simply drops out: the love edge outlived it, and this join
     skips the missing record rather than 404-ing the whole list."""
     get_public_user(user_id)
     edges = query_all_pages(

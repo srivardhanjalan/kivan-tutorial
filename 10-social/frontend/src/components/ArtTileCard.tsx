@@ -8,7 +8,7 @@ import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 interface ArtTileCardProps {
   /** The caption under the tile: also the tile's accessibility label */
   title: string;
-  /** Tap handler. Omit for a display-only tile — a wish on someone else's
+  /** Tap handler. Omit for a display-only tile: a wish on someone else's
       wishlist, which you can see but not open. */
   onPress?: () => void;
   /** The art block's wash: a life-event pastel, or a neutral fill */

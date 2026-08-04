@@ -7,7 +7,7 @@ import useFetch from '../hooks/useFetch';
 import { fetchFollowers, fetchFollowing } from '../services/api';
 
 /**
- * The people behind a profile's counts — one screen for both directions,
+ * The people behind a profile's counts: one screen for both directions,
  * chosen by the `mode` param. Each row pushes that user's profile, so the graph
  * is walkable: a follower's followers, and on.
  */

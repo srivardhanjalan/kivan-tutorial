@@ -85,7 +85,7 @@ def get_popular_wishlists(
     _user_id: str = Depends(get_current_user_id),
 ):
     """Discover's "wishlists to love" rail: the most-loved wishlists. A Query on
-    PopularWishlistsIndex in descending love_count order, capped at `limit` — the
+    PopularWishlistsIndex in descending love_count order, capped at `limit`: the
     rail is a short preview, so this reads only the top page, never the whole
     index. Every wishlist is publicly viewable this step, so no privacy filter.
     Declared before /{wishlist_id} so "popular" is never read as a wishlist id."""
@@ -100,7 +100,7 @@ def get_popular_wishlists(
 
 @router.get("/{wishlist_id}", response_model=Wishlist)
 def get_wishlist(wishlist_id: str, _user_id: str = Depends(get_current_user_id)):
-    """A single wishlist — a public read this step: 404 if missing, but any
+    """A single wishlist, a public read this step: 404 if missing, but any
     signed-in user can view any wishlist (a friend's collection off their
     profile, one you're about to love). Editing it still requires ownership."""
     return get_wishlist_or_404(wishlist_id)

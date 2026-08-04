@@ -79,7 +79,7 @@ resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
     Statement = [
       {
         # Users: get/put/update by id (JIT provisioning + profile), plus the
-        # social reads step 10 adds — Query on the search/Discover GSIs,
+        # social reads step 10 adds: Query on the search/Discover GSIs,
         # BatchGetItem to resolve a follower/following id list to user records,
         # and UpdateItem for the denormalized follower/following counts.
         Effect = "Allow"
@@ -97,7 +97,7 @@ resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
       },
       {
         # Wishlists: get/put/delete by id, UpdateItem (guarded field-scoped
-        # updates — utils/dynamo.update_item_fields — and the denormalized
+        # updates, utils/dynamo.update_item_fields, and the denormalized
         # love_count), Query on CreatedByIndex (GET /wishlists/me, a user's
         # public wishlists, the account-deletion sweep), and BatchGetItem to
         # resolve a loved-wishlist id list to records.

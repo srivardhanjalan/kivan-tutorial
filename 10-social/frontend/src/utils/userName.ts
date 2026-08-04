@@ -1,7 +1,7 @@
 import type { User } from '../services/api';
 
 /** "First Last" from a backend user record, falling back to the email when no
-    name is set — the one spelling of how a user is titled in search rows,
+    name is set: the one spelling of how a user is titled in search rows,
     follow lists, and their profile header. */
 export function userDisplayName(
   user: Pick<User, 'first_name' | 'last_name' | 'email'>

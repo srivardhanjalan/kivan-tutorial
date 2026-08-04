@@ -35,7 +35,7 @@ export default function useOptimisticToggle(options: {
     try {
       await (next ? turnOn() : turnOff());
     } catch {
-      // The request lost — undo the optimistic flip and say so
+      // The request lost: undo the optimistic flip and say so
       setOn(!next);
       setCount((c) => c - step);
       toast.show(errorMessage, { type: 'error' });

@@ -1,7 +1,7 @@
 # Users table — written by JIT provisioning on a user's first authenticated
 # request. Step 04 kept it key-only; step 10 (social) adds the two indexes its
 # search and Discover screens query. Every indexed user carries entity_type =
-# "USER" as a constant partition key — the one value both GSIs hash on, so a
+# "USER" as a constant partition key: the one value both GSIs hash on, so a
 # single Query returns "all users" ordered by the index's range key.
 resource "aws_dynamodb_table" "users" {
   name         = "${local.project_name}-${local.environment}-users"
@@ -13,7 +13,7 @@ resource "aws_dynamodb_table" "users" {
     type = "S"
   }
 
-  # entity_type is a constant "USER" — the shared hash key that lets both GSIs
+  # entity_type is a constant "USER": the shared hash key that lets both GSIs
   # gather every user under one partition and sort by their range key.
   attribute {
     name = "entity_type"
@@ -26,7 +26,7 @@ resource "aws_dynamodb_table" "users" {
     type = "S"
   }
 
-  # Denormalized follower tally — the range key PopularUsersIndex sorts by, so
+  # Denormalized follower tally: the range key PopularUsersIndex sorts by, so
   # "most-followed first" is a Query, never a Scan-and-sort.
   attribute {
     name = "follower_count"
@@ -73,7 +73,7 @@ resource "aws_dynamodb_table" "wishlists" {
     type = "S"
   }
 
-  # entity_type is a constant "WISHLIST" — the shared hash key PopularWishlistsIndex
+  # entity_type is a constant "WISHLIST": the shared hash key PopularWishlistsIndex
   # gathers every wishlist under, so Discover's "wishlists to love" rail is one
   # Query sorted by love_count, never a Scan-and-sort (the users-table pattern).
   attribute {
@@ -81,7 +81,7 @@ resource "aws_dynamodb_table" "wishlists" {
     type = "S"
   }
 
-  # Denormalized love tally — the range key PopularWishlistsIndex ranks by.
+  # Denormalized love tally: the range key PopularWishlistsIndex ranks by.
   attribute {
     name = "love_count"
     type = "N"
@@ -219,7 +219,7 @@ resource "aws_dynamodb_table" "products" {
   }
 }
 
-# Followers table — one row per follow edge, keyed (follower_id, following_id):
+# Followers table, one row per follow edge, keyed (follower_id, following_id):
 # the actor's id partitions, so "who X follows" is a Query on the base table.
 # FollowingIndex flips the edge (hash following_id) to answer "who follows X".
 # The follower/following COUNTS live denormalized on the user record (see
@@ -251,7 +251,7 @@ resource "aws_dynamodb_table" "followers" {
   }
 }
 
-# Wishlist-loves table — one row per love edge, keyed (user_id, wishlist_id):
+# Wishlist-loves table, one row per love edge, keyed (user_id, wishlist_id):
 # the lover's id partitions, so "wishlists this user loves" is a Query on the
 # base table and needs no GSI. The per-wishlist love COUNT lives denormalized
 # on the wishlist record (adjust_count); "does user X love wishlist Y" is a

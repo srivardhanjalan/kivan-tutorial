@@ -5,7 +5,7 @@ import useLifeEvents from '../hooks/useLifeEvents';
 import { Spacing } from '../constants/ScreenStyles';
 import type { Wishlist } from '../services/api';
 
-/** A rail card's width — a horizontal preview's own metric, not a grid cell
+/** A rail card's width: a horizontal preview's own metric, not a grid cell
     (My Stuff's grid computes its own widths). */
 const RAIL_CARD_WIDTH = 150;
 

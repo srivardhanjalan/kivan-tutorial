@@ -11,7 +11,7 @@ import type { Wish } from '../services/api';
 
 interface WishCardProps {
   wish: Wish;
-  /** Tap handler. Omit on another user's wishlist — the wish is display-only. */
+  /** Tap handler. Omit on another user's wishlist: the wish is display-only. */
   onPress?: () => void;
   /** The logo of the store or brand this wish came from (sourced wishes only).
       Shown as a corner badge on an active wish; a completed wish wears the

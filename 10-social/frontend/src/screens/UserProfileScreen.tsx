@@ -22,7 +22,7 @@ import Opacity from '../constants/Opacity';
 import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 import type { UserWithCounts, Wishlist } from '../services/api';
 
-/** The avatar diameter on a profile header — this screen's own metric */
+/** The avatar diameter on a profile header: this screen's own metric */
 const PROFILE_AVATAR_SIZE = 88;
 
 /** One tappable count in the header (Followers / Following). */
@@ -83,7 +83,7 @@ function ProfileHeader({
   );
 }
 
-/** A titled group of wishlists with its empty fallback — the profile's own
+/** A titled group of wishlists with its empty fallback: the profile's own
     Wishlists and Loved sections are the same scaffold, differing only in their
     copy, so it lives here once. Null while loading: header shows 0, no grid. */
 function WishlistSection({
@@ -116,7 +116,7 @@ function WishlistSection({
 /**
  * A public profile: avatar and name, the follower/following counts (each taps
  * through to that list), a follow button for other users, and the two things
- * that make up their taste — the wishlists they own and the ones they've
+ * that make up their taste: the wishlists they own and the ones they've
  * loved. Everything refetches on focus, so returning to the screen reflects
  * follows and loves made elsewhere.
  */

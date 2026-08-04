@@ -13,7 +13,7 @@ interface AvatarProps {
 
 /**
  * A circular user avatar: the profile image when one is set, else the name's
- * first initial on a soft disc. The one spelling of "show a user's face" —
+ * first initial on a soft disc. The one spelling of "show a user's face":
  * search rows, follow lists, and the profile header all render through it, so
  * the fallback can't drift between them.
  */

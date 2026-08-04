@@ -92,7 +92,7 @@ def update_current_user(
     # Read the current record when a photo is changing (we need the old URL to
     # clean it up) OR when a name is changing (name_lowercase is rebuilt from
     # BOTH names, so a one-field rename needs the other from the record). The
-    # read — like the guarded write below — 403s a deleted account and 404s a
+    # read (like the guarded write below) 403s a deleted account and 404s a
     # missing one before anything is claimed.
     name_changing = (
         user_update.first_name is not None or user_update.last_name is not None
@@ -330,7 +330,7 @@ def complete_onboarding(user_id: str = Depends(get_current_user_id)):
 
 
 def _active(users: list[dict]) -> list[dict]:
-    """Drop soft-deleted accounts from an index read — they stay in the table
+    """Drop soft-deleted accounts from an index read: they stay in the table
     for referential integrity but must never surface in search or Discover."""
     return [u for u in users if not u.get("is_deleted", False)]
 
@@ -343,7 +343,7 @@ def search_users(
 ):
     """Typeahead search by name. A prefix Query on NameSearchIndex (all users
     share the "USER" partition, name_lowercase is the sort key), never a Scan.
-    An empty query returns nothing — the client shows the popular rail instead."""
+    An empty query returns nothing: the client shows the popular rail instead."""
     prefix = q.strip().lower()
     if not prefix:
         return []
@@ -364,7 +364,7 @@ def get_popular_users(
     """Discover's default rail: the most-followed users. A Query on
     PopularUsersIndex in descending follower_count order returns them
     pre-sorted; we read the index (small at this app's scale), drop deleted
-    accounts, and take the top `limit`. is_following is left unset here — the
+    accounts, and take the top `limit`. is_following is left unset here: the
     rows navigate to a profile, where the real follow state is fetched."""
     ranked = query_all_pages(
         users_table,
@@ -377,8 +377,8 @@ def get_popular_users(
 
 @router.get("/{user_id}", response_model=UserWithCounts)
 def get_user(user_id: str, viewer_id: str = Depends(get_current_user_id)):
-    """A user's public profile: their record, denormalized counts, and — unless
-    you're looking at yourself — whether you follow them (a single GetItem on
+    """A user's public profile: their record, denormalized counts, and, unless
+    you're looking at yourself, whether you follow them (a single GetItem on
     the follow edge). 404 if the user is missing or a deleted account."""
     user = get_public_user(user_id)
     is_following = None
@@ -392,7 +392,7 @@ def get_user(user_id: str, viewer_id: str = Depends(get_current_user_id)):
 
 @router.get("/{user_id}/wishlists", response_model=list[Wishlist])
 def get_user_wishlists(user_id: str, _viewer: str = Depends(get_current_user_id)):
-    """A user's wishlists, newest first — the public read behind their profile.
+    """A user's wishlists, newest first: the public read behind their profile.
     Every wishlist is viewable this step (privacy is step 14); the same
     CreatedByIndex Query as GET /wishlists/me, just for another user."""
     get_public_user(user_id)
