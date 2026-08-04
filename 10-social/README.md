@@ -63,6 +63,8 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt -r requiremen
 .venv/bin/python -m pytest
 ```
 
+The suite works on Python 3.11 to 3.13 (pydantic-core has no 3.14 wheel yet).
+
 ## Deploy it
 
 This step **adds infrastructure**: two DynamoDB tables (`followers`, with a

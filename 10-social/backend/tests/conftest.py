@@ -200,7 +200,6 @@ def put_user(
     first_name: str | None = None,
     last_name: str | None = None,
     follower_count: int = 0,
-    following_count: int = 0,
     is_deleted: bool = False,
 ):
     item = {
@@ -210,7 +209,7 @@ def put_user(
         "last_name": last_name,
         "entity_type": "USER",
         "follower_count": follower_count,
-        "following_count": following_count,
+        "following_count": 0,
         "onboarding_completed": True,
         "created_at": "2026-01-01T00:00:00+00:00",
         "updated_at": "2026-01-01T00:00:00+00:00",
