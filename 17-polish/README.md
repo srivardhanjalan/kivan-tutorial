@@ -4,7 +4,7 @@
 is its written contract so the scope is documented rather than remembered.*
 
 The feature steps ship their screens with a deliberately simpler UI than the
-finished design, the one the repo's mocks and hero images show. That is on
+finished design; the repo's mocks show that design's look. That is on
 purpose: a plainer screen keeps the feature's logic readable while you are
 learning it, so the row list, the extra tap, and the placeholder layout are
 teaching aids, not the finished product. This step is where the app converges
@@ -16,7 +16,8 @@ look and feel like the real product.
 ## Scope
 
 Drawn from the divergences the earlier steps left behind on purpose. Each box
-is a refinement the finished design has and the tutorial steps do not yet.
+names its refinement concretely; some appear in the mocks, the rest are
+described here in full.
 
 ### Product detail
 

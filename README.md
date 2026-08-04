@@ -61,9 +61,10 @@ own. You're not just building Kivan; you're building a platform you can reuse.
 **How the repository works:**
 
 - **One folder per step**, named for what it builds (`01-prerequisites` …
-  `16-operations`). `01-prerequisites` sets up your machine and accounts; every
-  folder from `02-app-shell` on is a **complete, runnable, deployable
-  snapshot** — you never need another folder to run a step.
+  `17-polish`). `01-prerequisites` sets up your machine and accounts; every
+  folder from `02-app-shell` through `16-operations` is a **complete, runnable,
+  deployable snapshot**: you never need another folder to run a step. `17-polish`
+  is the exception for now, a written scope spec that ships last.
 - **Everything lands through pull requests** — main accepts no direct pushes
   (enforced by a repository ruleset, no admin bypass). Each step is three:
   a *baseline* PR (exact copy of the previous step's folder), a **code PR** — whose
