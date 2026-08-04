@@ -149,6 +149,19 @@ scope, not this one.
       storefront or brand. *tutorial:* the manual wish form and the
       browse/scrape flow are separate; there is no paste-a-URL entry.
 
+## Wishlist form
+
+- [ ] Pinned editor CTA. *source:* `EditorLayout` pins the save action in a
+      footer below the scroll, labeled with the life-event icon ("Start
+      Adding Wishes"). *tutorial:* an inline `PrimaryButton` that scrolls
+      with the form inside `FloatingHeaderLayout`.
+- [ ] Post-create flow. *source:* `navigation.replace` lands the user inside
+      the new wishlist, ready to add wishes. *tutorial:* `goBack()` returns
+      to the previous screen.
+- [ ] Delete lives with the form. *source:* Delete Wishlist sits inside the
+      wishlist settings editor. *tutorial:* delete is an action on the
+      wishlist detail screen. (Both reachable: placement only.)
+
 ## Directories (storefronts and brands)
 
 - [ ] Image-forward grid layouts (storefront card grid, brand logo wall)
