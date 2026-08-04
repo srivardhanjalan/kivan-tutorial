@@ -24,7 +24,7 @@ retired id would otherwise linger in the directory forever.
 The rows below are a CURATED subset of real brands, spanning categories and
 countries so the multi-currency capture is real when you browse them: a scrape
 from an India store quotes ₹, a US store $, a UK store £, an EU store €, a UAE
-store AED. Four of them (Nike, Zara, Nykaa, Puma) have a dedicated scraper in
+store AED. Four of them (Zara, Nykaa, Puma, Apple) have a dedicated scraper in
 frontend/src/scrapers/brands/, so browsing to one of those exercises the
 brand-scraper path; the rest fall back to the generic Firecrawl scrape.
 
