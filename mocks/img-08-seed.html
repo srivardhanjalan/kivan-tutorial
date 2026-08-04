@@ -2,45 +2,49 @@
   html,body{margin:0;padding:0}
   body{background:transparent;
     font-family:-apple-system,'Segoe UI',Roboto,sans-serif;padding:44px 48px;
-    width:872px;height:470px;box-sizing:border-box;overflow:hidden}
+    width:872px;height:512px;box-sizing:border-box;overflow:hidden}
   .card{max-width:776px;margin:0 auto;background:transparent;border-radius:22px;
     box-shadow:none;padding:30px 40px 28px}
   .k{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
     color:#5b6172;background:#eef0f4;padding:4px 12px;border-radius:20px}
   h1{font-size:23px;font-weight:800;color:#1f2430;margin:11px 0 3px;letter-spacing:-.01em}
   .sub{font-size:14px;color:#8a90a0;margin:0;line-height:1.45}
-  .stage{position:relative;width:700px;height:196px;margin:16px auto 0}
-  .node{position:absolute;top:40px;width:150px;display:flex;flex-direction:column;align-items:center;z-index:2}
-  .node img,.node .ic{width:62px;height:62px;border-radius:12px}
+  .stage{position:relative;width:700px;height:250px;margin:16px auto 0}
+  .node{position:absolute;width:150px;display:flex;flex-direction:column;align-items:center;z-index:2}
+  .node img,.node .ic{width:60px;height:60px;border-radius:12px}
   .node .lbl{margin-top:8px;font-size:12.5px;font-weight:800;color:#2b3040}
   .node .tag{font-size:11px;color:#9aa0b0;font-family:Menlo,monospace;margin-top:1px;text-align:center}
-  svg.wires{position:absolute;inset:0;width:700px;height:196px;z-index:1;overflow:visible}
+  svg.wires{position:absolute;inset:0;width:700px;height:250px;z-index:1;overflow:visible}
   .al{font-size:12px;fill:#5b6172;font-weight:600}.al.hot{fill:#FF385C;font-weight:700}
-  .foot{font-size:12px;color:#9aa0b0;text-align:center;margin:12px auto 0;max-width:660px;line-height:1.45}
+  .foot{font-size:12px;color:#9aa0b0;text-align:center;margin:12px auto 0;max-width:680px;line-height:1.45}
 </style></head><body>
 <div class="card">
   <span class="k">Seed</span>
   <h1>A catalog the runtime can't write</h1>
-  <p class="sub">Seeding writes both tables from your own credentials. The running server can only read them.</p>
+  <p class="sub">Seeding writes both tables and uploads the images from your own credentials. The running server only reads them.</p>
   <div class="stage">
-    <svg class="wires" viewBox="0 0 700 196">
+    <svg class="wires" viewBox="0 0 700 250">
       <defs>
         <marker id="s" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto"><path d="M0,0 L6.5,3 L0,6 Z" fill="#5b6172"/></marker>
         <marker id="h" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto"><path d="M0,0 L6.5,3 L0,6 Z" fill="#FF385C"/></marker>
       </defs>
-      <line x1="150" y1="71" x2="286" y2="71" stroke="#5b6172" stroke-width="1.8" marker-end="url(#s)"/>
-      <text class="al" x="218" y="57" text-anchor="middle">seed: put_item</text>
-      <line x1="550" y1="71" x2="414" y2="71" stroke="#FF385C" stroke-width="2.1" marker-end="url(#h)"/>
-      <text class="al hot" x="482" y="57" text-anchor="middle">Scan / Query</text>
-      <text class="al hot" x="482" y="92" text-anchor="middle">read only, no write</text>
+      <path d="M150 108 C 210 108, 220 58, 282 58" fill="none" stroke="#5b6172" stroke-width="1.8" marker-end="url(#s)"/>
+      <text class="al" x="212" y="46" text-anchor="middle">put_item</text>
+      <path d="M150 130 C 210 130, 220 182, 282 182" fill="none" stroke="#5b6172" stroke-width="1.8" marker-end="url(#s)"/>
+      <text class="al" x="212" y="202" text-anchor="middle">upload 19 images</text>
+      <path d="M548 58 C 486 58, 476 108, 414 108" fill="none" stroke="#FF385C" stroke-width="2.1" marker-end="url(#h)"/>
+      <text class="al hot" x="490" y="46" text-anchor="middle">Scan / Query</text>
+      <path d="M548 182 C 486 182, 476 132, 414 132" fill="none" stroke="#FF385C" stroke-width="2.1" marker-end="url(#h)"/>
+      <text class="al hot" x="490" y="206" text-anchor="middle">sign on read</text>
     </svg>
-    <div class="node" style="left:10px">
+    <div class="node" style="left:10px;top:78px">
       <svg class="ic" viewBox="0 0 80 80"><rect x="6" y="12" width="68" height="50" rx="7" fill="#EDEFF3" stroke="#5b6172" stroke-width="2.4"/><path d="M20 30 l10 8 -10 8" fill="none" stroke="#5b6172" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><line x1="38" y1="47" x2="54" y2="47" stroke="#5b6172" stroke-width="3" stroke-linecap="round"/><rect x="24" y="64" width="32" height="5" rx="2.5" fill="#5b6172"/></svg>
       <div class="lbl">You</div><div class="tag">developer creds</div>
     </div>
-    <div class="node" style="left:275px"><img src="dynamodb.svg"><div class="lbl">DynamoDB</div><div class="tag">storefronts + products</div></div>
-    <div class="node" style="left:540px"><img src="apprunner.svg"><div class="lbl">App Runner</div><div class="tag">the instance role</div></div>
+    <div class="node" style="left:275px;top:28px"><img src="dynamodb.svg"><div class="lbl">DynamoDB</div><div class="tag">storefronts + products</div></div>
+    <div class="node" style="left:275px;top:152px"><img src="s3-arch.svg"><div class="lbl">S3 photos bucket</div><div class="tag">catalog/ images</div></div>
+    <div class="node" style="left:540px;top:78px"><img src="apprunner.svg"><div class="lbl">App Runner</div><div class="tag">the instance role</div></div>
   </div>
-  <div class="foot">The instance role gets Scan on storefronts and Query on products, and no write action on either, so nothing the server runs can overwrite a store. The catalog changes only when you re-run the seed.</div>
+  <div class="foot">The instance role gets Scan on storefronts, Query on products, and read on the bucket to sign images, and no write to any of it, so nothing the server runs can overwrite the catalog. It changes only when you re-run the seed.</div>
 </div>
 </body></html>
