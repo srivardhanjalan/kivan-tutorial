@@ -103,6 +103,14 @@ scope, not this one.
 - [ ] Masonry wishes grid. *source:* wishes lay out in a responsive masonry
       grid (2/3/4 columns by width). *tutorial:* a uniform `TileGrid`.
 
+## Wish detail
+
+- [ ] The glass price pill sits beside the store link. *source:* a `BlurView`
+      glass price container in a price-plus-link row, the link button labeled
+      with the wish's store domain. *tutorial:* the price is plain text in
+      `DetailTitleBlock` and the link is a stacked **Open Link**
+      `DetailAction`.
+
 ## Product detail
 
 - [ ] The glass price pill sits beside a **View Product** action. *source:* a
