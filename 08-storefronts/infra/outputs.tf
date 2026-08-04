@@ -17,3 +17,8 @@ output "resource_group_name" {
   description = "Name of the resource group"
   value       = aws_resourcegroups_group.kivan.name
 }
+
+output "photos_bucket_name" {
+  description = "Private photos bucket; the storefronts seed uploads catalog images here (pass as PHOTOS_BUCKET_NAME)"
+  value       = aws_s3_bucket.photos.bucket
+}

@@ -30,6 +30,14 @@ s3_client = boto3.client(
 # reaps whatever is never claimed.
 PENDING_PREFIX = "pending/"
 
+# Curated catalog images (store logos, product photos) live under here. Unlike
+# a user upload, a catalog object is shared, read-only reference data seeded by
+# infra/scripts/seed_storefronts.py: many wishes legitimately point at one photo
+# (adding a product to a wishlist carries its photo onto the wish), and no
+# record owns it. So it sits outside the one-record-one-object ownership rules
+# below: referenced freely, never claimed, never deleted by a record's delete.
+CATALOG_PREFIX = "catalog/"
+
 
 def s3_key_from_url(url: Optional[str]) -> Optional[str]:
     """The bare object key if `url` points at our photos bucket, else None.
@@ -100,6 +108,11 @@ def delete_photo_by_url(url: Optional[str]) -> None:
     key = s3_key_from_url(url)
     if key is None:
         return
+    if key.startswith(CATALOG_PREFIX):
+        # Shared, seed-owned reference object: a wish delete or photo swap must
+        # never reap it, or it would blank that product/store for every other
+        # record pointing at it. Only the seed manages the catalog keyspace.
+        return
 
     try:
         s3_client.delete_object(Bucket=settings.photos_bucket_name, Key=key)
@@ -157,6 +170,18 @@ def plan_photo_update(new_url: str, old_url, user_id: str):
     is_pending = new_key is not None and new_key.startswith(PENDING_PREFIX)
     if is_pending and new_key[len(PENDING_PREFIX):] == old_key:
         return None, None, None  # already claimed — this echo's target IS the stored object
+
+    # A catalog key is shared, read-only reference data (a seeded store logo or
+    # product photo), so it is exempt from the ownership rules below: adding a
+    # catalog product to a wishlist carries its photo onto the new wish, and many
+    # wishes may reference one object. Referencing it grants nothing a browse of
+    # the catalog wouldn't (every catalog image is already readable via
+    # GET /storefronts and /products). Store the canonical bucket URL (re-signed
+    # on read); never claim it (already permanent) and never mark it for deletion
+    # (shared, not the caller's to remove). Catalog references only ever arrive
+    # on a create (AddToWishlistModal), so there is no prior object to sweep.
+    if new_key is not None and new_key.startswith(CATALOG_PREFIX):
+        return permanent_url_for_key(new_key), None, None
 
     # Past the echoes, the only legal our-bucket shape is a fresh pending
     # upload owned by the caller (uploads always arrive as pending/ — no
