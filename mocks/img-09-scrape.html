@@ -1,0 +1,44 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  html,body{margin:0;padding:0}
+  body{background:transparent;
+    font-family:-apple-system,'Segoe UI',Roboto,sans-serif;padding:40px 44px;
+    width:848px;height:452px;box-sizing:border-box;overflow:hidden}
+  .card{max-width:760px;margin:0 auto;background:transparent;border-radius:22px;
+    box-shadow:none;padding:30px 40px 28px}
+  .k{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+    color:#5b6172;background:#eef0f4;padding:4px 12px;border-radius:20px}
+  h1{font-size:23px;font-weight:800;color:#1f2430;margin:11px 0 3px;letter-spacing:-.01em}
+  .sub{font-size:14px;color:#8a90a0;margin:0;line-height:1.45}
+  .stage{position:relative;width:680px;height:196px;margin:16px auto 0}
+  .node{position:absolute;top:40px;width:130px;display:flex;flex-direction:column;align-items:center;z-index:2}
+  .node img{width:60px;height:60px}
+  .node .lbl{margin-top:7px;font-size:12.5px;font-weight:800;color:#2b3040}
+  .node .tag{font-size:11px;color:#9aa0b0;font-family:Menlo,monospace;margin-top:1px;text-align:center}
+  svg.wires{position:absolute;inset:0;width:680px;height:196px;z-index:1;overflow:visible}
+  .al{font-size:12px;fill:#5b6172;font-weight:600}.al.hot{fill:#FF385C;font-weight:700}
+  .foot{font-size:12px;color:#9aa0b0;text-align:center;margin:12px auto 0;max-width:640px;line-height:1.45}
+</style></head><body>
+<div class="card">
+  <span class="k">Scrape</span>
+  <h1>The scrape, key-side</h1>
+  <p class="sub">The phone posts a URL; the backend attaches the Firecrawl key and calls out; the page comes back.</p>
+  <div class="stage">
+    <svg class="wires" viewBox="0 0 680 196">
+      <defs>
+        <marker id="s" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto"><path d="M0,0 L6.5,3 L0,6 Z" fill="#5b6172"/></marker>
+        <marker id="h" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto"><path d="M0,0 L6.5,3 L0,6 Z" fill="#FF385C"/></marker>
+      </defs>
+      <line x1="120" y1="70" x2="300" y2="70" stroke="#5b6172" stroke-width="1.8" marker-end="url(#s)"/>
+      <text class="al" x="210" y="56" text-anchor="middle">POST the page URL</text>
+      <line x1="380" y1="70" x2="560" y2="70" stroke="#5b6172" stroke-width="1.8" marker-end="url(#s)"/>
+      <text class="al" x="470" y="56" text-anchor="middle">+ Bearer key from SSM</text>
+      <line x1="120" y1="170" x2="560" y2="170" stroke="#FF385C" stroke-width="2.1" marker-end="url(#h)"/>
+      <text class="al hot" x="340" y="156" text-anchor="middle">the key is attached only here, never on the phone</text>
+    </svg>
+    <div class="node" style="left:15px"><img src="mobile.svg"><div class="lbl">In-app browser</div><div class="tag">holds no key</div></div>
+    <div class="node" style="left:275px"><img src="apprunner.svg"><div class="lbl">Backend proxy</div><div class="tag">POST /scrape/firecrawl</div></div>
+    <div class="node" style="left:535px"><img src="globe.svg"><div class="lbl">Firecrawl</div><div class="tag">the live page</div></div>
+  </div>
+  <div class="foot">A mobile bundle is readable, so the key can never ship in the app. The frontend sends only the URL; the proxy adds the key from SSM and maps a slow upstream to 504, a bad one to 502.</div>
+</div>
+</body></html>

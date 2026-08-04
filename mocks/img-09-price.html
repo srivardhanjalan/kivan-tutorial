@@ -1,0 +1,38 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  html,body{margin:0;padding:0}
+  body{background:transparent;
+    font-family:-apple-system,'Segoe UI',Roboto,sans-serif;padding:44px 48px;
+    width:920px;box-sizing:border-box;overflow:hidden}
+  .card{max-width:824px;margin:0 auto;padding:30px 40px 30px}
+  .k{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+    color:#5b6172;background:#eef0f4;padding:4px 12px;border-radius:20px}
+  h1{font-size:23px;font-weight:800;color:#1f2430;margin:11px 0 3px;letter-spacing:-.01em}
+  .sub{font-size:14px;color:#8a90a0;margin:0 0 20px;line-height:1.45}
+  .rows{display:flex;flex-direction:column;gap:9px}
+  .row{display:flex;align-items:center;gap:16px;border:1px solid #eceef4;border-radius:13px;
+    background:#f7f8fb;padding:13px 18px}
+  .row.keep{border:1.6px solid #FF385C;background:#FFF3F5}
+  .amt{font-family:'SF Mono',Menlo,Consolas,monospace;font-size:19px;font-weight:800;
+    width:132px;color:#9aa0b0}
+  .row.keep .amt{color:#FF385C}
+  .amt s{text-decoration-color:#c3c8d4}
+  .what{flex:1;font-size:14.5px;color:#6b7280}
+  .row.keep .what{color:#2b3040;font-weight:600}
+  .verdict{font-size:12.5px;font-weight:800;letter-spacing:.02em;font-family:'SF Mono',Menlo,monospace}
+  .rej{color:#a3a9b8}.acc{color:#FF385C}
+  .foot{font-size:12px;color:#9aa0b0;text-align:center;margin:18px auto 0;max-width:720px;line-height:1.45}
+</style></head><body>
+<div class="card">
+  <span class="k">Pick the price</span>
+  <h1>One real price, four decoys, on apple.com/in</h1>
+  <p class="sub">The extractor scans every rupee figure on the iPhone page and keeps exactly one.</p>
+  <div class="rows">
+    <div class="row"><span class="amt"><s>&#8377;12,199</s>/mo</span><span class="what">EMI, quoted per month</span><span class="verdict rej">&#10007; an instalment unit follows it</span></div>
+    <div class="row"><span class="amt"><s>&#8377;2,500</s></span><span class="what">trade-in credit, low end</span><span class="verdict rej">&#10007; under the &#8377;10,000 floor</span></div>
+    <div class="row"><span class="amt"><s>&#8377;15,000</s></span><span class="what">instant cashback offer</span><span class="verdict rej">&#10007; a cashback word beside it</span></div>
+    <div class="row"><span class="amt"><s>&#8377;57,000</s></span><span class="what">trade-in credit, high end</span><span class="verdict rej">&#10007; a trade-in word beside it</span></div>
+    <div class="row keep"><span class="amt">&#8377;69,900</span><span class="what">the product's own price</span><span class="verdict acc">&#10003; kept</span></div>
+  </div>
+  <div class="foot">A first-number heuristic grabbed the EMI; a skip-small-numbers rule grabbed the &#8377;57,000 trade-in. The real fix reads the store's structured price first, and rejects the EMI by a tight per-amount suffix check, not a window that would take the price beside it too.</div>
+</div>
+</body></html>
