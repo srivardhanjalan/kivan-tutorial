@@ -41,7 +41,7 @@ resource "aws_dynamodb_table" "users" {
     projection_type = "ALL"
   }
 
-  # Discover's default rail: every user under one partition, read newest-follow
+  # Discover's default rail: every user under one partition, read most-followed
   # first by querying this index in descending follower_count order.
   global_secondary_index {
     name            = "PopularUsersIndex"
