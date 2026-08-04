@@ -4,6 +4,7 @@ import useFetch from '../hooks/useFetch';
 import DirectoryLayout from '../components/DirectoryLayout';
 import CatalogRow from '../components/CatalogRow';
 import { fetchStorefronts } from '../services/api';
+import { pluralize } from '../utils/pluralize';
 import type { Storefront } from '../services/api';
 
 /**
@@ -46,7 +47,7 @@ export default function StorefrontsScreen() {
           meta={[
             {
               icon: 'pricetag-outline',
-              text: `${storefront.product_count} ${storefront.product_count === 1 ? 'product' : 'products'}`,
+              text: pluralize(storefront.product_count, 'product'),
             },
           ]}
           onPress={() => navigation.navigate('StorefrontDetail', { storefront })}

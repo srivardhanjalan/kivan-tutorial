@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
 import { useUser } from '@clerk/clerk-expo';
 import { useAppNavigation } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
@@ -9,12 +8,10 @@ import ApiStatus from '../components/ApiStatus';
 import AsyncStatusLine from '../components/AsyncStatusLine';
 import BirthdayPrompt from '../components/BirthdayPrompt';
 import EmptyStateView from '../components/EmptyStateView';
-import WishlistCard from '../components/WishlistCard';
+import WishlistRail from '../components/WishlistRail';
 import useFetch from '../hooks/useFetch';
-import useLifeEvents from '../hooks/useLifeEvents';
 import { fetchCurrentUser, updateProfile, fetchMyWishlists } from '../services/api';
 import { clerkFullName, clerkPrimaryEmail } from '../utils/clerkName';
-import { Spacing } from '../constants/ScreenStyles';
 
 /** How many of the newest wishlists the home rail previews */
 const RAIL_LIMIT = 6;
@@ -32,7 +29,6 @@ export default function HomeScreen() {
     refetchOnFocus: true,
   });
   const { data: wishlists } = useFetch(fetchMyWishlists, { refetchOnFocus: true });
-  const { lifeEventFor } = useLifeEvents();
   // Hides the prompt instantly on dismiss; the persisted flag covers next launch
   const [promptDismissed, setPromptDismissed] = useState(false);
 
@@ -75,21 +71,10 @@ export default function HomeScreen() {
           subtitle="Create your first one over in My Stuff."
         />
       ) : (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.rail}
-        >
-          {wishlists?.slice(0, RAIL_LIMIT).map((wishlist) => (
-            <View key={wishlist.id} style={styles.railCard}>
-              <WishlistCard
-                wishlist={wishlist}
-                lifeEvent={lifeEventFor(wishlist.life_event_id)}
-                onPress={() => navigation.navigate('WishlistDetail', { wishlistId: wishlist.id })}
-              />
-            </View>
-          ))}
-        </ScrollView>
+        <WishlistRail
+          wishlists={wishlists?.slice(0, RAIL_LIMIT) ?? []}
+          onPressWishlist={(id) => navigation.navigate('WishlistDetail', { wishlistId: id })}
+        />
       )}
 
       <SectionHeader title="Your account" />
@@ -107,15 +92,3 @@ export default function HomeScreen() {
     </FloatingHeaderLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  rail: {
-    gap: Spacing.md,
-    paddingVertical: Spacing.sm,
-  },
-  // A single-use rail-card width — the home preview's own metric, not a
-  // grid cell (My Stuff's grid computes its own widths)
-  railCard: {
-    width: 150,
-  },
-});

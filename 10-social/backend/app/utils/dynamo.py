@@ -1,7 +1,11 @@
 """Low-level DynamoDB helpers shared across the routes."""
 
+import logging
+
 from botocore.exceptions import ClientError
 from fastapi import HTTPException, status
+
+logger = logging.getLogger(__name__)
 
 
 def get_item_or_404(table, item_id: str, not_found_detail: str) -> dict:
@@ -42,6 +46,67 @@ def query_all_pages(table, **query_kwargs) -> list[dict]:
             **query_kwargs, ExclusiveStartKey=response["LastEvaluatedKey"]
         )
         items.extend(response.get("Items", []))
+    return items
+
+
+def adjust_count(table, key: dict, field: str, delta: int) -> None:
+    """Nudge a denormalized counter by +1/-1, best-effort.
+
+    The follow and love edges are the source of truth; follower_count,
+    following_count and love_count are caches that make a profile header or a
+    Discover ranking an O(1) read instead of a COUNT query. So this is
+    deliberately swallow-on-failure: a lost increment leaves a count slightly
+    low, never blocks the edge write that already succeeded. if_not_exists
+    seeds the field so the first ever increment starts from 0 (a record
+    provisioned before this counter existed has no attribute to add to), and
+    the guard floors a decrement at 0 so a racing double-unfollow can't drive
+    it negative.
+    """
+    try:
+        if delta >= 0:
+            table.update_item(
+                Key=key,
+                UpdateExpression="SET #f = if_not_exists(#f, :zero) + :d",
+                ExpressionAttributeNames={"#f": field},
+                ExpressionAttributeValues={":zero": 0, ":d": delta},
+            )
+        else:
+            # Only decrement when the current value can absorb it, never below 0
+            table.update_item(
+                Key=key,
+                UpdateExpression="SET #f = #f - :d",
+                ConditionExpression="#f >= :d",
+                ExpressionAttributeNames={"#f": field},
+                ExpressionAttributeValues={":d": -delta},
+            )
+    except ClientError as e:
+        # A floored decrement (condition failed) is expected, not an error;
+        # anything else is logged and swallowed: the count is a cache.
+        if e.response["Error"]["Code"] != "ConditionalCheckFailedException":
+            logger.warning(f"adjust_count({field}, {delta}) failed: {e}")
+
+
+def batch_get_items(table, keys: list[dict]) -> list[dict]:
+    """Resolve a list of primary keys to their items in one round of
+    batch_get_item calls: the N+1 fix for turning an id list (a follower
+    edge's ids, a loved-wishlist id list) into records.
+
+    DynamoDB caps a BatchGetItem at 100 keys and can return UnprocessedKeys
+    under throttling, so this chunks by 100 and re-requests whatever came back
+    unprocessed. Order is NOT preserved (DynamoDB returns items ungrouped); a
+    caller that needs the original order rebuilds it from an {id: item} map.
+    Duplicate keys must be removed by the caller: BatchGetItem rejects a batch
+    with duplicates.
+    """
+    items: list[dict] = []
+    table_name = table.name
+    for start in range(0, len(keys), 100):
+        request = {table_name: {"Keys": keys[start:start + 100]}}
+        while request:
+            response = table.meta.client.batch_get_item(RequestItems=request)
+            items.extend(response["Responses"].get(table_name, []))
+            # Re-request only what DynamoDB deferred, until nothing is left
+            request = response.get("UnprocessedKeys") or None
     return items
 
 

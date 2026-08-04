@@ -11,12 +11,14 @@ import PlaceholderScreen from '../screens/PlaceholderScreen';
 import HomeScreen from '../screens/HomeScreen';
 import MyStuffScreen from '../screens/MyStuffScreen';
 import StorefrontsScreen from '../screens/StorefrontsScreen';
+import DiscoverScreen from '../screens/DiscoverScreen';
 
 // Tabs with a real screen; the rest stay placeholders until their step
 const TabScreens: Partial<Record<TabKey, React.ComponentType>> = {
   HomeTab: HomeScreen,
   AddWishTab: StorefrontsScreen,
   MyStuffTab: MyStuffScreen,
+  DiscoverTab: DiscoverScreen,
 };
 
 // The param list comes from the config, so adding a tab there types the

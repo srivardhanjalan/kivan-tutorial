@@ -7,7 +7,6 @@ import { Ionicons } from '@expo/vector-icons';
 import Colors from '../constants/Colors';
 import Typography from '../constants/Typography';
 import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
-import Opacity from '../constants/Opacity';
 import useAsyncAction from '../hooks/useAsyncAction';
 
 // Completes the pending browser session when the OAuth redirect returns
@@ -47,7 +46,7 @@ function OAuthButton({ strategy, label, icon }: OAuthProvider) {
 
   return (
     <TouchableOpacity
-      style={[CommonScreenStyles.outlinedSurface, styles.button, loading && styles.buttonDisabled]}
+      style={[CommonScreenStyles.outlinedSurface, styles.button, loading && CommonScreenStyles.dimmed]}
       onPress={onPress}
       disabled={loading}
       accessibilityRole="button"
@@ -80,9 +79,6 @@ const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
     marginBottom: Spacing.md,
-  },
-  buttonDisabled: {
-    opacity: Opacity.disabled,
   },
   buttonContent: {
     flexDirection: 'row',

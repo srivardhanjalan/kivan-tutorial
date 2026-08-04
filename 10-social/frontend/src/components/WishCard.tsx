@@ -11,7 +11,8 @@ import type { Wish } from '../services/api';
 
 interface WishCardProps {
   wish: Wish;
-  onPress: () => void;
+  /** Tap handler. Omit on another user's wishlist: the wish is display-only. */
+  onPress?: () => void;
   /** The logo of the store or brand this wish came from (sourced wishes only).
       Shown as a corner badge on an active wish; a completed wish wears the
       check instead. */
@@ -22,7 +23,8 @@ interface WishCardProps {
  * A wish as an image-led tile (the shared ArtTileCard): the photo fills the art
  * block, name and cost sit below. A wish added from a store or captured in the
  * in-app browser wears that source's logo in the corner. A completed wish dims
- * and wears a check: the got-it state read at a glance.
+ * and wears a check: the got-it state read at a glance. Pressable on your own
+ * wishlist, display-only when viewing someone else's.
  */
 const WishCard: React.FC<WishCardProps> = ({ wish, onPress, originLogo }) => (
   <ArtTileCard

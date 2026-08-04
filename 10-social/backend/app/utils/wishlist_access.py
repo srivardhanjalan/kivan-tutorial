@@ -11,11 +11,21 @@ from app.utils.dynamo import get_item_or_404, query_all_pages
 from app.utils.s3_helpers import delete_photo_by_url
 
 
+def get_wishlist_or_404(wishlist_id: str) -> dict:
+    """Fetch a wishlist for READING, no ownership check: 404 if missing. Step
+    10 (social) makes every wishlist publicly viewable: a public profile shows
+    someone else's wishlists, and you love a wishlist you don't own. Privacy
+    (public/private, co-owner visibility) is a step-14 concern. WRITES still go
+    through get_owned_wishlist: reading is open, editing stays single-owner."""
+    return get_item_or_404(wishlists_table, wishlist_id, "Wishlist not found")
+
+
 def get_owned_wishlist(wishlist_id: str, user_id: str) -> dict:
-    """Fetch a wishlist and enforce single-owner access: 404 if it doesn't
-    exist, 403 if the caller didn't create it. The same rule everywhere — a
-    wish's access is its wishlist's access."""
-    wishlist = get_item_or_404(wishlists_table, wishlist_id, "Wishlist not found")
+    """Fetch a wishlist and enforce single-owner access for a WRITE: 404 if it
+    doesn't exist, 403 if the caller didn't create it. Editing, deleting, and
+    every wish mutation funnel through this: a wish's write access is its
+    wishlist's ownership."""
+    wishlist = get_wishlist_or_404(wishlist_id)
     if wishlist["created_by"] != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

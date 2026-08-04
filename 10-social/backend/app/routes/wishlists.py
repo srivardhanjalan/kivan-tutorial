@@ -1,7 +1,7 @@
 import uuid
 
 from boto3.dynamodb.conditions import Key
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.database import wishlists_table
 from app.dependencies.auth import get_current_user_id
@@ -13,7 +13,11 @@ from app.utils.s3_helpers import (
 )
 from app.utils.dynamo import query_all_pages, update_item_fields
 from app.utils.timestamps import utc_now_iso
-from app.utils.wishlist_access import delete_wishlist_and_contents, get_owned_wishlist
+from app.utils.wishlist_access import (
+    delete_wishlist_and_contents,
+    get_owned_wishlist,
+    get_wishlist_or_404,
+)
 
 router = APIRouter(prefix="/wishlists", tags=["wishlists"])
 
@@ -49,6 +53,11 @@ def create_wishlist(
         "life_event_id": wishlist.life_event_id,
         "created_by": user_id,
         "created_at": utc_now_iso(),
+        # The denormalized love tally starts at zero (step 10); adjust_count
+        # moves it on love/unlove. entity_type is the constant partition key
+        # PopularWishlistsIndex ranks under, so a new wishlist joins the rail.
+        "love_count": 0,
+        "entity_type": "WISHLIST",
     }
     wishlists_table.put_item(Item=item)
     if to_claim:
@@ -70,10 +79,31 @@ def get_my_wishlists(user_id: str = Depends(get_current_user_id)):
     return items
 
 
+@router.get("/popular", response_model=list[Wishlist])
+def get_popular_wishlists(
+    limit: int = Query(default=10, ge=1, le=50),
+    _user_id: str = Depends(get_current_user_id),
+):
+    """Discover's "wishlists to love" rail: the most-loved wishlists. A Query on
+    PopularWishlistsIndex in descending love_count order, capped at `limit`: the
+    rail is a short preview, so this reads only the top page, never the whole
+    index. Every wishlist is publicly viewable this step, so no privacy filter.
+    Declared before /{wishlist_id} so "popular" is never read as a wishlist id."""
+    response = wishlists_table.query(
+        IndexName="PopularWishlistsIndex",
+        KeyConditionExpression=Key("entity_type").eq("WISHLIST"),
+        ScanIndexForward=False,  # highest love_count first
+        Limit=limit,
+    )
+    return response.get("Items", [])
+
+
 @router.get("/{wishlist_id}", response_model=Wishlist)
-def get_wishlist(wishlist_id: str, user_id: str = Depends(get_current_user_id)):
-    """A single wishlist — 404 if missing, 403 if not the caller's."""
-    return get_owned_wishlist(wishlist_id, user_id)
+def get_wishlist(wishlist_id: str, _user_id: str = Depends(get_current_user_id)):
+    """A single wishlist, a public read this step: 404 if missing, but any
+    signed-in user can view any wishlist (a friend's collection off their
+    profile, one you're about to love). Editing it still requires ownership."""
+    return get_wishlist_or_404(wishlist_id)
 
 
 @router.put("/{wishlist_id}", response_model=Wishlist)
