@@ -68,13 +68,16 @@ export default function InAppBrowserScreen() {
         toast.show('Could not read this page. Add the details yourself.', { type: 'error' });
       }
       // Open the modal either way: with what scraped, or just the URL + a name
-      // to edit. The link always points at the page you were on.
+      // to edit. The link always points at the page you were on. brand_id stamps
+      // the brand whose site this browser opened, so the wish wears its logo
+      // badge the way a catalog wish wears its store's.
       setDraft({
         name: scraped.title || pageTitle,
         cost: scraped.price,
         cost_currency: scraped.currency ?? null,
         link_url: url,
         image_url: scraped.image,
+        brand_id: brand.id,
       });
     }, 'Could not read this page');
 

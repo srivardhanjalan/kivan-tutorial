@@ -13,7 +13,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import WishlistPlaceholderGlyph from '../components/WishlistPlaceholderGlyph';
 import useFetch from '../hooks/useFetch';
 import useLifeEvents from '../hooks/useLifeEvents';
-import useStorefronts from '../hooks/useStorefronts';
+import useWishOrigin from '../hooks/useWishOrigin';
 import useConfirmedDelete from '../hooks/useConfirmedDelete';
 import { fetchWishlist, fetchWishes, deleteWishlist } from '../services/api';
 import pastelForLifeEvent from '../constants/lifeEventPastels';
@@ -35,7 +35,7 @@ export default function WishlistDetailScreen() {
   });
   const { data: wishes } = useFetch(() => fetchWishes(wishlistId), { refetchOnFocus: true });
   const { lifeEventFor } = useLifeEvents();
-  const { storefrontFor } = useStorefronts();
+  const { originFor } = useWishOrigin();
   const { requestDelete, confirmProps } = useConfirmedDelete(
     () => deleteWishlist(wishlistId),
     'Could not delete this wishlist'
@@ -89,7 +89,7 @@ export default function WishlistDetailScreen() {
                 <WishCard
                   key={wish.id}
                   wish={wish}
-                  storefrontLogo={storefrontFor(wish.storefront_id)?.logo_url}
+                  originLogo={originFor(wish)?.logoUrl}
                   onPress={() => navigation.navigate('WishDetail', { wishId: wish.id })}
                 />
               ))}

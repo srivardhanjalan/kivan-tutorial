@@ -55,9 +55,11 @@ def create_wish(wish: WishCreate, user_id: str = Depends(get_current_user_id)):
         "cost_currency": wish.cost_currency,
         "link_url": wish.link_url,
         "image_url": stored,
-        # null for a hand-typed wish; the catalog add-flow carries the product's
-        # storefront so the wish tiles can badge it with that store's logo
+        # A wish's origin for its logo badge, at most one and null for a
+        # hand-typed wish: the catalog add-flow carries the product's storefront,
+        # the in-app browser carries the brand whose site was open
         "storefront_id": wish.storefront_id,
+        "brand_id": wish.brand_id,
         "completed": False,
         "created_at": utc_now_iso(),
     }

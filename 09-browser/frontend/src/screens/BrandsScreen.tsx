@@ -38,6 +38,7 @@ export default function BrandsScreen() {
       <CatalogRow
         key={brand.id}
         icon="globe-outline"
+        logoUrl={brand.logo_url}
         title={brand.name}
         accessibilityLabel={`${brand.name}, ${brand.country}`}
         description={brand.description}

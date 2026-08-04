@@ -12,7 +12,7 @@ import useFetch from '../hooks/useFetch';
 import useAsyncAction from '../hooks/useAsyncAction';
 import useConfirmedDelete from '../hooks/useConfirmedDelete';
 import useOpenExternalLink from '../hooks/useOpenExternalLink';
-import useStorefronts from '../hooks/useStorefronts';
+import useWishOrigin from '../hooks/useWishOrigin';
 import { fetchWish, completeWish, uncompleteWish, deleteWish } from '../services/api';
 import type { Wish } from '../services/api';
 import BorderRadius from '../constants/BorderRadius';
@@ -35,7 +35,7 @@ export default function WishDetailScreen() {
   // the complete/uncomplete toggle instant feedback, and a focus refetch then
   // reconciles it with the server's persisted state.
   const { data } = useFetch(() => fetchWish(wishId), { refetchOnFocus: true });
-  const { storefrontFor } = useStorefronts();
+  const { originFor } = useWishOrigin();
   const [wish, setWish] = useState<Wish | null>(null);
   useEffect(() => {
     if (data) setWish(data);
@@ -58,9 +58,10 @@ export default function WishDetailScreen() {
     if (wish?.link_url) openExternalLink(wish.link_url);
   };
 
-  // The store a catalog wish came from, resolved for its logo and name; a
-  // hand-typed wish has no storefront_id, so this stays undefined and no row shows.
-  const store = wish ? storefrontFor(wish.storefront_id) : undefined;
+  // Where the wish came from, resolved for its logo and name: a catalog store
+  // (storefront_id) or a browser-captured brand (brand_id). A hand-typed wish
+  // carries neither, so this stays undefined and no row shows.
+  const origin = wish ? originFor(wish) : undefined;
 
   return (
     <FloatingHeaderLayout
@@ -85,12 +86,12 @@ export default function WishDetailScreen() {
             <DetailStatusRow label="Fulfilled" />
           )}
 
-          {store && (
-            <View style={styles.storeRow}>
-              {store.logo_url && (
-                <Image source={{ uri: store.logo_url }} style={styles.storeLogo} resizeMode="cover" />
+          {origin && (
+            <View style={styles.originRow}>
+              {origin.logoUrl && (
+                <Image source={{ uri: origin.logoUrl }} style={styles.originLogo} resizeMode="cover" />
               )}
-              <Text style={styles.storeName}>From {store.name}</Text>
+              <Text style={styles.originName}>From {origin.name}</Text>
             </View>
           )}
 
@@ -120,18 +121,18 @@ export default function WishDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  storeRow: {
+  originRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
     marginTop: Spacing.lg,
   },
-  storeLogo: {
+  originLogo: {
     width: 24,
     height: 24,
     borderRadius: BorderRadius.full,
   },
-  storeName: {
+  originName: {
     ...Typography.bodySecondaryStrong,
   },
 });
