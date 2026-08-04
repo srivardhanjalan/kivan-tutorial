@@ -8,18 +8,18 @@ import { useToast } from '../components/ToastProvider';
  * behavior so each button is just its own icon and label.
  *
  * Seeded once from `initialOn`/`initialCount`, so the caller mounts it only
- * after the value it reflects is known (a button rendered post-load). The
- * count is optional — the follow button toggles a bare boolean, the love
- * button a boolean with a tally.
+ * after the values it reflects are known (a control rendered post-load): the
+ * love button seeds its tally from the wishlist's love count, the follow button
+ * its follower tally from the profile.
  */
 export default function useOptimisticToggle(options: {
   initialOn: boolean;
-  initialCount?: number;
+  initialCount: number;
   turnOn: () => Promise<void>;
   turnOff: () => Promise<void>;
   errorMessage: string;
 }) {
-  const { initialOn, initialCount = 0, turnOn, turnOff, errorMessage } = options;
+  const { initialOn, initialCount, turnOn, turnOff, errorMessage } = options;
   const toast = useToast();
   const [on, setOn] = useState(initialOn);
   const [count, setCount] = useState(initialCount);
