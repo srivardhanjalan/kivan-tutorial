@@ -17,9 +17,15 @@ and embedded in the root README and the Medium posts.
 | — | `shot-02-home.png`, `shot-02-discover.png` | real simulator screenshots of the step-02 shell |
 | `hero-03.html` | `mocks-hero-03.png` | post 03 cover (real rollout terminal + live app screenshot) |
 | — | `shot-03-healthy.png` | real screenshot: Backend · healthy from the live API |
-| `hero-04.html` | `mocks-hero-04.png` | post 04 cover (401s terminal + the app greeting you by name) |
-| `img-04-learns.html` | `mocks-04-learns.png` | post 04: sign-in → tutorial → named Home (real screenshots) |
-| `img-04-race.html` | `mocks-04-race.png` | post 04: the CREATE_FAILED IAM-race terminal |
+| `hero-04.html` | `mocks-hero-04.png` | post 04 cover (real sign-in screen + no-token 401 → 200 record terminal) |
+| `img-04-filemap.html` | `mocks-04-filemap.png` | post 04: the "What we touch this step" file map (17 files) |
+| `img-04-provision.html` | `mocks-04-provision.png` | post 04: JIT provisioning diagram (First sign-in, first record) |
+| `img-04-code-*.html` | `mocks-04-code-*.png` | post 04: six code cards (oauth, provision, verify, onboarding, secret, deploy) |
+| `img-04-learns.html` | `mocks-04-learns.png` | superseded post-04 image (pre-rewrite; sweep pending) |
+| `img-04-race.html` | `mocks-04-race.png` | superseded post-04 image (pre-rewrite; sweep pending) |
+| `img-04-record.html` | `mocks-04-record.png` | superseded post-04 image (pre-rewrite; sweep pending) |
+| `img-04-secret.html` | `mocks-04-secret.png` | superseded post-04 image (pre-rewrite; sweep pending) |
+| `img-04-status.html` | `mocks-04-status.png` | superseded post-04 image (pre-rewrite; sweep pending) |
 | — | `shot-04-signin.png`, `shot-04-verify.png`, `shot-04-onboarding.png`, `shot-04-home.png` | real simulator screenshots of the step-04 auth flow |
 | `hero-05.html` | `mocks-hero-05.png` | post 05 cover (the working Settings screen + the delete-for-good terminal) |
 | `img-05-account.html` | `mocks-05-account.png` | post 05: edit yourself / erase yourself (real Settings + delete modal) |
