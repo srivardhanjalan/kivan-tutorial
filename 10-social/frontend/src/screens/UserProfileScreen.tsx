@@ -8,12 +8,19 @@ import WishlistGrid from '../components/WishlistGrid';
 import Avatar from '../components/Avatar';
 import FollowButton from '../components/FollowButton';
 import useFetch from '../hooks/useFetch';
-import { fetchUser, fetchUserWishlists, fetchUserLovedWishlists } from '../services/api';
+import useOptimisticToggle from '../hooks/useOptimisticToggle';
+import {
+  fetchUser,
+  fetchUserWishlists,
+  fetchUserLovedWishlists,
+  followUser,
+  unfollowUser,
+} from '../services/api';
 import { userDisplayName } from '../utils/userName';
 import Typography from '../constants/Typography';
 import Opacity from '../constants/Opacity';
 import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
-import type { Wishlist } from '../services/api';
+import type { UserWithCounts, Wishlist } from '../services/api';
 
 /** The avatar diameter on a profile header — this screen's own metric */
 const PROFILE_AVATAR_SIZE = 88;
@@ -31,6 +38,48 @@ function Stat({ count, label, onPress }: { count: number; label: string; onPress
       <Text style={styles.statCount}>{count}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </TouchableOpacity>
+  );
+}
+
+/**
+ * The profile header: avatar, the follower/following counts, and (for other
+ * users) a follow button. The visible follower tally and the button share ONE
+ * optimistic toggle, so a tap moves the count with the label exactly the way a
+ * love moves its own tally. Mounts only once `user` is loaded, so the toggle
+ * seeds from a known follow state and follower count.
+ */
+function ProfileHeader({
+  user,
+  openFollows,
+}: {
+  user: UserWithCounts;
+  openFollows: (mode: 'followers' | 'following') => void;
+}) {
+  const {
+    on: following,
+    count: followerCount,
+    loading,
+    toggle,
+  } = useOptimisticToggle({
+    initialOn: user.is_following ?? false,
+    initialCount: user.follower_count,
+    turnOn: () => followUser(user.id),
+    turnOff: () => unfollowUser(user.id),
+    errorMessage: 'Could not update follow',
+  });
+
+  return (
+    <View style={styles.header}>
+      <Avatar imageUrl={user.image_url} name={userDisplayName(user)} size={PROFILE_AVATAR_SIZE} />
+      <View style={styles.stats}>
+        <Stat count={followerCount} label="Followers" onPress={() => openFollows('followers')} />
+        <Stat count={user.following_count} label="Following" onPress={() => openFollows('following')} />
+      </View>
+      {/* is_following is null only on your own profile (no self-follow) */}
+      {user.is_following !== null && (
+        <FollowButton following={following} loading={loading} onPress={toggle} />
+      )}
+    </View>
   );
 }
 
@@ -68,7 +117,8 @@ function WishlistSection({
  * A public profile: avatar and name, the follower/following counts (each taps
  * through to that list), a follow button for other users, and the two things
  * that make up their taste — the wishlists they own and the ones they've
- * loved. Everything refetches on focus, so a follow or a love shows on return.
+ * loved. Everything refetches on focus, so returning to the screen reflects
+ * follows and loves made elsewhere.
  */
 export default function UserProfileScreen() {
   const navigation = useAppNavigation();
@@ -88,17 +138,7 @@ export default function UserProfileScreen() {
     <FloatingHeaderLayout title={user ? userDisplayName(user) : ''} loading={loading} showBack>
       {user && (
         <>
-          <View style={styles.header}>
-            <Avatar imageUrl={user.image_url} name={userDisplayName(user)} size={PROFILE_AVATAR_SIZE} />
-            <View style={styles.stats}>
-              <Stat count={user.follower_count} label="Followers" onPress={() => openFollows('followers')} />
-              <Stat count={user.following_count} label="Following" onPress={() => openFollows('following')} />
-            </View>
-            {/* is_following is null only on your own profile — no self-follow */}
-            {user.is_following !== null && (
-              <FollowButton userId={user.id} initialFollowing={user.is_following} />
-            )}
-          </View>
+          <ProfileHeader user={user} openFollows={openFollows} />
 
           <WishlistSection
             title="Wishlists"

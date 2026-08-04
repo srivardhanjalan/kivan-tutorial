@@ -1,7 +1,5 @@
 import React from 'react';
 import { TouchableOpacity, Text, ActivityIndicator, StyleSheet } from 'react-native';
-import useOptimisticToggle from '../hooks/useOptimisticToggle';
-import { followUser, unfollowUser } from '../services/api';
 import Colors from '../constants/Colors';
 import Typography from '../constants/Typography';
 import BorderRadius from '../constants/BorderRadius';
@@ -9,26 +7,21 @@ import Opacity from '../constants/Opacity';
 import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 
 interface FollowButtonProps {
-  userId: string;
-  initialFollowing: boolean;
+  following: boolean;
+  loading: boolean;
+  onPress: () => void;
 }
 
 /**
- * The Follow / Following toggle on a profile. Optimistic: the label flips on
- * tap and rolls back with a toast if the request fails. Mounts only for OTHER
- * users (the profile hides it on your own), so its initial state is known.
+ * The Follow / Following pill on a profile. Presentational: the parent owns the
+ * optimistic toggle (so the visible follower tally and this label move together,
+ * the same way a love moves its own tally) and passes the current state down.
+ * Rendered only for OTHER users (the profile hides it on your own).
  */
-const FollowButton: React.FC<FollowButtonProps> = ({ userId, initialFollowing }) => {
-  const { on: following, loading, toggle } = useOptimisticToggle({
-    initialOn: initialFollowing,
-    turnOn: () => followUser(userId),
-    turnOff: () => unfollowUser(userId),
-    errorMessage: 'Could not update follow',
-  });
-
+const FollowButton: React.FC<FollowButtonProps> = ({ following, loading, onPress }) => {
   return (
     <TouchableOpacity
-      onPress={toggle}
+      onPress={onPress}
       disabled={loading}
       activeOpacity={Opacity.pressed}
       accessibilityRole="button"
