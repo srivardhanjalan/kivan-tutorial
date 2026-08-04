@@ -70,7 +70,7 @@ Every step from 03 onward ends in a deployable state: `terraform apply`, push th
 
 ## The roadmap
 
-Seventeen steps, four of them jigsaw modules 🧩 — and each will get its own post in this series:
+Seventeen steps, four of them jigsaw modules 🧩, and each will get its own post in this series:
 
 1. **Prerequisites** — one setup script (it even handles the Android toolchain), and the short list of accounts a script can't create for you
 2. **App shell & design system** — config-driven identity (name, scheme, theme, tabs), the glass chrome, shared components; a fully themed app that runs standalone
