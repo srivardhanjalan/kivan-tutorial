@@ -39,7 +39,8 @@
       <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">followers.py &#183; loves.py</span><span class="note"># idempotent follow + love edges</span></span></div>
       <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">users.py &#183; wishlists.py</span><span class="note"># name search, public reads, the rails</span></span></div>
       <div class="folder">app/utils/</div>
-      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">wishlist_access.py &#183; user_access.py</span><span class="note"># the read-open, write-owned guards</span></span></div>
+      <div class="row"><span class="badge b-new">new</span><span class="fc"><span class="path">user_access.py</span><span class="note"># public reads of another user, 404 not 403</span></span></div>
+      <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">wishlist_access.py</span><span class="note"># add get_wishlist_or_404: reads open, writes owned</span></span></div>
       <div class="row"><span class="badge b-mod">mod</span><span class="fc"><span class="path">dynamo.py &#183; user_provisioning.py</span><span class="note"># adjust_count, the sparse name key</span></span></div>
     </div>
     <div class="grp">
