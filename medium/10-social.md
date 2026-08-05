@@ -21,14 +21,7 @@ So this step makes the app social. You find a person by name, open their profile
 
 ## What we build
 
-A Discover tab. Search people by name, or browse two rails: most-loved wishlists and most-followed people. Tap a person and their public profile opens: follower and following counts, the wishlists they own, and the ones they have loved. Open one of their wishlists and you see every wish, with a heart to love the list. What you cannot do is change any of it.
-
-One decision runs through all of it: everything you see of another person is open to read and closed to write. The same wishlist is a public page to any viewer and editable only by its owner, so a stranger can open it, love it, and copy nothing but the idea.
-
-- **Reading and writing split into two guards.** One helper fetches a record for anyone signed in; the other fetches it and refuses anyone who is not its owner. Every route picks the one it needs.
-- **Search and the popular rails read a sorted index, never a scan.** Every user carries a constant tag, `entity_type = "USER"`, every wishlist `"WISHLIST"`; that one shared value lets a secondary index gather the whole table under a single key and hand it back sorted. One index per order: name for the typeahead, follower count for Discover, love count for the rail.
-- **The counts live on the record, nudged by the edge writes.** A follow writes one row and bumps two counters; the counters are a cache the profile reads in one shot, floored so a double-unfollow can never push one below zero, and best-effort so a lost bump never blocks the follow that already happened.
-- **Follow and love share one optimistic hook.** Tap either and the boolean and its count flip on the spot, the request fires, and if it fails both roll back with a toast. The follow button and the love heart are just their own icon over that one shared dance.
+One decision runs through all of it: everything you see of another person is open to read and closed to write. The same wishlist is a public page to any viewer and editable only by its owner, so a stranger can open it and love it but change nothing. That splits into five moves, in order: the access gate that separates the read from the write, a name search that reads a sorted index instead of scanning, the follow graph with its counts denormalized onto each record, one optimistic toggle shared by the follow button and the love heart, and the Discover feed that ties search and the popular rails together.
 
 Two things this step deliberately is not. Not notifications: following someone tells them nothing yet, and the pipeline that turns a new follower into a ping is step 11. And not privacy or sharing: every wishlist is public to every signed-in user, with no private toggle and no co-owners. Sharing a list between people, and hiding one, are both step 14.
 
