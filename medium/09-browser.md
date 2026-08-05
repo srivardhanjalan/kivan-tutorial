@@ -21,22 +21,13 @@ Drawing a list of stores is easy. Reading a real product page is not. A live sto
 
 ## What we build
 
-A brand directory of thirteen real stores, grouped by category. Tap one and an in-app browser opens on its actual website; browse to a product, tap **Add to wishlist**, and the page becomes a wish: its name, its photo, and its price in the currency the store quoted. Pick a wishlist and it lands there, wearing the brand's logo as a badge. It reaches collections through the same seam everything else does, the `POST /wishes` the manual form and the step-8 catalog already call.
+One decision runs through all of it: a browsed page becomes a wish that keeps exactly what the store said, its real price in the store's own currency, captured once and never converted. That splits into six moves, in order: seed the read-only brand directory, keep the scrape key on the server, open the in-app browser onto a real storefront, pick the one real price from a page full of decoys, carry the currency onto the wish, and badge the wish from the store it came from.
 
-One decision runs through all of it: a browsed page becomes a wish that keeps exactly what the store said, its real price in the store's own currency, captured once and never converted. The app does not translate the number, hold the scraping key, or invent a rate.
+**What we need:** step 8 complete, an AWS account, and the step-3 deploy in place. This step adds a DynamoDB table and a second server-side secret, so like step 8 it wants a real backend: a deployed stack, or a local one with the brands table applied and seeded. It also needs a free [Firecrawl](https://firecrawl.dev) API key from step 1.
 
-- **The directory is a third reference domain, the same shape as the first two.** One seeded, read-only DynamoDB table, one auth-gated `GET`, the running role granted `Scan` and nothing else. Adding a curated domain still costs two files and an IAM statement, not a new pattern.
-- **The scraper picks the one real price, and reports the currency it found it in.** It prefers the store's own structured metadata, the live selling price, already free of the MRP (the printed maximum retail price on Indian listings) and the EMI prose; when it has to read the page body, it filters out the figures that are not the price. The currency rides along with the price.
-- **The Firecrawl key stays on the server.** The in-app browser posts a URL to a backend proxy; the proxy attaches the key from SSM and returns the page. The key never reaches a phone.
-- **The screens that would have been copies share one shape.** The row that both directories list, the scaffold that both screens hang on, the modal that both add-paths raise: each moved into one place the moment a second caller wanted it, so the store directory and the Wish Store cannot drift apart.
+**Time:** about 60 to 90 minutes.
 
-Two things this step deliberately is not. It is not a display-currency picker: no setting converts every price into your home currency, because that needs a live rate source and this step will not ship stale rates dressed as real ones. And it is not an admin catalog: the thirteen brands and their logos are seeded reference data, read by the app and never written by it. Uploading your own logos and managing the directory is the admin dashboard in step 15.
-
-**What we need:** step 8 complete, an AWS account, and the step-3 deploy in place. This step adds a real DynamoDB table and a second server-side secret, so like step 8 it wants a real backend: a deployed stack, or a local one with the table applied and seeded. It also needs a free [Firecrawl](https://firecrawl.dev) API key, listed back in step 1 as one of the accounts to create.
-
-**Time:** about 60 to 90 minutes, most of it the deploy, the one-time seed, and a browse through a real store to watch a wish fill itself in.
-
-**The code:** the snippets below are shown as images; the full, copyable source is [the step folder on `main`](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/09-browser), organized by the file paths in each caption. The build's whole story is [PR #72](https://github.com/srivardhanjalan/kivan-tutorial/pull/72/files), stacked on the baseline copy in [PR #67](https://github.com/srivardhanjalan/kivan-tutorial/pull/67/files).
+**The code:** the snippets below are images; the full, copyable source lives in [the step folder on `main`](https://github.com/srivardhanjalan/kivan-tutorial/tree/main/09-browser), organized by the file paths in each caption. The whole build is [PR #72](https://github.com/srivardhanjalan/kivan-tutorial/pull/72/files), stacked on baseline [PR #67](https://github.com/srivardhanjalan/kivan-tutorial/pull/67/files).
 
 ## What we touch this step
 
