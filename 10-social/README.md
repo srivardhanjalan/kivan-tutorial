@@ -50,6 +50,21 @@ before this step won't appear in search or Discover until their record is
 rewritten** (any profile edit does it). On a fresh local database this is a
 non-issue: every user you sign in provisions with the fields already set.
 
+## Running the backend tests
+
+This step adds the first backend tests: a pytest suite under `backend/tests/`
+that runs the social routes against moto's in-memory DynamoDB, so it needs no
+AWS account and no network. The dev-only deps live in `requirements-dev.txt`
+(kept out of the runtime image).
+
+```bash
+cd backend
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt -r requirements-dev.txt
+.venv/bin/python -m pytest
+```
+
+The suite works on Python 3.11 to 3.13 (pydantic-core has no 3.14 wheel yet).
+
 ## Deploy it
 
 This step **adds infrastructure**: two DynamoDB tables (`followers`, with a
