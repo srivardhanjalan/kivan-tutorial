@@ -40,7 +40,7 @@ Two things this step deliberately is not. Not notifications: following someone t
 
 ## What we touch this step
 
-Around two dozen files carry the feature, most of them new screens and components, wired into the routes and infra around them. Each build section below takes one area.
+Around two dozen files carry the feature, most of them new screens and components, wired into the routes and infra around them.
 
 ![What we touch this step, the new files grouped by folder and the existing ones they wire into: the backend followers and loves routes with the shared access guards and the denormalized-count and batch-get helpers, the users route gaining name search and public profiles, the frontend Discover and profile and follow-list screens with the shared optimistic-toggle hook and the follow, love, avatar and user-row components, and the infra two edge tables with the search and popularity indexes and the grants to match; each file marked new or modified](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-10-filemap.png?v=PLACEHOLDER)
 
@@ -82,7 +82,7 @@ There is a sharp edge hiding in `name_lowercase` that a real signup found the ha
 
 ## Follow once, count forever
 
-A follow is one row: who followed whom. The count is where it gets interesting. Showing "42 followers" by counting 42 rows on every profile load is a query that grows with popularity, exactly backwards. So the number lives on the user record, a cache the profile reads in one shot, and the follow write nudges it.
+A follow is one row: who followed whom. Showing "42 followers" by counting 42 rows on every profile load is a query that grows with popularity, exactly backwards. So the number lives on the user record, a cache the profile reads in one shot, and the follow write nudges it.
 
 Two traps sit in that nudge, and the naive version hits both. Increment blindly and a double-tapped follow counts twice off one real edge. Decrement blindly and a race between two unfollows drives the tally to minus one. Both are fixed at the edge, not the count. The follow is a conditional write: the row is written only if it does not already exist, so a repeat follow fails the condition and returns a quiet success that touches no counter. The unfollow mirrors it, deleting only an edge that is there. The count moves exactly once per real change, because the edge changed exactly once.
 
