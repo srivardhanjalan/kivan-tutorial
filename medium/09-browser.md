@@ -10,7 +10,7 @@
 
 ## The problem
 
-Step 8 gave the app a store. It was our store: four made-up shops, fifteen products, all seeded by us. The thing a person actually wants is almost never in it. It is on Apple's site, or Nykaa's, or a shop we have never heard of. So this step lets a wish come from any real store. You open the store inside the app, browse to the product the normal way, and tap once. The live page becomes a wish.
+Step 8 gave the app a store. It was our store: four made-up shops, fifteen products, all seeded by us. The thing a person actually wants is almost never in it. It is on Apple's site, or Nykaa's, or a shop we have never heard of. So this step lets a wish come from any real store.
 
 Drawing a list of stores is easy. Reading a real product page is not. A live storefront is built to sell, not to be parsed, and four things fight you at once.
 
@@ -21,16 +21,16 @@ Drawing a list of stores is easy. Reading a real product page is not. A live sto
 
 ## What we build
 
-A brand directory of thirteen real stores, grouped by category. Tap one and an in-app browser opens on its actual website. Browse to a product the ordinary way, tap **Add to wishlist**, and the page you are on is scraped into a wish: its name, its photo, and its price in the currency the store quoted. Pick a wishlist and it lands there, wearing the brand's logo as a badge. It reaches collections through the same one seam everything else does, the `POST /wishes` the manual form and the step-8 catalog already call.
+A brand directory of thirteen real stores, grouped by category. Tap one and an in-app browser opens on its actual website; browse to a product, tap **Add to wishlist**, and the page becomes a wish: its name, its photo, and its price in the currency the store quoted. Pick a wishlist and it lands there, wearing the brand's logo as a badge. It reaches collections through the same seam everything else does, the `POST /wishes` the manual form and the step-8 catalog already call.
 
-One decision runs through all of it: a browsed page becomes a wish that keeps exactly what the store said, its real price in the store's own currency, captured once and never converted. The app does not translate the number, does not hold the scraping key, and does not invent a rate. It reads what is there and stores it as-is.
+One decision runs through all of it: a browsed page becomes a wish that keeps exactly what the store said, its real price in the store's own currency, captured once and never converted. The app does not translate the number, hold the scraping key, or invent a rate.
 
 - **The directory is a third reference domain, the same shape as the first two.** One seeded, read-only DynamoDB table, one auth-gated `GET`, the running role granted `Scan` and nothing else. Adding a curated domain still costs two files and an IAM statement, not a new pattern.
-- **The scraper picks the one real price, and reports the currency it found it in.** It prefers the store's own structured metadata, the live selling price, already free of the MRP (the printed maximum retail price on Indian listings) and the EMI prose. When it has to read the page body it filters out the figures that are not the price. The currency rides along with the price: an ISO code from the structured metadata, the symbol the matcher landed on in the body, or the store's known currency for a single-currency scraper like Apple's.
+- **The scraper picks the one real price, and reports the currency it found it in.** It prefers the store's own structured metadata, the live selling price, already free of the MRP (the printed maximum retail price on Indian listings) and the EMI prose; when it has to read the page body, it filters out the figures that are not the price. The currency rides along with the price.
 - **The Firecrawl key stays on the server.** The in-app browser posts a URL to a backend proxy; the proxy attaches the key from SSM and returns the page. The key never reaches a phone.
 - **The screens that would have been copies share one shape.** The row that both directories list, the scaffold that both screens hang on, the modal that both add-paths raise: each moved into one place the moment a second caller wanted it, so the store directory and the Wish Store cannot drift apart.
 
-Two things this step deliberately is not. It is not a display-currency picker: there is no setting that converts every price into your home currency, because that needs a live rate source and this step will not ship stale rates dressed as real ones. Per-store currency and conversion are separate concerns, and the picker is a later one. And it is not an admin catalog: the thirteen brands and their logos are seeded reference data, read by the app and never written by it. Uploading your own store logos and managing the directory is the admin dashboard in step 15.
+Two things this step deliberately is not. It is not a display-currency picker: no setting converts every price into your home currency, because that needs a live rate source and this step will not ship stale rates dressed as real ones. And it is not an admin catalog: the thirteen brands and their logos are seeded reference data, read by the app and never written by it. Uploading your own logos and managing the directory is the admin dashboard in step 15.
 
 **What we need:** step 8 complete, an AWS account, and the step-3 deploy in place. This step adds a real DynamoDB table and a second server-side secret, so like step 8 it wants a real backend: a deployed stack, or a local one with the table applied and seeded. It also needs a free [Firecrawl](https://firecrawl.dev) API key, listed back in step 1 as one of the accounts to create.
 
@@ -46,7 +46,7 @@ Two dozen new files carry the feature, wired into the screens, config, and infra
 
 ## Seed a directory nothing at runtime can write
 
-The brand directory is the same for everyone. The tempting way to manage those rows is the easy one: hand-edit them in the DynamoDB console, or let the app write a brand the first time someone browses to it. Both hand the running server write access to a table it only ever reads. But every user browses the identical stores, so the running server has no reason to write the table, and every reason not to be able to. This is the reference-data shape step 7's occasions and step 8's catalog already set, and we lean on it a third time without changing it.
+The brand directory is the same for everyone. The tempting way to manage those rows is easy: hand-edit them in the DynamoDB console, or let the app write a brand the first time someone browses to it. Both hand the running server write access to a table it only ever reads and has no reason to write. This is the reference-data shape step 7's occasions and step 8's catalog already set, and we lean on it a third time without changing it.
 
 Brands are one plain table keyed by `id`, no index. The whole set is thirteen curated rows, read with one `Scan` that sits far under DynamoDB's single-page cap. There is no by-category endpoint, because the directory screen groups by category itself, on the client, off that one read.
 
@@ -54,7 +54,7 @@ Brands are one plain table keyed by `id`, no index. The whole set is thirteen cu
 
 The grant is what makes read-only real. The App Runner instance role gets `dynamodb:Scan` on the brands table and no write action on it, the same least-privilege line the life-events taxonomy and the storefronts catalog already carry. Once the running role cannot write, the seed cannot live in the app. It runs once, from your own AWS credentials, and that is the whole split.
 
-The seed itself is thirteen real brands spread across categories and countries, and the countries are not decoration: an India store quotes rupees, a US store dollars, a UK store pounds, a UAE store dirhams. That spread is what makes the multi-currency capture real when you browse them. Each brand carries a placeholder logo, an honest stand-in showing the brand's initial on a colored wash, committed under `assets/brands/`, not an imitation of any real mark. The seed uploads each logo to the private photos bucket under the shared `catalog/` key and stores that object's bucket URL on the row, so the backend signs it on read exactly as it serves a storefront logo. No new S3 anything: the logos ride step 6's bucket and its read grant.
+The seed itself is thirteen real brands spread across categories and countries, and the countries are not decoration: an India store quotes rupees, a US store dollars, a UK store pounds, a UAE store dirhams. That spread is what makes the multi-currency capture real. Each brand carries a placeholder logo, an honest stand-in showing the brand's initial on a colored wash, committed under `assets/brands/`, not an imitation of any real mark. The seed uploads each logo to the private photos bucket under the shared `catalog/` key and stores that object's bucket URL on the row, so the backend signs it on read exactly as it serves a storefront logo. No new S3 anything: the logos ride step 6's bucket and its read grant.
 
 [![seed_brands.py: thirteen real brands across categories and countries, each logo uploaded to the photos bucket, idempotent upsert by id](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-09-code-seed.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/09-browser/infra/scripts/seed_brands.py)
 
@@ -62,11 +62,11 @@ Apply this and the directory exists. It reads like a phone contact list, one row
 
 ![The Wish Store gains a Browse real stores entry, and tapping it opens the brand directory: thirteen real stores grouped by category, each row a placeholder logo, a one-line blurb, and the country its prices are quoted in](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-09-fig-brands.png?v=PLACEHOLDER)
 
-Now the app can list the stores. Next it has to open one, and to read a page from one it needs a key it cannot be allowed to hold.
+The app can list the stores. To read a page from one, it needs a key it cannot be allowed to hold.
 
 ## Keep the scrape key on the server
 
-Reading a live product page is Firecrawl's job, and Firecrawl authenticates with an API key. The tempting version puts that key in the app: the in-app browser calls Firecrawl directly, one less hop, done. It also ships the key to every phone that installs the app. A mobile bundle is not a secret; anyone can pull it apart and read the strings inside. A key in the frontend is a key you have handed out.
+Reading a live product page is Firecrawl's job, and Firecrawl authenticates with an API key. The tempting version puts that key in the app: the in-app browser calls Firecrawl directly, one less hop, done. It also ships the key to every phone that installs the app, and a mobile bundle is not a secret. A key in the frontend is a key you have handed out.
 
 So the key never reaches a phone. It follows the exact discipline the Clerk secret set in step 4: a SecureString in SSM, injected into the container at instance start, never a plaintext env var readable in the console.
 
@@ -74,19 +74,19 @@ So the key never reaches a phone. It follows the exact discipline the Clerk secr
 
 The frontend, which is holding the URL to scrape, posts it to a backend proxy instead. The proxy attaches the Bearer key from SSM, calls Firecrawl, and hands back the page. It is auth-gated like every data route, so only a signed-in user can spend a scrape.
 
-The route is a plain `def`, not an `async def`, and that is deliberate. FastAPI runs a sync handler in a threadpool, which keeps the blocking Firecrawl call off the event loop. An `async def` body full of blocking calls stalls every other request the server is serving; a plain `def` with an `httpx.Client` sidesteps that entirely. The proxy also translates failure honestly: a Firecrawl timeout becomes a 504, a transport failure a 502, and a page Firecrawl rejects becomes `success: false` rather than leaking their status code as ours. The caller only needs to know the scrape yielded nothing, so it can fall back to letting you type the wish in by hand.
+The route is a plain `def`, not an `async def`, and that is deliberate. FastAPI runs a sync handler in a threadpool, keeping the blocking Firecrawl call off the event loop; an `async def` full of blocking calls would stall every other request the server is serving. The proxy also translates failure honestly: a Firecrawl timeout becomes a 504, a transport failure a 502, and a page Firecrawl rejects becomes `success: false` rather than leaking their status code as ours. The caller only needs to know the scrape yielded nothing, so it can fall back to letting you type the wish in by hand.
 
 [![POST /scrape/firecrawl: the proxy attaches the SSM key server-side, threadpooled as a sync handler, mapping a slow upstream to 504 and a bad one to 502](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-09-code-proxy.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/09-browser/backend/app/routes/scraping.py)
 
 ![The scrape path, key-side: the in-app browser POSTs the current page URL to the backend proxy, the proxy attaches the Firecrawl key from SSM and calls Firecrawl, and the page comes back; the key is added only at the backend and never travels to the phone](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-09-scrape.png?v=PLACEHOLDER)
 
-The key is safe and the page is reachable. Now the app opens the store.
+Now the app opens the store.
 
 ## Open the store, then read the page you land on
 
 Tapping a brand opens the in-app browser: a full-screen `WebView` on the store's real website, with the chrome to drive it (close, back, forward, reload) and one prominent action, **Add to wishlist**. You browse to a product page the way you would in any browser. The `WebView` is a native module, so it is added with `npx expo install react-native-webview`, never a hand-pinned version: the pinned range is the one Expo Go's renderer expects, and a native dependency that skews from it crashes on launch.
 
-Add scrapes the page you are on. There is a subtle trap in what "the page you are on" means. React state lags a beat behind the live `WebView`, so reading the URL from a `useState` value can scrape the page you were on one navigation ago. The live URL is kept in a ref instead, updated on every navigation event, so Add reads the page you are on right now.
+Add scrapes the page you are on, and there is a subtle trap in what that means. React state lags a beat behind the live `WebView`, so reading the URL from a `useState` value can scrape the page you were on one navigation ago. The live URL is kept in a ref instead, updated on every navigation event, so Add reads the page you are on right now.
 
 [![InAppBrowserScreen: a WebView with disabled-able back and forward chrome, Add scrapes the live URL from a ref and stamps brand_id onto the draft](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-09-code-browser.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/09-browser/frontend/src/screens/InAppBrowserScreen.tsx)
 
@@ -94,7 +94,7 @@ Whatever the scrape finds, the add-a-wish modal opens. If it read a title, a pri
 
 ![The in-app browser open on apple.com/in with its Add to wishlist bar, beside the picker it opens: the modal is prefilled with the scraped product name, and routes you to create a wishlist first when you have none yet](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-09-fig-browser.png?v=PLACEHOLDER)
 
-The page is scraped, the modal is open. Everything now rides on the scrape having found the right number, and on a page like Apple's that is the hardest thing in the step.
+Everything now rides on the scrape having found the right number, and on a page like Apple's that is the hardest thing in the step.
 
 ## Pick the one real price
 
@@ -108,13 +108,13 @@ Two ideas fix it, and they compose. The first is to prefer the store's own struc
 
 Most stores carry that metadata. Apple does not: its price lives in the page body with all the noise, and no clean tag to fall back on. So Apple is the one bespoke scraper, and it carries four filters the shared factory cannot express. It scans rupees only, because `apple.com/in` quotes solely in rupees, and names INR directly rather than reading a symbol off the page. It rejects any amount under ₹10,000, which on Apple's catalog is always an instalment, never a price. It rejects a figure that is itself a monthly instalment, checked as a tight suffix on the amount rather than through a context window. And it drops any amount sitting next to a trade-in or cashback word, the same noise-window check the shared filter runs, widened with Apple's own financing vocabulary.
 
-The instalment rule is the subtle one, and it is worth seeing why the obvious version fails. The usual way to reject a noisy price is to look at the words around it, a window of characters on each side, and drop it if "EMI" or "trade-in" is nearby. That window is exactly what catches the trade-in and cashback figures, and it is the fourth rule above. But Apple writes the EMI and the real price right next to each other: "From ₹12199.00/mo. ... or ₹69900.00". A window wide enough to catch the "/mo." on the instalment also catches the real price sitting beside it, and throws the real one away. So the instalment check is not a window at all. It reads the twelve characters immediately after the amount and disqualifies it only if a "/mo" or "per month" unit follows it directly. The EMI disqualifies itself; the real price beside it survives.
+The instalment rule is the subtle one. The usual way to reject a noisy price is to look at the words around it, a window of characters on each side, and drop it if "EMI" or "trade-in" is nearby. That window is exactly what catches the trade-in and cashback figures, the fourth rule above. But Apple writes the EMI and the real price right next to each other: "From ₹12199.00/mo. ... or ₹69900.00". A window wide enough to catch the "/mo." also catches the real price beside it, and throws it away. So the instalment check is not a window at all: it reads the twelve characters immediately after the amount and disqualifies it only if a "/mo" or "per month" unit follows directly. The EMI disqualifies itself; the real price beside it survives.
 
 [![apple.ts: the bespoke scraper scans rupees only, floors sub-₹10,000 instalments, rejects the EMI by a tight per-amount suffix, and drops trade-in and cashback figures by the noise window](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-09-code-apple.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/09-browser/frontend/src/scrapers/brands/apple.ts)
 
 Everything Apple does specially, the other brands do not need, so they share one factory. Zara, Nykaa, and Puma each become a few lines of config: the hostnames to match and the SEO junk to strip from the title. A brand whose extraction turns out identical to the generic path is not kept as a near-clone; it falls back to the generic Firecrawl scrape, and the directory still seeds it. An abstraction with one honest caller is a defect, and a clone dressed as a brand is another.
 
-Every shared scan goes through one currency-aware matcher. It knows the symbols the app supports, lists the multi-character dollar signs before the bare `$` so a Singapore price is never half-read as a US one, and reports the currency implied by whatever symbol it matched. Apple is the one exception: its rupee-only scan carries no symbol variety for the matcher to read, so it names INR from its own config instead. Either way, the currency travels out of the page and onto the wish.
+Every shared scan goes through one currency-aware matcher. It knows the symbols the app supports, lists the multi-character dollar signs before the bare `$` so a Singapore price is never half-read as a US one, and reports the currency implied by whatever symbol it matched. Apple is the one exception: its rupee-only scan carries no symbol variety for the matcher to read, so it names INR from its own config instead.
 
 ![Picking the real price on Apple's page: the extractor rejects four decoys, the ₹12,199/mo EMI (an instalment unit follows it), the ₹2,500 trade-in credit under the ₹10,000 floor, the ₹15,000 instant cashback (a cashback word beside it), and the ₹57,000 trade-in credit (a trade-in word beside it), and keeps ₹69,900, the one amount that is the product's own price](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-09-price.png?v=PLACEHOLDER)
 
@@ -122,19 +122,19 @@ The scrape now returns a price and the currency it was quoted in. The wish has t
 
 ## Carry the currency onto the wish
 
-A wish grows two fields this step: `cost_currency`, the ISO code the price was quoted in, and `brand_id`, the origin the badge resolves from later. The tempting move is to normalize the price at capture: convert every scraped amount into one home currency, or store it as a ready-made display string like `₹69,900`. Both throw away the fact the wish most needs to keep, the currency the store actually quoted, and conversion also bakes in a rate that is wrong the day the market moves. So `cost_currency` stays a plain string label, not a `Decimal`, and it stores and reads with no coercion. A wish captured from a browsed store carries both new fields. A wish typed by hand or added from step 8's catalog carries no currency, and reads in the app's default symbol, so the single-currency look is unchanged everywhere it was before.
+A wish grows two fields this step: `cost_currency`, the ISO code the price was quoted in, and `brand_id`, the origin the badge resolves from later. The tempting move is to normalize the price at capture: convert every scraped amount into one home currency, or store it as a ready-made display string like `₹69,900`. Both throw away the currency the store actually quoted, and conversion bakes in a rate that goes stale. So `cost_currency` stays a plain string label, not a `Decimal`, stored and read with no coercion. A wish captured from a browsed store carries both new fields; a wish typed by hand or added from step 8's catalog carries no currency and reads in the app's default symbol, so the single-currency look is unchanged everywhere it was before.
 
 [![wishes.py: cost_currency, a plain ISO-code label captured beside cost, and brand_id, the browser-captured origin, both new WishCreate fields stamped once at create time](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-09-code-wishmodel.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/09-browser/backend/app/models/wishes.py)
 
 The currency is captured once, at scrape time, and never edited. The update route ignores it entirely: a wish's currency is a fact about where it came from, not a field you tweak later. So `WishUpdate` does not carry `cost_currency` at all, and the comment in the model says why.
 
-On the way out, one formatter renders every cost, and it is the only place a cost becomes a string. Pass it a currency code and it prefixes the matching symbol; pass it nothing and it uses the app default. The symbols mirror the tokens the matcher reads, so a price scraped as `₹` round-trips back to `₹`, a `£` back to `£`. There is no conversion here and there is no rate table, on purpose. A rupee price reads in rupees and a dollar price in dollars, each shown exactly as its store quoted it.
+On the way out, one formatter renders every cost, and it is the only place a cost becomes a string. Pass it a currency code and it prefixes the matching symbol; pass it nothing and it uses the app default. The symbols mirror the tokens the matcher reads, so a price scraped as `₹` round-trips back to `₹`, a `£` back to `£`. No conversion, no rate table: each price reads exactly as its store quoted it.
 
 [![formatCost.ts: one formatter prefixes the symbol for a captured currency code, or the app default when none; no conversion, no rate table](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-09-code-currency.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/09-browser/frontend/src/utils/formatCost.ts)
 
 ![Currency travels with the price, end to end: a rupee store's scrape stores cost_currency = INR and reads ₹, a dollar store's stores USD and reads $, each captured once and never converted, while a catalog or hand-typed wish carries no currency and reads in the app default](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-09-currency.png?v=PLACEHOLDER)
 
-The wish now holds the right price in the right currency. The last thing it needs is to look like it came from somewhere.
+The last thing the wish needs is to look like it came from somewhere.
 
 ## Badge it, and share the scaffold
 
@@ -144,7 +144,7 @@ A wish captured in the browser wears the brand's logo, the same way a step-8 cat
 
 ![Two wish detail screens side by side: the browser-captured AirPods wish reads "From Apple" above its title and its cost is ₹67,900, in rupees, the currency apple.com/in quoted, while the catalog Ceramic Table Lamp beside it reads "From Nestwell"; both badges resolve from the origin the add-flow stamped on](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-09-fig-badge.png?v=PLACEHOLDER)
 
-That badge is the visible half. The invisible half is that the whole browse experience shares its shape with the Wish Store next door, and neither screen respells it. The store directory and the Wish Store are the same screen: fetch a reference list, render logo-led rows under category headings. Built as copies they would be near-identical, drifting apart on the first one-sided edit. So the row lives once, and it takes data, not markup. A caller hands it a title, a logo, a blurb, a country, and whether the row leads onward; it never hands it JSX. That is what lets each screen stay a fetch, a row, and its sections, and reach for nothing lower.
+That badge is the visible half. The invisible half is that the whole browse experience shares its shape with the Wish Store next door. The store directory and the Wish Store are the same screen: fetch a reference list, render logo-led rows under category headings. Built as copies they would drift apart on the first one-sided edit. So the row lives once, and it takes data, not markup: a caller hands it a title, a logo, a blurb, a country, and whether the row leads onward, never JSX. That is what lets each screen stay a fetch, a row, and its sections.
 
 [![CatalogRow.tsx: the one glyph-or-logo row both directories list, taking data (a title, a logo, meta lines) so neither screen respells the markup](https://raw.githubusercontent.com/srivardhanjalan/kivan-tutorial/main/mocks/mocks-09-code-directory.png?v=PLACEHOLDER)](https://github.com/srivardhanjalan/kivan-tutorial/blob/main/09-browser/frontend/src/components/CatalogRow.tsx)
 
