@@ -375,11 +375,15 @@ def put_wishlist(
     name: str = "A wishlist",
     love_count: int = 0,
     co_owners: list[str] | None = None,
+    privacy_type: str = "public",
 ):
     """Seed a wishlist AND its owner edges: the creator plus any co_owners. The
     route auto-inserts the creator as the first owner, so a wishlist seeded
     without its owner row would 403 its own creator on every write; this keeps
-    the fixture faithful to how create_wishlist actually leaves the tables."""
+    the fixture faithful to how create_wishlist actually leaves the tables.
+
+    privacy_type defaults public (create's default); pass "private" to seed a
+    wishlist only its owners and co-owners may view."""
     item = {
         "id": wishlist_id,
         "name": name,
@@ -387,6 +391,7 @@ def put_wishlist(
         "created_by": created_by,
         "entity_type": "WISHLIST",
         "love_count": love_count,
+        "privacy_type": privacy_type,
         "created_at": "2026-01-01T00:00:00+00:00",
     }
     aws.Table(WISHLISTS_TABLE).put_item(Item=item)
