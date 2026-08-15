@@ -76,7 +76,7 @@ output "monthly_budget_name" {
 
 output "cost_explorer_url" {
   description = "URL to AWS Cost Explorer filtered for Kivan resources"
-  value       = "https://console.aws.amazon.com/cost-management/home?region=${var.aws_region}#/cost-explorer?chartStyle=STACK&costAggregate=unBlendedCost&endDate=2025-12-31&filter=%5B%7B%22dimension%22:%7B%22id%22:%22TagKey%22,%22displayValue%22:%22Tag%22%7D,%22operator%22:%22INCLUDES%22,%22values%22:%5B%7B%22value%22:%22Project%22,%22displayValue%22:%22Project%22%7D%5D%7D,%7B%22dimension%22:%7B%22id%22:%22TagKeyValue%22,%22displayValue%22:%22Tag%22%7D,%22operator%22:%22INCLUDES%22,%22values%22:%5B%7B%22value%22:%22Project%24kivan%22,%22displayValue%22:%22Project:kivan%22%7D%5D%7D%5D&granularity=Monthly&groupBy=%5B%22Service%22%5D&isDefault=false&reportName=Kivan%20Monthly%20Costs&startDate=2025-01-01"
+  value       = "https://console.aws.amazon.com/cost-management/home?region=${var.aws_region}#/cost-explorer?chartStyle=STACK&costAggregate=unBlendedCost&filter=%5B%7B%22dimension%22:%7B%22id%22:%22TagKey%22,%22displayValue%22:%22Tag%22%7D,%22operator%22:%22INCLUDES%22,%22values%22:%5B%7B%22value%22:%22Project%22,%22displayValue%22:%22Project%22%7D%5D%7D,%7B%22dimension%22:%7B%22id%22:%22TagKeyValue%22,%22displayValue%22:%22Tag%22%7D,%22operator%22:%22INCLUDES%22,%22values%22:%5B%7B%22value%22:%22Project%24kivan%22,%22displayValue%22:%22Project:kivan%22%7D%5D%7D%5D&granularity=Monthly&groupBy=%5B%22Service%22%5D&isDefault=false&reportName=Kivan%20Monthly%20Costs"
 }
 
 output "budgets_dashboard_url" {
