@@ -1,15 +1,13 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import ModalCard from './ModalCard';
-import FormInput from './FormInput';
-import UserRow from './UserRow';
+import UserSearchPicker from './UserSearchPicker';
 import PrimaryButton from './PrimaryButton';
 import { useToast } from './ToastProvider';
 import useAsyncAction from '../hooks/useAsyncAction';
 import useUserSearch from '../hooks/useUserSearch';
 import { addWishlistOwner } from '../services/api';
 import type { User } from '../services/api';
-import Typography from '../constants/Typography';
 import { Spacing } from '../constants/ScreenStyles';
 
 interface ManageOwnersModalProps {
@@ -57,36 +55,19 @@ export default function ManageOwnersModal({
       onClose();
     }, 'Could not add that co-owner');
 
-  const searching = query.trim().length > 0;
-
   return (
     <ModalCard
       visible={visible}
       title="Add a co-owner"
       message="A co-owner can view, edit, and delete this wishlist."
     >
-      <FormInput
-        value={query}
-        onChangeText={setQuery}
-        placeholder="Search people by name"
-        autoCapitalize="none"
-        autoCorrect={false}
-        clearButtonMode="while-editing"
+      <UserSearchPicker
+        query={query}
+        onChangeQuery={setQuery}
+        results={results}
+        onPick={addOwner}
         editable={!adding}
       />
-      {searching &&
-        (results.length === 0 ? (
-          <Text style={styles.hint}>No one to add.</Text>
-        ) : (
-          results.map((user) => (
-            <UserRow
-              key={user.id}
-              user={user}
-              subtitle={user.email}
-              onPress={() => addOwner(user)}
-            />
-          ))
-        ))}
 
       <View style={styles.gap} />
       <PrimaryButton title="Done" variant="secondary" onPress={onClose} />
@@ -95,10 +76,6 @@ export default function ManageOwnersModal({
 }
 
 const styles = StyleSheet.create({
-  hint: {
-    ...Typography.bodySecondary,
-    paddingVertical: Spacing.sm,
-  },
   gap: {
     height: Spacing.md,
   },

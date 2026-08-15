@@ -3,12 +3,11 @@ import React, { useState } from 'react';
 // screens lean on the same already-shared primitives; there is no logic here to
 // extract, so this run is kept out of jscpd's clone report.
 // jscpd:ignore-start
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { useUser } from '@clerk/clerk-expo';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
-import EditDeleteHeaderButtons from '../components/EditDeleteHeaderButtons';
-import HeaderIconButton from '../components/HeaderIconButton';
+import DetailHeaderActions from '../components/DetailHeaderActions';
 import ShareEventModal from '../components/ShareEventModal';
 import SectionHeader from '../components/SectionHeader';
 import EmptyStateView from '../components/EmptyStateView';
@@ -109,20 +108,19 @@ export default function EventDetailScreen() {
       showBack
       headerRight={
         detail && event ? (
-          <View style={styles.headerActions}>
-            <HeaderIconButton
-              icon="share-outline"
-              accessibilityLabel="Share event"
-              onPress={() => setShowShare(true)}
-            />
-            {detail.is_host && (
-              <EditDeleteHeaderButtons
-                subject="event"
-                onEdit={() => navigation.navigate('EventForm', { event })}
-                onDelete={requestDelete}
-              />
-            )}
-          </View>
+          <DetailHeaderActions
+            shareLabel="Share event"
+            onShare={() => setShowShare(true)}
+            manage={
+              detail.is_host
+                ? {
+                    subject: 'event',
+                    onEdit: () => navigation.navigate('EventForm', { event }),
+                    onDelete: requestDelete,
+                  }
+                : undefined
+            }
+          />
         ) : undefined
       }
     >
@@ -235,9 +233,6 @@ export default function EventDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  headerActions: {
-    flexDirection: 'row',
-  },
   meta: {
     ...Typography.bodySecondary,
     marginTop: Spacing.sm,

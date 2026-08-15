@@ -3,8 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { useUser } from '@clerk/clerk-expo';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
-import EditDeleteHeaderButtons from '../components/EditDeleteHeaderButtons';
-import HeaderIconButton from '../components/HeaderIconButton';
+import DetailHeaderActions from '../components/DetailHeaderActions';
 import SectionHeader from '../components/SectionHeader';
 import EmptyStateView from '../components/EmptyStateView';
 import TileGrid from '../components/TileGrid';
@@ -93,20 +92,19 @@ export default function WishlistDetailScreen() {
       showBack
       headerRight={
         wishlist ? (
-          <View style={styles.headerActions}>
-            <HeaderIconButton
-              icon="share-outline"
-              accessibilityLabel="Share wishlist"
-              onPress={() => setShowShare(true)}
-            />
-            {isOwner && (
-              <EditDeleteHeaderButtons
-                subject="wishlist"
-                onEdit={() => navigation.navigate('WishlistForm', { wishlist })}
-                onDelete={requestDelete}
-              />
-            )}
-          </View>
+          <DetailHeaderActions
+            shareLabel="Share wishlist"
+            onShare={() => setShowShare(true)}
+            manage={
+              isOwner
+                ? {
+                    subject: 'wishlist',
+                    onEdit: () => navigation.navigate('WishlistForm', { wishlist }),
+                    onDelete: requestDelete,
+                  }
+                : undefined
+            }
+          />
         ) : undefined
       }
     >
@@ -223,9 +221,6 @@ export default function WishlistDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  headerActions: {
-    flexDirection: 'row',
-  },
   loveRow: {
     marginTop: Spacing.lg,
   },

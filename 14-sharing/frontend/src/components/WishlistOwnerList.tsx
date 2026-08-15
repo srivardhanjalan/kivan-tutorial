@@ -1,10 +1,7 @@
 import React from 'react';
-import { TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import PersonRow from './PersonRow';
+import RemovePersonButton from './RemovePersonButton';
 import { userDisplayName } from '../utils/userName';
-import Colors from '../constants/Colors';
-import Opacity from '../constants/Opacity';
 import type { User } from '../services/api';
 
 interface WishlistOwnerListProps {
@@ -31,15 +28,10 @@ const WishlistOwnerList: React.FC<WishlistOwnerListProps> = ({ owners, onRemove 
         subtitle={owner.email}
         trailing={
           onRemove && (
-            <TouchableOpacity
+            <RemovePersonButton
+              label={userDisplayName(owner)}
               onPress={() => onRemove(owner)}
-              activeOpacity={Opacity.pressed}
-              accessibilityRole="button"
-              accessibilityLabel={`Remove ${userDisplayName(owner)}`}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="close" size={22} color={Colors.textMuted} />
-            </TouchableOpacity>
+            />
           )
         }
       />
