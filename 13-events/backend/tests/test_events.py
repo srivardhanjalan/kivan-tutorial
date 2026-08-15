@@ -268,6 +268,167 @@ def test_link_wishlist_duplicate_is_400(client, aws):
     ).status_code == 400
 
 
+# ── Invitees & RSVP ──────────────────────────────────────────────────────────
+
+
+def _invitee(detail, invitee_id):
+    """The invitee entry for an id within a detail response, or None."""
+    return next(
+        (i for i in detail["invitees"] if i["invitee_id"] == invitee_id), None
+    )
+
+
+def test_create_time_invitees_both_kinds(client, aws):
+    """Create-time invites go through the shared helper: a known user id is
+    added as a user invitee, an email as an email invitee, and an unknown user
+    id is silently skipped (the helper validates ids against the users table)."""
+    put_user(aws, "host")
+    put_user(aws, "friend", first_name="Fran", last_name="Ng")
+
+    event_id = _create_event(
+        client,
+        "host",
+        invitee_ids=["friend", "ghost"],
+        invitee_emails=["nobody@example.com"],
+    ).json()["id"]
+
+    detail = client("host").get(f"/events/{event_id}").json()
+    ids = {i["invitee_id"] for i in detail["invitees"]}
+    assert ids == {"friend", "nobody@example.com"}  # ghost (no account) skipped
+
+
+def test_add_later_invitees_both_kinds_and_idempotent(client, aws):
+    """The add-later route reuses the same helper: user and email invites land,
+    and re-inviting an existing identifier is a no-op skip (no duplicate row,
+    no error)."""
+    put_user(aws, "host")
+    put_user(aws, "friend")
+    event_id = _create_event(client, "host").json()["id"]
+
+    resp = client("host").post(
+        f"/events/{event_id}/invitees",
+        json={"invitee_ids": ["friend"], "invitee_emails": ["nobody@example.com"]},
+    )
+    assert resp.status_code == 200
+    # Re-invite the same two: still 200, still exactly two invitee rows.
+    client("host").post(
+        f"/events/{event_id}/invitees",
+        json={"invitee_ids": ["friend"], "invitee_emails": ["nobody@example.com"]},
+    )
+    detail = client("host").get(f"/events/{event_id}").json()
+    assert len(detail["invitees"]) == 2
+
+
+def test_invitee_list_enrichment(client, aws):
+    """A user invitee carries the invited person's nested User record; an email
+    invitee (no account) leaves user=None."""
+    put_user(aws, "host")
+    put_user(aws, "friend", first_name="Fran", last_name="Ng")
+    event_id = _create_event(
+        client, "host", invitee_ids=["friend"], invitee_emails=["nobody@example.com"]
+    ).json()["id"]
+
+    detail = client("host").get(f"/events/{event_id}").json()
+
+    user_invitee = _invitee(detail, "friend")
+    assert user_invitee["invitee_type"] == "user"
+    assert user_invitee["user"]["id"] == "friend"
+    assert user_invitee["user"]["first_name"] == "Fran"
+
+    email_invitee = _invitee(detail, "nobody@example.com")
+    assert email_invitee["invitee_type"] == "email"
+    assert email_invitee["user"] is None
+
+
+def test_add_invitees_host_only(client, aws):
+    """Only a host can add invitees."""
+    put_user(aws, "host")
+    put_user(aws, "friend")
+    event_id = _create_event(client, "host").json()["id"]
+
+    assert (
+        client("stranger")
+        .post(f"/events/{event_id}/invitees", json={"invitee_ids": ["friend"]})
+        .status_code
+        == 403
+    )
+
+
+def test_remove_invitee_host_only(client, aws):
+    """A host can remove an invitee; a non-host cannot."""
+    put_user(aws, "host")
+    put_user(aws, "friend")
+    event_id = _create_event(client, "host", invitee_ids=["friend"]).json()["id"]
+
+    assert (
+        client("stranger").delete(f"/events/{event_id}/invitees/friend").status_code
+        == 403
+    )
+    assert client("host").delete(f"/events/{event_id}/invitees/friend").status_code == 200
+    assert client("host").get(f"/events/{event_id}").json()["invitees"] == []
+
+
+def test_rsvp_happy_and_self_only(client, aws):
+    """(f) An invitee sets their own RSVP and it persists to their detail view;
+    only that invitee may set it (a non-invitee is 403), an unknown invitee row
+    is 404, and an out-of-set status is rejected by the model (422)."""
+    put_user(aws, "host")
+    put_user(aws, "friend")
+    event_id = _create_event(client, "host", invitee_ids=["friend"]).json()["id"]
+
+    resp = client("friend").patch(
+        f"/events/{event_id}/invitees/friend", json={"rsvp_status": "going"}
+    )
+    assert resp.status_code == 200
+    mine = client("friend").get(f"/events/{event_id}").json()
+    assert mine["is_invitee"] is True
+    assert mine["my_rsvp_status"] == "going"
+
+    # Someone who isn't that invitee cannot set it.
+    assert (
+        client("stranger")
+        .patch(f"/events/{event_id}/invitees/friend", json={"rsvp_status": "maybe"})
+        .status_code
+        == 403
+    )
+    # No such invitee row → 404.
+    assert (
+        client("friend")
+        .patch(f"/events/{event_id}/invitees/ghost", json={"rsvp_status": "going"})
+        .status_code
+        == 404
+    )
+    # A status outside going|maybe|not_going is a validation error.
+    assert (
+        client("friend")
+        .patch(f"/events/{event_id}/invitees/friend", json={"rsvp_status": "pending"})
+        .status_code
+        == 422
+    )
+
+
+def test_rsvp_by_email_identifier(client, aws):
+    """(h) An email invite is RSVP-able by its address once that person signs
+    in: they PATCH the row keyed by their email, and it surfaces in /events/me."""
+    put_user(aws, "host")
+    put_user(aws, "guest")  # email seeded as guest@example.com
+    event_id = _create_event(client, "host").json()["id"]
+    client("host").post(
+        f"/events/{event_id}/invitees",
+        json={"invitee_emails": ["guest@example.com"]},
+    )
+
+    resp = client("guest").patch(
+        f"/events/{event_id}/invitees/guest@example.com",
+        json={"rsvp_status": "going"},
+    )
+    assert resp.status_code == 200
+
+    invited = client("guest").get("/events/me").json()["invited"]
+    assert [e["id"] for e in invited] == [event_id]
+    assert invited[0]["my_rsvp_status"] == "going"
+
+
 # ── Delete cascade ───────────────────────────────────────────────────────────
 
 

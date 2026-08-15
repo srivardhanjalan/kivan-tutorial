@@ -19,9 +19,11 @@ from app.models.events import (
     EventCreate,
     EventDetailResponse,
     EventHostCreate,
+    EventInviteeCreate,
     EventUpdate,
     EventWishlistCreate,
     MyEventsResponse,
+    UpdateRsvpRequest,
 )
 from app.utils.dynamo import (
     batch_get_items,
@@ -40,10 +42,11 @@ router = APIRouter(prefix="/events", tags=["events"])
 
 
 # ── Event-domain helpers ─────────────────────────────────────────────────────
-# The whole events surface funnels its access checks through these. is_event_*
-# read the child tables by composite key; get_user_email backs the by-email
-# invitee reach (an event invited by email address, claimed once that address
-# signs up). Kept at file top, not a util module: every caller is in this file.
+# The whole events surface funnels its access checks through these. is_event_host
+# reads the host edge by composite key; get_user_email backs the by-email invitee
+# reach (an event invited by email address, claimed once that address signs up)
+# on both /me and the RSVP self-check. Kept at file top, not a util module: every
+# caller is in this file.
 
 
 def get_event_or_404(event_id: str) -> dict:
@@ -58,19 +61,6 @@ def is_event_host(event_id: str, user_id: str) -> bool:
         Key={"event_id": event_id, "user_id": user_id}
     )
     return "Item" in response
-
-
-def is_event_invitee(event_id: str, user_id: str, email: Optional[str]) -> bool:
-    """Is this user invited, by user id OR by email? An invite can be addressed
-    to a raw email before that person has an account; once they sign up with it,
-    the same row is theirs. So access is checked against both identifiers."""
-    for invitee_id in filter(None, [user_id, email]):
-        response = event_invitees_table.get_item(
-            Key={"event_id": event_id, "invitee_id": invitee_id}
-        )
-        if "Item" in response:
-            return True
-    return False
 
 
 def get_user_email(user_id: str) -> Optional[str]:
@@ -125,6 +115,96 @@ def require_host(event_id: str, user_id: str, action: str) -> None:
         )
 
 
+def add_invitees(
+    event_id: str,
+    invitee_ids: Optional[list[str]],
+    invitee_emails: Optional[list[str]],
+    invited_by: str,
+) -> None:
+    """Write invitee rows for user ids and/or raw emails, skipping any already
+    invited. The user-vs-email split lives HERE, in one place: the reference
+    duplicated this same put_item logic in create_event AND the add-invitees
+    route (the step-13 study flagged it), so both callers now funnel through
+    this helper. A user id is validated against the users table and skipped when
+    unknown; an email is trusted verbatim (an address invited before that person
+    has an account, claimed once they sign up with it). Notifying the newly
+    added user invitees is a later step's job; this only writes the rows."""
+    now = utc_now_iso()
+
+    if invitee_ids:
+        unique_ids = list(set(invitee_ids))
+        existing_users = {
+            user["id"]
+            for user in batch_get_items(
+                users_table, [{"id": uid} for uid in unique_ids]
+            )
+        }
+        for invitee_id in unique_ids:
+            if invitee_id in existing_users and not _is_invited(event_id, invitee_id):
+                _put_invitee(event_id, invitee_id, "user", invited_by, now)
+
+    if invitee_emails:
+        for email in set(invitee_emails):
+            if not _is_invited(event_id, email):
+                _put_invitee(event_id, email, "email", invited_by, now)
+
+
+def _is_invited(event_id: str, invitee_id: str) -> bool:
+    """Is this identifier (user id or email) already an invitee row? A direct
+    GetItem on the composite key, so re-inviting is an idempotent skip."""
+    response = event_invitees_table.get_item(
+        Key={"event_id": event_id, "invitee_id": invitee_id}
+    )
+    return "Item" in response
+
+
+def _put_invitee(
+    event_id: str, invitee_id: str, invitee_type: str, invited_by: str, now: str
+) -> None:
+    """Write one invitee row at the initial "pending" RSVP. The single put both
+    invite kinds share, differing only in invitee_type and what invitee_id
+    holds (a user id vs an email)."""
+    event_invitees_table.put_item(
+        Item={
+            "event_id": event_id,
+            "invitee_id": invitee_id,
+            "invitee_type": invitee_type,
+            "rsvp_status": "pending",
+            "invited_at": now,
+            "invited_by": invited_by,
+        }
+    )
+
+
+def get_enriched_invitees(
+    event_id: str, user_id: str, user_email: Optional[str]
+) -> tuple[list[dict], Optional[str]]:
+    """Every invitee row for an event, each user-type row enriched with its User
+    record (one Query + one BatchGetItem, the N+1 fix), plus the caller's own
+    rsvp_status. Backs the detail screen's Guests list and RSVP control. Returns
+    (invitees, my_rsvp_status); my_rsvp_status is None when the caller has no
+    invitee row, which is exactly the "not an invitee" signal the detail route
+    reads, so it needn't ask a second time."""
+    rows = query_all_pages(
+        event_invitees_table, KeyConditionExpression=Key("event_id").eq(event_id)
+    )
+    user_ids = [r["invitee_id"] for r in rows if r.get("invitee_type") == "user"]
+    users_map = {
+        user["id"]: user
+        for user in batch_get_items(users_table, [{"id": uid} for uid in user_ids])
+    }
+    my_identifiers = set(filter(None, [user_id, user_email]))
+
+    invitees: list[dict] = []
+    my_rsvp_status: Optional[str] = None
+    for row in rows:
+        user = users_map.get(row["invitee_id"]) if row.get("invitee_type") == "user" else None
+        invitees.append({**row, "user": user})
+        if row["invitee_id"] in my_identifiers:
+            my_rsvp_status = row.get("rsvp_status", "pending")
+    return invitees, my_rsvp_status
+
+
 # ── Event CRUD ───────────────────────────────────────────────────────────────
 # Sync handlers on purpose: FastAPI threadpools them, keeping DynamoDB's
 # blocking I/O off the event loop (the repo-wide route idiom).
@@ -173,6 +253,9 @@ def create_event(event: EventCreate, user_id: str = Depends(get_current_user_id)
             "added_by": user_id,
         }
     )
+
+    # Create-time invites go through the SAME helper the add-later route uses
+    add_invitees(event_id, event.invitee_ids, event.invitee_emails, user_id)
 
     if to_claim:
         claim_pending_photo(to_claim)
@@ -253,15 +336,20 @@ def get_public_events(
 
 @router.get("/{event_id}", response_model=EventDetailResponse)
 def get_event(event_id: str, user_id: str = Depends(get_current_user_id)):
-    """An event's full detail: the event, its hosts, its linked wishlists, and
-    whether the caller is a host (which unlocks edit/delete). Access is host OR
-    invitee OR public: a public event surfaced via /events/public must not 403
-    when tapped, so viewing one you weren't invited to is deliberate."""
+    """An event's full detail: the event, its hosts, its invitees (user-enriched
+    for the Guests list), its linked wishlists, and how the caller relates to it:
+    is_host unlocks edit/delete/invite, is_invitee/my_rsvp_status drive the RSVP
+    control. Access is host OR invitee OR public: a public event surfaced
+    via /events/public must not 403 when tapped, so viewing one you weren't
+    invited to is deliberate."""
     event = get_event_or_404(event_id)
 
     is_host = is_event_host(event_id, user_id)
-    if not (is_host or event.get("is_public") or
-            is_event_invitee(event_id, user_id, get_user_email(user_id))):
+    user_email = get_user_email(user_id)
+    invitees, my_rsvp_status = get_enriched_invitees(event_id, user_id, user_email)
+    # my_rsvp_status is set exactly when the caller has an invitee row
+    is_invitee = my_rsvp_status is not None
+    if not (is_host or event.get("is_public") or is_invitee):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't have access to this event",
@@ -270,8 +358,11 @@ def get_event(event_id: str, user_id: str = Depends(get_current_user_id)):
     return {
         "event": event,
         "hosts": get_event_hosts(event_id),
+        "invitees": invitees,
         "wishlists": get_event_wishlists(event_id),
         "is_host": is_host,
+        "is_invitee": is_invitee,
+        "my_rsvp_status": my_rsvp_status,
     }
 
 
@@ -433,6 +524,77 @@ def remove_event_host(
         )
     event_hosts_table.delete_item(Key={"event_id": event_id, "user_id": host_id})
     return {"success": True, "message": "Host removed"}
+
+
+# ── Invitees & RSVP ──────────────────────────────────────────────────────────
+# Hosts add and remove invitees; the invitee alone sets their own RSVP. An
+# invite addressed to a raw email is RSVP-able once that address signs in (the
+# path identifier is the email, which is the invitee row's key).
+
+
+@router.post("/{event_id}/invitees", response_model=ActionResponse)
+def add_event_invitees(
+    event_id: str,
+    invitee_data: EventInviteeCreate,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Invite people after the event exists. Host-only. User ids and emails run
+    through the shared add-invitees helper (the same one create-time invites
+    use); already-invited identifiers are skipped, so re-inviting is idempotent.
+    Notifying the new user invitees is a later step's concern."""
+    get_event_or_404(event_id)
+    require_host(event_id, user_id, "add invitees")
+    add_invitees(event_id, invitee_data.invitee_ids, invitee_data.invitee_emails, user_id)
+    return {"success": True, "message": "Invitees added"}
+
+
+@router.delete("/{event_id}/invitees/{invitee_id}", response_model=ActionResponse)
+def remove_event_invitee(
+    event_id: str,
+    invitee_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Remove an invitee. Host-only. Idempotent: removing one who isn't invited
+    is a no-op DeleteItem (invitee_id is the user id or email that keys the row)."""
+    get_event_or_404(event_id)
+    require_host(event_id, user_id, "remove invitees")
+    event_invitees_table.delete_item(
+        Key={"event_id": event_id, "invitee_id": invitee_id}
+    )
+    return {"success": True, "message": "Invitee removed"}
+
+
+@router.patch("/{event_id}/invitees/{invitee_id}", response_model=ActionResponse)
+def update_invitee_rsvp(
+    event_id: str,
+    invitee_id: str,
+    rsvp: UpdateRsvpRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Set an RSVP. ONLY the invitee themselves may set their own: the path's
+    invitee_id must equal the caller's user id or their email (an email invite
+    becomes RSVP-able once its address signs in). 404 if there's no such invitee
+    row; 403 if the row is someone else's. The status is already validated to
+    going|maybe|not_going by the model."""
+    get_event_or_404(event_id)
+    if not _is_invited(event_id, invitee_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Invitee not found"
+        )
+
+    user_email = get_user_email(user_id)
+    if invitee_id != user_id and not (user_email and invitee_id == user_email):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only update your own RSVP",
+        )
+
+    event_invitees_table.update_item(
+        Key={"event_id": event_id, "invitee_id": invitee_id},
+        UpdateExpression="SET rsvp_status = :s",
+        ExpressionAttributeValues={":s": rsvp.rsvp_status},
+    )
+    return {"success": True, "message": f"RSVP updated to {rsvp.rsvp_status}"}
 
 
 # ── Wishlist linking ─────────────────────────────────────────────────────────
