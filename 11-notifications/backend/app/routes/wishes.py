@@ -1,3 +1,4 @@
+import logging
 import uuid
 from decimal import Decimal
 
@@ -7,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.database import wishes_table, wishlists_table
 from app.dependencies.auth import get_current_user_id
 from app.models.wishes import Wish, WishCreate, WishUpdate
+from app.utils.notifications import notify_wish_added
 from app.utils.s3_helpers import (
     claim_pending_photo,
     delete_photo_by_url,
@@ -15,6 +17,8 @@ from app.utils.s3_helpers import (
 from app.utils.dynamo import get_item_or_404, query_all_pages, update_item_fields
 from app.utils.timestamps import utc_now_iso
 from app.utils.wishlist_access import get_owned_wishlist, get_wishlist_or_404
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/wishes", tags=["wishes"])
 
@@ -66,6 +70,19 @@ def create_wish(wish: WishCreate, user_id: str = Depends(get_current_user_id)):
     wishes_table.put_item(Item=item)
     if to_claim:
         claim_pending_photo(to_claim)
+
+    # Fan the new wish out to the owner's followers, best-effort: a notification
+    # failure must never fail the add. wishlist_id rides along so the tap can
+    # open the wish inside its list. Public-by-default this step (privacy is 14).
+    try:
+        notify_wish_added(
+            actor_id=user_id,
+            wish_id=item["id"],
+            wish_name=item["name"],
+            wishlist_id=item["wishlist_id"],
+        )
+    except Exception as notif_error:
+        logger.error(f"Failed to publish wish_added notifications: {notif_error}")
     return item
 
 

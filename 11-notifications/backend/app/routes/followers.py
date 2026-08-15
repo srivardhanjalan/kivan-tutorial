@@ -1,3 +1,5 @@
+import logging
+
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -6,7 +8,10 @@ from app.database import followers_table, users_table
 from app.dependencies.auth import get_current_user_id
 from app.models.users import User
 from app.utils.dynamo import adjust_count, batch_get_items, query_all_pages
+from app.utils.notifications import notify_follow
 from app.utils.user_access import get_public_user
+
+logger = logging.getLogger(__name__)
 
 # The follow graph hangs off /users/{id}, so it shares that prefix but keeps its
 # own file: following is one concern, the profile CRUD in users.py another.
@@ -59,6 +64,14 @@ def follow_user(user_id: str, follower_id: str = Depends(get_current_user_id)):
     # following (best-effort: the edge above is the source of truth)
     adjust_count(users_table, {"id": user_id}, "follower_count", 1)
     adjust_count(users_table, {"id": follower_id}, "following_count", 1)
+
+    # Tell the followed user, best-effort: a notification failure must never
+    # fail a follow that already persisted (the producer swallows its own
+    # errors; this second guard covers an unexpected raise on the way in).
+    try:
+        notify_follow(actor_id=follower_id, followed_user_id=user_id)
+    except Exception as notif_error:
+        logger.error(f"Failed to publish follow notification: {notif_error}")
 
 
 @router.delete("/{user_id}/unfollow", status_code=status.HTTP_204_NO_CONTENT)
