@@ -28,6 +28,18 @@ variable "budget_alert_email" {
   default     = "alerts@example.com" # placeholder — set to a real inbox you can confirm
 }
 
+variable "monthly_budget_limit" {
+  description = "Monthly budget limit in USD for all Kivan resources (Project=kivan)"
+  type        = string
+  default     = "100.00"
+}
+
+variable "daily_budget_limit" {
+  description = "Daily budget limit in USD; catches unexpected same-day cost spikes"
+  type        = string
+  default     = "10.00"
+}
+
 variable "clerk_secret_key" {
   description = "Clerk secret key (sk_...) — the backend uses it to fetch JWKS and user profiles"
   type        = string
