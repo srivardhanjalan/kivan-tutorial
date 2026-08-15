@@ -1,12 +1,10 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Avatar, { LIST_ROW_AVATAR_SIZE } from './Avatar';
+import PersonRow from './PersonRow';
 import { userDisplayName } from '../utils/userName';
 import Colors from '../constants/Colors';
-import Typography from '../constants/Typography';
 import Opacity from '../constants/Opacity';
-import { Spacing } from '../constants/ScreenStyles';
 import { RSVP_LABEL } from '../constants/rsvpLabels';
 import type { EventInvitee, RsvpStatus } from '../services/api';
 
@@ -35,61 +33,36 @@ interface EventGuestListProps {
 }
 
 /**
- * The event's guest list: one row per invitee (avatar, name, and their RSVP),
- * with a host-only remove button on the right. A user invite shows the invited
- * person; an email invite shows the address it was sent to until that person
- * signs up.
+ * The event's guest list: one {@link PersonRow} per invitee (avatar, name, and
+ * their RSVP), with a host-only remove button on the right. A user invite shows
+ * the invited person; an email invite shows the address it was sent to until
+ * that person signs up.
  */
 const EventGuestList: React.FC<EventGuestListProps> = ({ guests, onRemove }) => (
   <>
     {guests.map((invitee) => (
-      <View key={invitee.invitee_id} style={styles.row}>
-        <Avatar
-          imageUrl={invitee.user?.image_url}
-          name={guestName(invitee)}
-          size={LIST_ROW_AVATAR_SIZE}
-        />
-        <View style={styles.text}>
-          <Text style={styles.name} numberOfLines={1}>
-            {guestName(invitee)}
-          </Text>
-          <Text style={[styles.status, { color: RSVP_COLOR[invitee.rsvp_status] }]}>
-            {RSVP_LABEL[invitee.rsvp_status]}
-          </Text>
-        </View>
-        {onRemove && (
-          <TouchableOpacity
-            onPress={() => onRemove(invitee)}
-            activeOpacity={Opacity.pressed}
-            accessibilityRole="button"
-            accessibilityLabel={`Remove ${guestName(invitee)}`}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="close" size={22} color={Colors.textMuted} />
-          </TouchableOpacity>
-        )}
-      </View>
+      <PersonRow
+        key={invitee.invitee_id}
+        imageUrl={invitee.user?.image_url}
+        name={guestName(invitee)}
+        subtitle={RSVP_LABEL[invitee.rsvp_status]}
+        subtitleColor={RSVP_COLOR[invitee.rsvp_status]}
+        trailing={
+          onRemove && (
+            <TouchableOpacity
+              onPress={() => onRemove(invitee)}
+              activeOpacity={Opacity.pressed}
+              accessibilityRole="button"
+              accessibilityLabel={`Remove ${guestName(invitee)}`}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="close" size={22} color={Colors.textMuted} />
+            </TouchableOpacity>
+          )
+        }
+      />
     ))}
   </>
 );
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    paddingVertical: Spacing.sm,
-  },
-  text: {
-    flex: 1,
-  },
-  name: {
-    ...Typography.bodySecondaryStrong,
-  },
-  status: {
-    ...Typography.bodySecondary,
-    marginTop: Spacing.hairlineGap,
-  },
-});
 
 export default EventGuestList;

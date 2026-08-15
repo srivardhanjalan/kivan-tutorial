@@ -6,13 +6,11 @@ import UserRow from './UserRow';
 import PrimaryButton from './PrimaryButton';
 import { useToast } from './ToastProvider';
 import useAsyncAction from '../hooks/useAsyncAction';
-import { searchUsers, addEventInvitee } from '../services/api';
+import useUserSearch from '../hooks/useUserSearch';
+import { addEventInvitee } from '../services/api';
 import type { EventInvitee, User } from '../services/api';
 import Typography from '../constants/Typography';
 import { Spacing } from '../constants/ScreenStyles';
-
-/** One request per pause, not per keystroke: the Discover search cadence. */
-const SEARCH_DEBOUNCE_MS = 300;
 
 /** A pragmatic "looks like an email" check: something, an @, something, a dot,
     something. The backend trusts the address verbatim, so this is the only
@@ -49,41 +47,23 @@ export default function InviteGuestModal({
 }: InviteGuestModalProps) {
   const toast = useToast();
   const { loading: inviting, run } = useAsyncAction();
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<User[]>([]);
   const [email, setEmail] = useState('');
-
-  // Clear the fields each time the modal opens, so it never reopens mid-search.
-  useEffect(() => {
-    if (!visible) return;
-    setQuery('');
-    setResults([]);
-    setEmail('');
-  }, [visible]);
 
   // Everyone already invited, plus the host, are ineligible: an invitee row is
   // keyed by user id OR email, so this one set covers both invite kinds.
   const invited = new Set(invitees.map((i) => i.invitee_id));
 
-  // Debounced name search, minus anyone already invited or the host themselves.
+  // The shared debounced people search, minus anyone already invited or the host.
+  const { query, setQuery, results, reset } = useUserSearch(
+    (u) => u.id !== currentUserId && !invited.has(u.id)
+  );
+
+  // Clear the fields each time the modal opens, so it never reopens mid-search.
   useEffect(() => {
-    const trimmed = query.trim();
-    if (!trimmed) {
-      setResults([]);
-      return;
-    }
-    const timer = setTimeout(() => {
-      searchUsers(trimmed)
-        .then((users) =>
-          setResults(users.filter((u) => u.id !== currentUserId && !invited.has(u.id)))
-        )
-        .catch(() => setResults([]));
-    }, SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-    // invited/currentUserId are stable for a given open; keying on query alone
-    // matches the Discover search and avoids refiring on every parent render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query]);
+    if (!visible) return;
+    reset();
+    setEmail('');
+  }, [visible, reset]);
 
   const inviteUser = (user: User) =>
     run(async () => {
