@@ -22,6 +22,12 @@ variable "apprunner_memory" {
   default     = "2048"
 }
 
+variable "budget_alert_email" {
+  description = "Email address subscribed to the operational alert topic; the subscription is created but stays PendingConfirmation until this inbox confirms it"
+  type        = string
+  default     = "alerts@example.com" # placeholder — set to a real inbox you can confirm
+}
+
 variable "clerk_secret_key" {
   description = "Clerk secret key (sk_...) — the backend uses it to fetch JWKS and user profiles"
   type        = string
