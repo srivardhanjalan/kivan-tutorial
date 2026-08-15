@@ -270,15 +270,20 @@ resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
         ]
       },
       {
-        # Event invitees: GetItem for the access check, Query on the base table
+        # Event invitees: GetItem for the access check; Query on the base table
         # (an event's invitees, the delete cascade) and InviteeIdIndex (events
-        # I'm invited to by id and by email, for /events/me), and BatchWriteItem
-        # for the cascade. Writing invitees (put/delete) arrives with the invitee
-        # step, so those actions are withheld here.
+        # I'm invited to by id and by email, for /events/me); PutItem to add an
+        # invitee, UpdateItem for the RSVP PATCH, DeleteItem for a host's
+        # single remove; BatchWriteItem for the cascade. The E2E caught the
+        # write actions still withheld by a phase-A comment after the invitee
+        # endpoints shipped.
         Effect = "Allow"
         Action = [
           "dynamodb:GetItem",
           "dynamodb:Query",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
           "dynamodb:BatchWriteItem"
         ]
         Resource = [
