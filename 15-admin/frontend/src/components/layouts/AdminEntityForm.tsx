@@ -30,10 +30,10 @@ export interface AdminField {
 }
 
 /**
- * The three fields every admin form shares verbatim get a builder each, so the
+ * The four fields every admin form shares verbatim get a builder each, so the
  * shape (and the boilerplate that must stay in lockstep) lives in one place and
- * each screen names only what differs — the seed value, and for the slug the
- * copy that names the entity.
+ * each screen names only what differs — the seed value, and for the slug and
+ * name the entity-specific placeholder and empty-value copy.
  */
 
 /** The client-supplied slug id an entity opens with: shown only on create,
@@ -48,6 +48,18 @@ export function slugField(current: string | undefined, placeholder: string, requ
     required,
     autoCapitalize: 'none',
     maxLength: 100,
+  };
+}
+
+/** The required display name every entity carries; the backend caps it at 200. */
+export function nameField(current: string | undefined, placeholder: string, required: string): AdminField {
+  return {
+    key: 'name',
+    label: 'Name',
+    placeholder,
+    initial: current ?? '',
+    required,
+    maxLength: 200,
   };
 }
 

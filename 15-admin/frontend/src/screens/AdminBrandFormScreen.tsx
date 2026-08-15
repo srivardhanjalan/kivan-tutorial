@@ -3,6 +3,7 @@ import { useAppRoute } from '../hooks/useAppNavigation';
 import AdminEntityForm, {
   AdminField,
   slugField,
+  nameField,
   descriptionField,
   displayOrderField,
 } from '../components/layouts/AdminEntityForm';
@@ -21,7 +22,7 @@ export default function AdminBrandFormScreen() {
 
   const fields: AdminField[] = [
     slugField(brand?.id, 'e.g. nike', 'Give the brand an id'),
-    { key: 'name', label: 'Name', placeholder: 'Brand name', initial: brand?.name ?? '', required: 'Give the brand a name', maxLength: 200 },
+    nameField(brand?.name, 'Brand name', 'Give the brand a name'),
     descriptionField(brand?.description),
     { key: 'websiteUrl', label: 'Website URL', placeholder: 'https://…', initial: brand?.website_url ?? '', autoCapitalize: 'none', maxLength: 2048 },
     { key: 'category', label: 'Category', placeholder: 'e.g. Fashion', initial: brand?.category ?? '', maxLength: 100 },

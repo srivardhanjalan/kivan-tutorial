@@ -3,6 +3,7 @@ import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import AdminEntityForm, {
   AdminField,
   slugField,
+  nameField,
   descriptionField,
   displayOrderField,
 } from '../components/layouts/AdminEntityForm';
@@ -25,7 +26,7 @@ export default function AdminStorefrontFormScreen() {
 
   const fields: AdminField[] = [
     slugField(storefront?.id, 'e.g. acme-goods', 'Give the storefront an id'),
-    { key: 'name', label: 'Name', placeholder: 'Store name', initial: storefront?.name ?? '', required: 'Give the storefront a name', maxLength: 200 },
+    nameField(storefront?.name, 'Store name', 'Give the storefront a name'),
     descriptionField(storefront?.description),
     displayOrderField(storefront?.display_order),
   ];

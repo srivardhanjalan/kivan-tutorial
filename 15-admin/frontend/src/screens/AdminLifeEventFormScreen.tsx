@@ -3,6 +3,7 @@ import { useAppRoute } from '../hooks/useAppNavigation';
 import AdminEntityForm, {
   AdminField,
   slugField,
+  nameField,
   descriptionField,
   displayOrderField,
 } from '../components/layouts/AdminEntityForm';
@@ -20,7 +21,7 @@ export default function AdminLifeEventFormScreen() {
 
   const fields: AdminField[] = [
     slugField(lifeEvent?.id, 'e.g. graduation', 'Give the life event an id'),
-    { key: 'name', label: 'Name', placeholder: 'Occasion name', initial: lifeEvent?.name ?? '', required: 'Give the life event a name', maxLength: 200 },
+    nameField(lifeEvent?.name, 'Occasion name', 'Give the life event a name'),
     { key: 'icon', label: 'Icon (emoji)', placeholder: '🎓', initial: lifeEvent?.icon ?? '', maxLength: 100 },
     descriptionField(lifeEvent?.description),
     displayOrderField(lifeEvent?.display_order),
