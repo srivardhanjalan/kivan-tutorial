@@ -3,11 +3,18 @@ import { useToast } from '../components/ToastProvider';
 
 /**
  * One spelling for "show the user why it failed": a Clerk error's specific
- * message when there is one, the caller's message otherwise. Raw thrown
- * messages (fetch paths, status codes) never reach a toast.
+ * message when there is one, then the backend's own reason (an ApiError's
+ * `detail` — a 409 conflict, a 422 validation message), and the caller's
+ * fallback otherwise. Raw thrown messages (fetch paths, status codes) still
+ * never reach a toast: those live on `.message`, which this deliberately skips.
  */
 function errorMessage(err: any, fallback: string): string {
-  return err.errors?.[0]?.message || err.errors?.[0]?.longMessage || fallback;
+  return (
+    err.errors?.[0]?.message ||
+    err.errors?.[0]?.longMessage ||
+    err.detail ||
+    fallback
+  );
 }
 
 /**
