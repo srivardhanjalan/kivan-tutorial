@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import AppSwitch from '../components/AppSwitch';
-import { View, Text, StyleSheet, Switch } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import NOTIFICATION_TYPE_ICON from '../constants/notificationTypeIcons';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
