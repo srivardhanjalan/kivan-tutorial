@@ -1,6 +1,11 @@
 import React from 'react';
 import { useAppRoute } from '../hooks/useAppNavigation';
-import AdminEntityForm, { AdminField } from '../components/layouts/AdminEntityForm';
+import AdminEntityForm, {
+  AdminField,
+  slugField,
+  descriptionField,
+  displayOrderField,
+} from '../components/layouts/AdminEntityForm';
 import { createBrand, updateBrand, deleteBrand } from '../services/api';
 
 /**
@@ -15,13 +20,13 @@ export default function AdminBrandFormScreen() {
   const editing = !!brand;
 
   const fields: AdminField[] = [
-    { key: 'id', label: 'ID (slug)', placeholder: 'e.g. nike', initial: brand?.id ?? '', slugOnCreate: true, required: 'Give the brand an id', autoCapitalize: 'none', maxLength: 100 },
+    slugField(brand?.id, 'e.g. nike', 'Give the brand an id'),
     { key: 'name', label: 'Name', placeholder: 'Brand name', initial: brand?.name ?? '', required: 'Give the brand a name', maxLength: 200 },
-    { key: 'description', label: 'Description', placeholder: 'Optional', initial: brand?.description ?? '', maxLength: 2048 },
+    descriptionField(brand?.description),
     { key: 'websiteUrl', label: 'Website URL', placeholder: 'https://…', initial: brand?.website_url ?? '', autoCapitalize: 'none', maxLength: 2048 },
     { key: 'category', label: 'Category', placeholder: 'e.g. Fashion', initial: brand?.category ?? '', maxLength: 100 },
     { key: 'country', label: 'Country', placeholder: 'e.g. India', initial: brand?.country ?? '', maxLength: 100 },
-    { key: 'displayOrder', label: 'Display order', placeholder: '0', initial: String(brand?.display_order ?? 0), keyboardType: 'number-pad' },
+    displayOrderField(brand?.display_order),
   ];
 
   return (

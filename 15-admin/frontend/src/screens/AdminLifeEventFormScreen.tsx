@@ -1,6 +1,11 @@
 import React from 'react';
 import { useAppRoute } from '../hooks/useAppNavigation';
-import AdminEntityForm, { AdminField } from '../components/layouts/AdminEntityForm';
+import AdminEntityForm, {
+  AdminField,
+  slugField,
+  descriptionField,
+  displayOrderField,
+} from '../components/layouts/AdminEntityForm';
 import { createLifeEvent, updateLifeEvent, deleteLifeEvent } from '../services/api';
 
 /**
@@ -14,11 +19,11 @@ export default function AdminLifeEventFormScreen() {
   const editing = !!lifeEvent;
 
   const fields: AdminField[] = [
-    { key: 'id', label: 'ID (slug)', placeholder: 'e.g. graduation', initial: lifeEvent?.id ?? '', slugOnCreate: true, required: 'Give the life event an id', autoCapitalize: 'none', maxLength: 100 },
+    slugField(lifeEvent?.id, 'e.g. graduation', 'Give the life event an id'),
     { key: 'name', label: 'Name', placeholder: 'Occasion name', initial: lifeEvent?.name ?? '', required: 'Give the life event a name', maxLength: 200 },
     { key: 'icon', label: 'Icon (emoji)', placeholder: '🎓', initial: lifeEvent?.icon ?? '', maxLength: 100 },
-    { key: 'description', label: 'Description', placeholder: 'Optional', initial: lifeEvent?.description ?? '', maxLength: 2048 },
-    { key: 'displayOrder', label: 'Display order', placeholder: '0', initial: String(lifeEvent?.display_order ?? 0), keyboardType: 'number-pad' },
+    descriptionField(lifeEvent?.description),
+    displayOrderField(lifeEvent?.display_order),
   ];
 
   return (

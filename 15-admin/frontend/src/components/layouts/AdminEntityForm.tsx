@@ -29,6 +29,50 @@ export interface AdminField {
   maxLength?: number;
 }
 
+/**
+ * The three fields every admin form shares verbatim get a builder each, so the
+ * shape (and the boilerplate that must stay in lockstep) lives in one place and
+ * each screen names only what differs — the seed value, and for the slug the
+ * copy that names the entity.
+ */
+
+/** The client-supplied slug id an entity opens with: shown only on create,
+    fixed once it exists. Placeholder and the empty-value toast name the entity. */
+export function slugField(current: string | undefined, placeholder: string, required: string): AdminField {
+  return {
+    key: 'id',
+    label: 'ID (slug)',
+    placeholder,
+    initial: current ?? '',
+    slugOnCreate: true,
+    required,
+    autoCapitalize: 'none',
+    maxLength: 100,
+  };
+}
+
+/** The optional free-text description every entity carries. */
+export function descriptionField(current: string | undefined): AdminField {
+  return {
+    key: 'description',
+    label: 'Description',
+    placeholder: 'Optional',
+    initial: current ?? '',
+    maxLength: 2048,
+  };
+}
+
+/** The sort key every directory orders by, a plain number seeded to 0. */
+export function displayOrderField(current: number | undefined): AdminField {
+  return {
+    key: 'displayOrder',
+    label: 'Display order',
+    placeholder: '0',
+    initial: String(current ?? 0),
+    keyboardType: 'number-pad',
+  };
+}
+
 interface AdminEntityFormProps {
   /** Titles the screen and every action's label: "New <noun>" / "Edit <noun>",
       "Create <noun>", "Delete <noun>", "Delete this <noun>?". */

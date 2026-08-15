@@ -1,6 +1,11 @@
 import React from 'react';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
-import AdminEntityForm, { AdminField } from '../components/layouts/AdminEntityForm';
+import AdminEntityForm, {
+  AdminField,
+  slugField,
+  descriptionField,
+  displayOrderField,
+} from '../components/layouts/AdminEntityForm';
 import PrimaryButton from '../components/PrimaryButton';
 import { createStorefront, updateStorefront, deleteStorefront } from '../services/api';
 import { pluralize } from '../utils/pluralize';
@@ -19,10 +24,10 @@ export default function AdminStorefrontFormScreen() {
   const editing = !!storefront;
 
   const fields: AdminField[] = [
-    { key: 'id', label: 'ID (slug)', placeholder: 'e.g. acme-goods', initial: storefront?.id ?? '', slugOnCreate: true, required: 'Give the storefront an id', autoCapitalize: 'none', maxLength: 100 },
+    slugField(storefront?.id, 'e.g. acme-goods', 'Give the storefront an id'),
     { key: 'name', label: 'Name', placeholder: 'Store name', initial: storefront?.name ?? '', required: 'Give the storefront a name', maxLength: 200 },
-    { key: 'description', label: 'Description', placeholder: 'Optional', initial: storefront?.description ?? '', maxLength: 2048 },
-    { key: 'displayOrder', label: 'Display order', placeholder: '0', initial: String(storefront?.display_order ?? 0), keyboardType: 'number-pad' },
+    descriptionField(storefront?.description),
+    displayOrderField(storefront?.display_order),
   ];
 
   return (

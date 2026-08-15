@@ -1,6 +1,11 @@
 import React from 'react';
 import { useAppRoute } from '../hooks/useAppNavigation';
-import AdminEntityForm, { AdminField } from '../components/layouts/AdminEntityForm';
+import AdminEntityForm, {
+  AdminField,
+  slugField,
+  descriptionField,
+  displayOrderField,
+} from '../components/layouts/AdminEntityForm';
 import { createProduct, updateProduct, deleteProduct } from '../services/api';
 
 /**
@@ -15,13 +20,13 @@ export default function AdminProductFormScreen() {
   const editing = !!product;
 
   const fields: AdminField[] = [
-    { key: 'id', label: 'ID (slug)', placeholder: 'e.g. acme-mug', initial: product?.id ?? '', slugOnCreate: true, required: 'Give the product an id', autoCapitalize: 'none', maxLength: 100 },
+    slugField(product?.id, 'e.g. acme-mug', 'Give the product an id'),
     { key: 'name', label: 'Name', placeholder: 'Product name', initial: product?.name ?? '', required: 'Give the product a name', maxLength: 200 },
-    { key: 'description', label: 'Description', placeholder: 'Optional', initial: product?.description ?? '', maxLength: 2048 },
+    descriptionField(product?.description),
     { key: 'price', label: 'Price', placeholder: '0', initial: product ? String(product.price) : '', keyboardType: 'decimal-pad' },
     { key: 'category', label: 'Category', placeholder: 'e.g. Mugs', initial: product?.category ?? '', maxLength: 100 },
     { key: 'linkUrl', label: 'Link URL', placeholder: 'https://…', initial: product?.link_url ?? '', autoCapitalize: 'none', maxLength: 2048 },
-    { key: 'displayOrder', label: 'Display order', placeholder: '0', initial: String(product?.display_order ?? 0), keyboardType: 'number-pad' },
+    displayOrderField(product?.display_order),
   ];
 
   return (
