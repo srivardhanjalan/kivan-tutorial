@@ -95,7 +95,7 @@ export function setAuthTokenGetter(getter: () => Promise<string | null>): void {
  * the code. `message` keeps the old `<path> failed: <status>` spelling so logs
  * and the fetch-failed callers that predate this read unchanged.
  */
-export class ApiError extends Error {
+class ApiError extends Error {
   readonly status: number;
   readonly detail?: string;
   constructor(path: string, status: number, detail?: string) {
