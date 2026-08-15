@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import formatUnreadCount from '../utils/formatUnreadCount';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
@@ -57,7 +58,7 @@ function TabButton({
       {badgeCount > 0 && (
         <View style={styles.badge}>
           <Text style={styles.badgeText} maxFontSizeMultiplier={ChromeMaxFontSizeMultiplier}>
-            {badgeCount > 99 ? '99+' : badgeCount}
+            {formatUnreadCount(badgeCount)}
           </Text>
         </View>
       )}

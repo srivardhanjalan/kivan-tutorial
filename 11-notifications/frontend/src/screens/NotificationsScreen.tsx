@@ -1,4 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
+import formatUnreadCount from '../utils/formatUnreadCount';
 import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -6,7 +7,7 @@ import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import HeaderIconButton from '../components/HeaderIconButton';
 import EmptyStateView from '../components/EmptyStateView';
 import ConfirmModal from '../components/ConfirmModal';
-import Avatar from '../components/Avatar';
+import Avatar, { LIST_ROW_AVATAR_SIZE } from '../components/Avatar';
 import { useToast } from '../components/ToastProvider';
 import useAsyncAction from '../hooks/useAsyncAction';
 import { useAppNavigation } from '../hooks/useAppNavigation';
@@ -25,8 +26,6 @@ import BorderRadius from '../constants/BorderRadius';
 
 /** The page size for the feed's infinite scroll (the backend caps limit at 50). */
 const PAGE_SIZE = 20;
-/** The avatar diameter in a notification row: this row's own metric. */
-const ROW_AVATAR_SIZE = 48;
 
 /** The icon that identifies each notification type in its avatar badge. */
 const TYPE_ICON: Record<NotificationType, keyof typeof Ionicons.glyphMap> = {
@@ -81,7 +80,7 @@ const NotificationRow: React.FC<{
       style={styles.row}
     >
       <View>
-        <Avatar imageUrl={item.actor.image_url} name={name} size={ROW_AVATAR_SIZE} />
+        <Avatar imageUrl={item.actor.image_url} name={name} size={LIST_ROW_AVATAR_SIZE} />
         <View style={[styles.typeBadge, { backgroundColor: TYPE_COLOR[item.notification_type] }]}>
           <Ionicons name={TYPE_ICON[item.notification_type]} size={13} color={Colors.white} />
         </View>
@@ -223,7 +222,7 @@ export default function NotificationsScreen() {
           <View style={styles.headerActions}>
             <View style={styles.unreadPill}>
               <Text style={styles.unreadPillText} maxFontSizeMultiplier={ChromeMaxFontSizeMultiplier}>
-                {unreadCount > 99 ? '99+' : unreadCount}
+                {formatUnreadCount(unreadCount)}
               </Text>
             </View>
             <HeaderIconButton
