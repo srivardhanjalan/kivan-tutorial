@@ -1,0 +1,82 @@
+# Reference GitHub Actions workflow — copy into .github/workflows/ of the repo
+# that holds your extracted Kivan backend (the one you set as
+# `github_repository` in infra/variables.tf). It is NOT wired to the tutorial
+# monorepo; the `backend/` path below is the backend at your app repo's root.
+#
+# Auth is OIDC: the `AWS_ROLE_ARN` secret is the ARN of the role cicd.tf
+# provisions (terraform output after apply). No long-lived AWS keys.
+#
+# Build note vs local `infra/scripts/deploy.sh`: locally on Apple Silicon that
+# script cross-builds for amd64 on the colima-rosetta docker context
+# (`docker build --platform linux/amd64 ...`). Here the runner is
+# `ubuntu-latest`, which is amd64-native, so a plain `docker build` already
+# produces the linux/amd64 image App Runner needs — no --platform flag, no
+# colima, no rosetta.
+name: Deploy to AWS App Runner
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: kivan-api-ecr-production
+
+permissions:
+  id-token: write # Required for OIDC authentication
+  contents: read
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-KivanBackend
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Build the backend image. ubuntu-latest is amd64-native, so no
+          # --platform/colima dance is needed (unlike the local deploy.sh).
+          cd backend
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+          # Push both tags
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:latest" >> $GITHUB_OUTPUT
+
+      - name: App Runner auto-deployment
+        run: |
+          echo "App Runner is configured with auto-deployments enabled."
+          echo "The service will automatically deploy the new image from ECR."
+          echo "Image pushed: ${{ steps.build-image.outputs.image }}"
+
+      - name: Deployment summary
+        run: |
+          echo "### Deployment Complete! :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ steps.build-image.outputs.image }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "App Runner will automatically deploy this image within a few minutes." >> $GITHUB_STEP_SUMMARY
