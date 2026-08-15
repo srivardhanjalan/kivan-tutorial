@@ -167,6 +167,17 @@ def test_grant_admin_by_user_id(aws):
     assert table.get_item(Key={"id": "user_boot"}).get("Item")["role"] == "admin"
 
 
+def test_script_granted_admin_passes_the_gate(aws, client):
+    """The bootstrap chain end to end: a role-less record granted by the
+    operator script passes require_admin on a real admin route. This is what
+    enforces the script's claim that its ADMIN_ROLE literal matches the
+    model's — if the two strings ever diverged, this test would 403."""
+    put_user(aws, "user_boot", role=None)
+    grant_admin_mod.grant_admin(aws.Table(USERS_TABLE), user_id="user_boot")
+
+    assert client("user_boot").get("/admin/users").status_code == 200
+
+
 def test_grant_admin_by_email(aws):
     put_user(aws, "user_boot", role=None)  # no role yet, resolved by email
     table = aws.Table(USERS_TABLE)
