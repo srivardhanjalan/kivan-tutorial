@@ -1,3 +1,4 @@
+import logging
 import uuid
 from typing import Optional
 
@@ -30,6 +31,7 @@ from app.utils.dynamo import (
     get_item_or_404,
     query_all_pages,
 )
+from app.utils.notifications import notify_event_created, notify_event_invitation
 from app.utils.s3_helpers import (
     claim_pending_photo,
     delete_photo_by_url,
@@ -37,6 +39,8 @@ from app.utils.s3_helpers import (
 )
 from app.utils.timestamps import utc_now_iso
 from app.utils.wishlist_access import get_owned_wishlist
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -120,16 +124,23 @@ def add_invitees(
     invitee_ids: Optional[list[str]],
     invitee_emails: Optional[list[str]],
     invited_by: str,
+    event_name: str,
 ) -> None:
     """Write invitee rows for user ids and/or raw emails, skipping any already
-    invited. The user-vs-email split lives HERE, in one place: the reference
-    duplicated this same put_item logic in create_event AND the add-invitees
-    route (the step-13 study flagged it), so both callers now funnel through
-    this helper. A user id is validated against the users table and skipped when
-    unknown; an email is trusted verbatim (an address invited before that person
-    has an account, claimed once they sign up with it). Notifying the newly
-    added user invitees is a later step's job; this only writes the rows."""
+    invited, and notify the newly added USER invitees. The user-vs-email split
+    lives HERE, in one place: the reference duplicated this same put_item logic
+    in create_event AND the add-invitees route (the step-13 study flagged it),
+    so both callers now funnel through this helper. A user id is validated
+    against the users table and skipped when unknown; an email is trusted
+    verbatim (an address invited before that person has an account, claimed once
+    they sign up with it).
+
+    Only the user invitees actually written are notified: a re-invite that was
+    skipped fires nothing, and email invitees are never notified (no account to
+    reach). The notify is best-effort: a notification failure must never fail
+    the invite the host asked for."""
     now = utc_now_iso()
+    added_user_ids: list[str] = []
 
     if invitee_ids:
         unique_ids = list(set(invitee_ids))
@@ -142,11 +153,23 @@ def add_invitees(
         for invitee_id in unique_ids:
             if invitee_id in existing_users and not _is_invited(event_id, invitee_id):
                 _put_invitee(event_id, invitee_id, "user", invited_by, now)
+                added_user_ids.append(invitee_id)
 
     if invitee_emails:
         for email in set(invitee_emails):
             if not _is_invited(event_id, email):
                 _put_invitee(event_id, email, "email", invited_by, now)
+
+    if added_user_ids:
+        try:
+            notify_event_invitation(
+                actor_id=invited_by,
+                event_id=event_id,
+                event_name=event_name,
+                invitee_ids=added_user_ids,
+            )
+        except Exception as notif_error:
+            logger.error(f"Failed to publish event_invitation notifications: {notif_error}")
 
 
 def _is_invited(event_id: str, invitee_id: str) -> bool:
@@ -255,7 +278,17 @@ def create_event(event: EventCreate, user_id: str = Depends(get_current_user_id)
     )
 
     # Create-time invites go through the SAME helper the add-later route uses
-    add_invitees(event_id, event.invitee_ids, event.invitee_emails, user_id)
+    # (it also notifies the added user invitees).
+    add_invitees(
+        event_id, event.invitee_ids, event.invitee_emails, user_id, event.name
+    )
+
+    # Fan the new event out to the creator's followers, best-effort: a
+    # notification failure must never fail the create the user asked for.
+    try:
+        notify_event_created(actor_id=user_id, event_id=event_id, event_name=event.name)
+    except Exception as notif_error:
+        logger.error(f"Failed to publish event_created notifications: {notif_error}")
 
     if to_claim:
         claim_pending_photo(to_claim)
@@ -540,11 +573,17 @@ def add_event_invitees(
 ):
     """Invite people after the event exists. Host-only. User ids and emails run
     through the shared add-invitees helper (the same one create-time invites
-    use); already-invited identifiers are skipped, so re-inviting is idempotent.
-    Notifying the new user invitees is a later step's concern."""
-    get_event_or_404(event_id)
+    use); already-invited identifiers are skipped, so re-inviting is idempotent,
+    and the added user invitees are notified from inside that helper."""
+    event = get_event_or_404(event_id)
     require_host(event_id, user_id, "add invitees")
-    add_invitees(event_id, invitee_data.invitee_ids, invitee_data.invitee_emails, user_id)
+    add_invitees(
+        event_id,
+        invitee_data.invitee_ids,
+        invitee_data.invitee_emails,
+        user_id,
+        event["name"],
+    )
     return {"success": True, "message": "Invitees added"}
 
 

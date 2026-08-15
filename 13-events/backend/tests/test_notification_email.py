@@ -16,7 +16,7 @@ import boto3
 import pytest
 from moto import mock_aws
 
-# tests/ -> backend/ -> 12-email/ -> lambda/notification_processor.
+# tests/ -> backend/ -> 13-events/ -> lambda/notification_processor.
 _LAMBDA_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     "lambda",
@@ -152,6 +152,34 @@ def test_opt_in_configured_sends_email(load_handler, monkeypatch):
         assert url == "https://api.mailgun.net/v3/mg.example.com/messages"
         assert kwargs["auth"] == ("api", "key-abc")
         assert kwargs["data"]["to"] == "u1@example.com"
+
+
+def test_event_notification_rides_the_generic_template(load_handler, monkeypatch):
+    """The two step-13 event types need NO Lambda change: they ride the same
+    generic template every type uses (the source has no per-type email copy). An
+    event_invitation send carries the message verbatim and the humanized type
+    label ("Event Invitation"), under the one shared subject."""
+    with load_handler(mailgun_configured=True) as (handler, res):
+        _seed(res, email="u1@example.com")
+        calls = []
+
+        def fake_post(url, **kwargs):
+            calls.append((url, kwargs))
+            return _FakeResponse(200)
+
+        monkeypatch.setattr(handler.requests, "post", fake_post)
+
+        handler.create_notification(
+            "u1", "actor", "event_invitation", "Ada invited you to an event: Gala"
+        )
+
+        assert len(calls) == 1
+        _, kwargs = calls[0]
+        data = kwargs["data"]
+        assert data["to"] == "u1@example.com"
+        assert data["subject"] == "You have a new notification on Kivan"
+        assert "Ada invited you to an event: Gala" in data["text"]
+        assert "Event Invitation" in data["text"]
 
 
 def test_unconfigured_skips_send(load_handler, monkeypatch):

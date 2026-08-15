@@ -76,6 +76,8 @@ class NotificationSettings(BaseModel):
     mute_wishlist_created: bool = False
     mute_wish_added: bool = False
     mute_wishlist_loved: bool = False
+    mute_event_created: bool = False
+    mute_event_invitation: bool = False
     # Email copies of notifications (step 12). Default True, so email is on until
     # a user turns it off; the Lambda mailer honors this same default.
     email_notifications: bool = True
@@ -90,4 +92,6 @@ class NotificationSettingsUpdate(BaseModel):
     mute_wishlist_created: Optional[bool] = None
     mute_wish_added: Optional[bool] = None
     mute_wishlist_loved: Optional[bool] = None
+    mute_event_created: Optional[bool] = None
+    mute_event_invitation: Optional[bool] = None
     email_notifications: Optional[bool] = None
