@@ -14,7 +14,9 @@ import { fetchMyWishlists, fetchMyEvents } from '../services/api';
  * My Stuff: the grid of everything you own. Wishlists and the events you host
  * both load and refetch on focus, so a create or edit shows the moment you
  * return. Empty, each section points you at your first one; full, an add tile
- * leads the grid.
+ * leads the grid. Events you're invited to follow in their own section, each
+ * tile carrying my RSVP, and only when there are any (no empty prompt to plan
+ * someone else's event).
  */
 export default function MyStuffScreen() {
   const navigation = useAppNavigation();
@@ -27,6 +29,7 @@ export default function MyStuffScreen() {
   const openEvent = (id: string) => navigation.navigate('EventDetail', { eventId: id });
 
   const hosting = myEvents?.hosting ?? [];
+  const invited = myEvents?.invited ?? [];
 
   return (
     <FloatingHeaderLayout title="My Stuff" loading={loading}>
@@ -63,6 +66,22 @@ export default function MyStuffScreen() {
             <EventCard key={event.id} event={event} onPress={() => openEvent(event.id)} />
           ))}
         </TileGrid>
+      )}
+
+      {invited.length > 0 && (
+        <>
+          <SectionHeader title="Invited" meta={invited.length} />
+          <TileGrid>
+            {invited.map((event) => (
+              <EventCard
+                key={event.id}
+                event={event}
+                rsvp={event.my_rsvp_status}
+                onPress={() => openEvent(event.id)}
+              />
+            ))}
+          </TileGrid>
+        </>
       )}
     </FloatingHeaderLayout>
   );

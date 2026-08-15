@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useUser } from '@clerk/clerk-expo';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import EditDeleteHeaderButtons from '../components/EditDeleteHeaderButtons';
@@ -9,11 +10,23 @@ import WishlistGrid from '../components/WishlistGrid';
 import ArtTile from '../components/ArtTile';
 import ImagePlaceholderGlyph from '../components/ImagePlaceholderGlyph';
 import ConfirmModal from '../components/ConfirmModal';
+import RsvpControl from '../components/RsvpControl';
+import EventGuestList from '../components/EventGuestList';
+import InviteGuestModal from '../components/InviteGuestModal';
+import DetailAction from '../components/DetailAction';
 import useFetch from '../hooks/useFetch';
 import useLifeEvents from '../hooks/useLifeEvents';
 import useConfirmedDelete from '../hooks/useConfirmedDelete';
-import { fetchEvent, deleteEvent } from '../services/api';
+import useAsyncAction from '../hooks/useAsyncAction';
+import {
+  fetchEvent,
+  deleteEvent,
+  updateRSVP,
+  removeEventInvitee,
+} from '../services/api';
+import type { EventInvitee, RsvpChoice } from '../services/api';
 import { userDisplayName } from '../utils/userName';
+import { clerkPrimaryEmail } from '../utils/clerkName';
 import formatEventDate from '../utils/formatEventDate';
 import pastelForLifeEvent from '../constants/lifeEventPastels';
 import Typography from '../constants/Typography';
@@ -21,16 +34,19 @@ import { Spacing } from '../constants/ScreenStyles';
 
 /**
  * One event: a pastel/image cover, its life event, date, location and
- * description, then the wishlists linked to it (tapping one opens it). A host
- * sees edit and delete in the header; the guest list and RSVP arrive with the
- * invitee step. Everything refetches on focus so a change shows on return.
+ * description; an invitee's own RSVP control; the guest list (hosts see
+ * everyone and can invite/remove, guests see only who's confirmed going); and
+ * the wishlists linked to it (tapping one opens it). A host sees edit and delete
+ * in the header. On-screen changes (RSVP, invite, remove) re-pull the detail so
+ * the guest list and RSVP always reflect the server.
  */
 export default function EventDetailScreen() {
   const navigation = useAppNavigation();
   const route = useAppRoute<'EventDetail'>();
   const { eventId } = route.params;
+  const { user } = useUser();
 
-  const { data: detail, loading } = useFetch(() => fetchEvent(eventId), {
+  const { data: detail, loading, refetch } = useFetch(() => fetchEvent(eventId), {
     refetchOnFocus: true,
   });
   const { lifeEventFor } = useLifeEvents();
@@ -38,10 +54,46 @@ export default function EventDetailScreen() {
     () => deleteEvent(eventId),
     'Could not delete this event'
   );
+  const { loading: busy, run } = useAsyncAction();
+
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<EventInvitee | null>(null);
 
   const event = detail?.event;
   const lifeEvent = event?.event_type ? lifeEventFor(event.event_type) : undefined;
   const openWishlist = (id: string) => navigation.navigate('WishlistDetail', { wishlistId: id });
+
+  // My own invitee row is keyed by my user id, or by my email for an invite
+  // addressed to it; either identifier is what the RSVP PATCH targets.
+  const myEmail = clerkPrimaryEmail(user);
+  const myInvitee = detail?.invitees.find(
+    (i) => i.invitee_id === user?.id || i.invitee_id === myEmail
+  );
+
+  const changeRsvp = (choice: RsvpChoice) => {
+    if (!myInvitee) return;
+    run(async () => {
+      await updateRSVP(eventId, myInvitee.invitee_id, choice);
+      refetch();
+    }, 'Could not update your RSVP');
+  };
+
+  const confirmRemove = () => {
+    if (!removeTarget) return;
+    run(async () => {
+      await removeEventInvitee(eventId, removeTarget.invitee_id);
+      setRemoveTarget(null);
+      refetch();
+    }, 'Could not remove that guest');
+  };
+
+  const isHost = !!detail?.is_host;
+  // A host sees every guest; a guest sees only who's confirmed going.
+  const guests = detail
+    ? isHost
+      ? detail.invitees
+      : detail.invitees.filter((i) => i.rsvp_status === 'going')
+    : [];
 
   return (
     <FloatingHeaderLayout
@@ -77,6 +129,38 @@ export default function EventDetailScreen() {
             <Text style={styles.description}>{event.description}</Text>
           ) : null}
 
+          {detail.is_invitee && (
+            <>
+              <SectionHeader title="Your RSVP" />
+              <RsvpControl value={detail.my_rsvp_status} onChange={changeRsvp} busy={busy} />
+            </>
+          )}
+
+          <SectionHeader title="Guests" meta={guests.length} />
+          {isHost && (
+            <DetailAction
+              title="Invite guests"
+              variant="secondary"
+              onPress={() => setInviteOpen(true)}
+            />
+          )}
+          {guests.length === 0 ? (
+            <EmptyStateView
+              icon="people-outline"
+              title={isHost ? 'No guests yet' : 'No confirmed guests yet'}
+              subtitle={
+                isHost
+                  ? 'Invite people by name or email.'
+                  : 'Nobody has said yes yet.'
+              }
+            />
+          ) : (
+            <EventGuestList
+              guests={guests}
+              onRemove={isHost ? setRemoveTarget : undefined}
+            />
+          )}
+
           <SectionHeader title="Wishlists" meta={detail.wishlists.length} />
           {detail.wishlists.length === 0 ? (
             <EmptyStateView
@@ -93,6 +177,33 @@ export default function EventDetailScreen() {
           )}
         </>
       )}
+
+      <InviteGuestModal
+        visible={inviteOpen}
+        eventId={eventId}
+        invitees={detail?.invitees ?? []}
+        currentUserId={user?.id}
+        onClose={() => setInviteOpen(false)}
+        onInvited={refetch}
+      />
+
+      <ConfirmModal
+        visible={removeTarget !== null}
+        title="Remove guest?"
+        message={
+          removeTarget
+            ? `Remove ${
+                removeTarget.user
+                  ? userDisplayName(removeTarget.user)
+                  : removeTarget.invitee_id
+              } from this event?`
+            : ''
+        }
+        confirmTitle="Remove"
+        loading={busy}
+        onConfirm={confirmRemove}
+        onCancel={() => setRemoveTarget(null)}
+      />
 
       <ConfirmModal
         {...confirmProps}

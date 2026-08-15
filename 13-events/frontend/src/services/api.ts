@@ -660,6 +660,27 @@ export interface Event {
   updated_at: string;
 }
 
+/** An invitee's RSVP. "pending" is the server's initial state (never something
+    the invitee sets); the three the invitee can choose are the rest. */
+export type RsvpStatus = 'pending' | 'going' | 'maybe' | 'not_going';
+
+/** The three RSVP states an invitee can actually set (PATCH rejects "pending"). */
+export type RsvpChoice = Exclude<RsvpStatus, 'pending'>;
+
+/** One invitee of an event, enriched with the invited person's record when the
+    invite was addressed to a user. `invitee_id` is the identifier the RSVP and
+    remove calls key on: a user id for a "user" invite, the raw email for an
+    "email" invite (`user` is null until that address has an account). */
+export interface EventInvitee {
+  event_id: string;
+  invitee_id: string;
+  invitee_type: 'user' | 'email';
+  rsvp_status: RsvpStatus;
+  invited_at: string;
+  invited_by: string;
+  user: User | null;
+}
+
 /** POST /events/ and PUT /events/{id} body: the one form that calls both
     always sends name and adds the optional fields when set or changed. */
 export interface EventCreate {
@@ -672,20 +693,31 @@ export interface EventCreate {
   location?: string;
 }
 
-/** GET /events/me: the events I host and the events I'm invited to. Phase A
-    surfaces hosting; the invited list carries an RSVP the invitee step reads. */
-export interface MyEvents {
-  hosting: Event[];
-  invited: Event[];
+/** An event I'm invited to, carrying my own RSVP status (an event I host has
+    no RSVP, so hosting stays plain `Event`). Consumed only through `MyEvents`,
+    so it isn't exported. */
+interface EventInvited extends Event {
+  my_rsvp_status: RsvpStatus | null;
 }
 
-/** GET /events/{id}: the event with its hosts and linked wishlists, plus
-    whether the caller hosts it (which unlocks the edit/delete affordances). */
+/** GET /events/me: the events I host and the events I'm invited to; the invited
+    ones carry my RSVP so My Stuff can show its state at a glance. */
+export interface MyEvents {
+  hosting: Event[];
+  invited: EventInvited[];
+}
+
+/** GET /events/{id}: the event with its hosts, invitees (user-enriched for the
+    Guests list), and linked wishlists, plus how I relate to it: is_host unlocks
+    edit/delete/invite, is_invitee/my_rsvp_status drive the RSVP control. */
 export interface EventDetail {
   event: Event;
   hosts: User[];
+  invitees: EventInvitee[];
   wishlists: Wishlist[];
   is_host: boolean;
+  is_invitee: boolean;
+  my_rsvp_status: RsvpStatus | null;
 }
 
 /** Create an event; the creator becomes its first host server-side. The
@@ -730,5 +762,46 @@ export async function linkWishlistToEvent(
   await request(`/events/${eventId}/wishlists`, {
     method: 'POST',
     body: JSON.stringify({ wishlist_id: wishlistId }),
+  });
+}
+
+/** Invite one person to an event (host-only): a known user by id, or anyone by
+    email. The backend takes parallel id/email lists, so this wraps the single
+    invite as the one-element list its kind belongs in. */
+export async function addEventInvitee(
+  eventId: string,
+  invitee: { user_id: string } | { email: string }
+): Promise<void> {
+  const body =
+    'user_id' in invitee
+      ? { invitee_ids: [invitee.user_id] }
+      : { invitee_emails: [invitee.email] };
+  await request(`/events/${eventId}/invitees`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+/** Remove an invitee (host-only). `inviteeId` is the user id or the email that
+    keys the row (an invitee's `invitee_id`). */
+export async function removeEventInvitee(
+  eventId: string,
+  inviteeId: string
+): Promise<void> {
+  await request(`/events/${eventId}/invitees/${encodeURIComponent(inviteeId)}`, {
+    method: 'DELETE',
+  });
+}
+
+/** Set my RSVP. Only the invitee themselves may call this for their own row;
+    `inviteeId` is my user id, or my email for an invite addressed to it. */
+export async function updateRSVP(
+  eventId: string,
+  inviteeId: string,
+  status: RsvpChoice
+): Promise<void> {
+  await request(`/events/${eventId}/invitees/${encodeURIComponent(inviteeId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ rsvp_status: status }),
   });
 }
