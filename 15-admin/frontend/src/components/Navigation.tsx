@@ -25,6 +25,10 @@ import FollowListScreen from '../screens/FollowListScreen';
 import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
 import AdminHomeScreen from '../screens/AdminHomeScreen';
 import AdminUsersScreen from '../screens/AdminUsersScreen';
+import AdminBrandsScreen from '../screens/AdminBrandsScreen';
+import AdminBrandFormScreen from '../screens/AdminBrandFormScreen';
+import AdminLifeEventsScreen from '../screens/AdminLifeEventsScreen';
+import AdminLifeEventFormScreen from '../screens/AdminLifeEventFormScreen';
 import {
   setAuthTokenGetter,
   fetchOnboardingCompleted,
@@ -247,6 +251,10 @@ export default function Navigation() {
           <Stack.Screen name="FollowList" component={FollowListScreen} />
           <Stack.Screen name="AdminHome" component={AdminHomeScreen} />
           <Stack.Screen name="AdminUsers" component={AdminUsersScreen} />
+          <Stack.Screen name="AdminBrands" component={AdminBrandsScreen} />
+          <Stack.Screen name="AdminBrandForm" component={AdminBrandFormScreen} />
+          <Stack.Screen name="AdminLifeEvents" component={AdminLifeEventsScreen} />
+          <Stack.Screen name="AdminLifeEventForm" component={AdminLifeEventFormScreen} />
         </Stack.Navigator>
       </NavigationContainer>
       <OnboardingTutorial visible={showOnboarding} onDismiss={handleOnboardingDismiss} />

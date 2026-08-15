@@ -425,6 +425,8 @@ export interface Storefront {
   description: string | null;
   logo_url: string | null;
   product_count: number;
+  /** The catalog sort key the backend orders by; the admin form edits it. */
+  display_order: number;
 }
 
 /** One product in a storefront. `price` is in the app's single currency
@@ -444,6 +446,8 @@ export interface Product {
   category: string;
   image_url: string | null;
   link_url: string;
+  /** The in-store sort key the backend orders by; the admin form edits it. */
+  display_order: number;
 }
 
 /** The curated catalog of stores, ordered by the backend's display_order. */
@@ -477,11 +481,12 @@ export interface Brand {
   category: string;
   country: string;
   logo_url: string | null;
+  /** The directory sort key the backend orders by; the admin form edits it. */
+  display_order: number;
 }
 
 /** The real-store directory, ordered by the backend's (display_order, name)
-    and grouped by category on the client. (display_order sorts server-side, so
-    like a storefront the type does not carry it.) */
+    and grouped by category on the client. */
 export async function fetchBrands(): Promise<Brand[]> {
   const res = await request('/brands');
   return res.json();
