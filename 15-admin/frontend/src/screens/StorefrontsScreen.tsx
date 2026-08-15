@@ -3,8 +3,8 @@ import { useAppNavigation } from '../hooks/useAppNavigation';
 import useFetch from '../hooks/useFetch';
 import DirectoryLayout from '../components/DirectoryLayout';
 import CatalogRow from '../components/CatalogRow';
+import StorefrontCatalogRow from '../components/StorefrontCatalogRow';
 import { fetchStorefronts } from '../services/api';
-import { pluralize } from '../utils/pluralize';
 import type { Storefront } from '../services/api';
 
 /**
@@ -37,19 +37,9 @@ export default function StorefrontsScreen() {
       title: 'Stores',
       count: storefronts?.length ?? 0,
       children: storefronts?.map((storefront: Storefront) => (
-        <CatalogRow
+        <StorefrontCatalogRow
           key={storefront.id}
-          icon="storefront-outline"
-          logoUrl={storefront.logo_url}
-          title={storefront.name}
-          accessibilityLabel={storefront.name}
-          description={storefront.description}
-          meta={[
-            {
-              icon: 'pricetag-outline',
-              text: pluralize(storefront.product_count, 'product'),
-            },
-          ]}
+          storefront={storefront}
           onPress={() => navigation.navigate('StorefrontDetail', { storefront })}
         />
       )),

@@ -1,18 +1,9 @@
-import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React from 'react';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
-import FormScreenScaffold from '../components/layouts/FormScreenScaffold';
-import FormInput from '../components/FormInput';
-import FieldLabel from '../components/FieldLabel';
+import AdminEntityForm, { AdminField } from '../components/layouts/AdminEntityForm';
 import PrimaryButton from '../components/PrimaryButton';
-import ConfirmModal from '../components/ConfirmModal';
-import { useToast } from '../components/ToastProvider';
-import useAsyncAction from '../hooks/useAsyncAction';
-import useConfirmedDelete from '../hooks/useConfirmedDelete';
 import { createStorefront, updateStorefront, deleteStorefront } from '../services/api';
-import type { StorefrontCreate, StorefrontUpdate } from '../services/api';
 import { pluralize } from '../utils/pluralize';
-import { Spacing } from '../constants/ScreenStyles';
 
 /**
  * One form for creating and editing a storefront. On create the id is a client
@@ -26,101 +17,42 @@ export default function AdminStorefrontFormScreen() {
   const navigation = useAppNavigation();
   const storefront = useAppRoute<'AdminStorefrontForm'>().params?.storefront;
   const editing = !!storefront;
-  const toast = useToast();
-  const { loading: saving, run } = useAsyncAction();
 
-  const [id, setId] = useState(storefront?.id ?? '');
-  const [name, setName] = useState(storefront?.name ?? '');
-  const [description, setDescription] = useState(storefront?.description ?? '');
-  const [displayOrder, setDisplayOrder] = useState(String(storefront?.display_order ?? 0));
-
-  const { requestDelete, confirmProps } = useConfirmedDelete(
-    () => deleteStorefront(storefront!.id),
-    'Could not delete this storefront'
-  );
-
-  const save = () => {
-    if (!editing && !id.trim()) {
-      toast.show('Give the storefront an id', { type: 'error' });
-      return;
-    }
-    if (!name.trim()) {
-      toast.show('Give the storefront a name', { type: 'error' });
-      return;
-    }
-    run(async () => {
-      const order = Number(displayOrder) || 0;
-      if (editing) {
-        const body: StorefrontUpdate = {
-          name: name.trim(),
-          description,
-          display_order: order,
-        };
-        await updateStorefront(storefront!.id, body);
-      } else {
-        const body: StorefrontCreate = {
-          id: id.trim(),
-          name: name.trim(),
-          description,
-          display_order: order,
-        };
-        await createStorefront(body);
-      }
-      navigation.goBack();
-    }, 'Could not save this storefront');
-  };
+  const fields: AdminField[] = [
+    { key: 'id', label: 'ID (slug)', placeholder: 'e.g. acme-goods', initial: storefront?.id ?? '', slugOnCreate: true, required: 'Give the storefront an id', autoCapitalize: 'none', maxLength: 100 },
+    { key: 'name', label: 'Name', placeholder: 'Store name', initial: storefront?.name ?? '', required: 'Give the storefront a name', maxLength: 200 },
+    { key: 'description', label: 'Description', placeholder: 'Optional', initial: storefront?.description ?? '', maxLength: 2048 },
+    { key: 'displayOrder', label: 'Display order', placeholder: '0', initial: String(storefront?.display_order ?? 0), keyboardType: 'number-pad' },
+  ];
 
   return (
-    <FormScreenScaffold
-      editing={editing}
+    <AdminEntityForm
       noun="Storefront"
-      submitLabel="Create Storefront"
-      onSubmit={save}
-      saving={saving}
-    >
-      {!editing && (
-        <>
-          <FieldLabel>ID (slug)</FieldLabel>
-          <FormInput value={id} placeholder="e.g. acme-goods" onChangeText={setId} autoCapitalize="none" maxLength={100} />
-        </>
-      )}
-
-      <FieldLabel>Name</FieldLabel>
-      <FormInput value={name} placeholder="Store name" onChangeText={setName} maxLength={200} />
-
-      <FieldLabel>Description</FieldLabel>
-      <FormInput value={description} placeholder="Optional" onChangeText={setDescription} maxLength={2048} />
-
-      <FieldLabel>Display order</FieldLabel>
-      <FormInput value={displayOrder} placeholder="0" onChangeText={setDisplayOrder} keyboardType="number-pad" />
-
-      {editing && (
-        <View style={styles.actions}>
-          <PrimaryButton
-            title={`Manage products (${pluralize(storefront!.product_count, 'product')})`}
-            variant="secondary"
-            onPress={() => navigation.navigate('AdminStorefrontProducts', { storefront: storefront! })}
-          />
-          <View style={styles.gap} />
-          <PrimaryButton title="Delete Storefront" variant="danger" onPress={requestDelete} />
-        </View>
-      )}
-
-      <ConfirmModal
-        {...confirmProps}
-        title="Delete this storefront?"
-        message="It is removed from the catalog. This cannot be undone."
-        confirmTitle="Delete Storefront"
-      />
-    </FormScreenScaffold>
+      editing={editing}
+      fields={fields}
+      submitError="Could not save this storefront"
+      onSubmit={async (values) => {
+        const body = {
+          name: values.name.trim(),
+          description: values.description,
+          display_order: Number(values.displayOrder) || 0,
+        };
+        if (editing) {
+          await updateStorefront(storefront!.id, body);
+        } else {
+          await createStorefront({ id: values.id.trim(), ...body });
+        }
+      }}
+      onDelete={() => deleteStorefront(storefront!.id)}
+      deleteError="Could not delete this storefront"
+      deleteMessage="It is removed from the catalog. This cannot be undone."
+      editActions={
+        <PrimaryButton
+          title={`Manage products (${pluralize(storefront!.product_count, 'product')})`}
+          variant="secondary"
+          onPress={() => navigation.navigate('AdminStorefrontProducts', { storefront: storefront! })}
+        />
+      }
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  actions: {
-    marginTop: Spacing.xl,
-  },
-  gap: {
-    height: Spacing.md,
-  },
-});

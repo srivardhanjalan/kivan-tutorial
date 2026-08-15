@@ -1,17 +1,7 @@
-import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
-import FormScreenScaffold from '../components/layouts/FormScreenScaffold';
-import FormInput from '../components/FormInput';
-import FieldLabel from '../components/FieldLabel';
-import PrimaryButton from '../components/PrimaryButton';
-import ConfirmModal from '../components/ConfirmModal';
-import { useToast } from '../components/ToastProvider';
-import useAsyncAction from '../hooks/useAsyncAction';
-import useConfirmedDelete from '../hooks/useConfirmedDelete';
+import React from 'react';
+import { useAppRoute } from '../hooks/useAppNavigation';
+import AdminEntityForm, { AdminField } from '../components/layouts/AdminEntityForm';
 import { createBrand, updateBrand, deleteBrand } from '../services/api';
-import type { BrandCreate, BrandUpdate } from '../services/api';
-import { Spacing } from '../constants/ScreenStyles';
 
 /**
  * One form for creating and editing a brand — the passed brand (if any) seeds
@@ -21,113 +11,43 @@ import { Spacing } from '../constants/ScreenStyles';
  * seeded logo untouched. Delete lives on the edit form, behind a confirm.
  */
 export default function AdminBrandFormScreen() {
-  const navigation = useAppNavigation();
   const brand = useAppRoute<'AdminBrandForm'>().params?.brand;
   const editing = !!brand;
-  const toast = useToast();
-  const { loading: saving, run } = useAsyncAction();
 
-  const [id, setId] = useState(brand?.id ?? '');
-  const [name, setName] = useState(brand?.name ?? '');
-  const [description, setDescription] = useState(brand?.description ?? '');
-  const [websiteUrl, setWebsiteUrl] = useState(brand?.website_url ?? '');
-  const [category, setCategory] = useState(brand?.category ?? '');
-  const [country, setCountry] = useState(brand?.country ?? '');
-  const [displayOrder, setDisplayOrder] = useState(String(brand?.display_order ?? 0));
-
-  const { requestDelete, confirmProps } = useConfirmedDelete(
-    () => deleteBrand(brand!.id),
-    'Could not delete this brand'
-  );
-
-  const save = () => {
-    if (!editing && !id.trim()) {
-      toast.show('Give the brand an id', { type: 'error' });
-      return;
-    }
-    if (!name.trim()) {
-      toast.show('Give the brand a name', { type: 'error' });
-      return;
-    }
-    run(async () => {
-      const order = Number(displayOrder) || 0;
-      if (editing) {
-        const body: BrandUpdate = {
-          name: name.trim(),
-          description,
-          website_url: websiteUrl.trim(),
-          category: category.trim(),
-          country: country.trim(),
-          display_order: order,
-        };
-        await updateBrand(brand!.id, body);
-      } else {
-        const body: BrandCreate = {
-          id: id.trim(),
-          name: name.trim(),
-          description,
-          website_url: websiteUrl.trim(),
-          category: category.trim(),
-          country: country.trim(),
-          display_order: order,
-        };
-        await createBrand(body);
-      }
-      navigation.goBack();
-    }, 'Could not save this brand');
-  };
+  const fields: AdminField[] = [
+    { key: 'id', label: 'ID (slug)', placeholder: 'e.g. nike', initial: brand?.id ?? '', slugOnCreate: true, required: 'Give the brand an id', autoCapitalize: 'none', maxLength: 100 },
+    { key: 'name', label: 'Name', placeholder: 'Brand name', initial: brand?.name ?? '', required: 'Give the brand a name', maxLength: 200 },
+    { key: 'description', label: 'Description', placeholder: 'Optional', initial: brand?.description ?? '', maxLength: 2048 },
+    { key: 'websiteUrl', label: 'Website URL', placeholder: 'https://…', initial: brand?.website_url ?? '', autoCapitalize: 'none', maxLength: 2048 },
+    { key: 'category', label: 'Category', placeholder: 'e.g. Fashion', initial: brand?.category ?? '', maxLength: 100 },
+    { key: 'country', label: 'Country', placeholder: 'e.g. India', initial: brand?.country ?? '', maxLength: 100 },
+    { key: 'displayOrder', label: 'Display order', placeholder: '0', initial: String(brand?.display_order ?? 0), keyboardType: 'number-pad' },
+  ];
 
   return (
-    <FormScreenScaffold
-      editing={editing}
+    <AdminEntityForm
       noun="Brand"
-      submitLabel="Create Brand"
-      onSubmit={save}
-      saving={saving}
-    >
-      {!editing && (
-        <>
-          <FieldLabel>ID (slug)</FieldLabel>
-          <FormInput value={id} placeholder="e.g. nike" onChangeText={setId} autoCapitalize="none" maxLength={100} />
-        </>
-      )}
-
-      <FieldLabel>Name</FieldLabel>
-      <FormInput value={name} placeholder="Brand name" onChangeText={setName} maxLength={200} />
-
-      <FieldLabel>Description</FieldLabel>
-      <FormInput value={description} placeholder="Optional" onChangeText={setDescription} maxLength={2048} />
-
-      <FieldLabel>Website URL</FieldLabel>
-      <FormInput value={websiteUrl} placeholder="https://…" onChangeText={setWebsiteUrl} autoCapitalize="none" maxLength={2048} />
-
-      <FieldLabel>Category</FieldLabel>
-      <FormInput value={category} placeholder="e.g. Fashion" onChangeText={setCategory} maxLength={100} />
-
-      <FieldLabel>Country</FieldLabel>
-      <FormInput value={country} placeholder="e.g. India" onChangeText={setCountry} maxLength={100} />
-
-      <FieldLabel>Display order</FieldLabel>
-      <FormInput value={displayOrder} placeholder="0" onChangeText={setDisplayOrder} keyboardType="number-pad" />
-
-      {editing && (
-        <View style={styles.delete}>
-          <PrimaryButton title="Delete Brand" variant="danger" onPress={requestDelete} />
-        </View>
-      )}
-
-      <ConfirmModal
-        {...confirmProps}
-        title="Delete this brand?"
-        message="It is removed from the directory. This cannot be undone."
-        confirmTitle="Delete Brand"
-      />
-    </FormScreenScaffold>
+      editing={editing}
+      fields={fields}
+      submitError="Could not save this brand"
+      onSubmit={async (values) => {
+        const body = {
+          name: values.name.trim(),
+          description: values.description,
+          website_url: values.websiteUrl.trim(),
+          category: values.category.trim(),
+          country: values.country.trim(),
+          display_order: Number(values.displayOrder) || 0,
+        };
+        if (editing) {
+          await updateBrand(brand!.id, body);
+        } else {
+          await createBrand({ id: values.id.trim(), ...body });
+        }
+      }}
+      onDelete={() => deleteBrand(brand!.id)}
+      deleteError="Could not delete this brand"
+      deleteMessage="It is removed from the directory. This cannot be undone."
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  delete: {
-    marginTop: Spacing.xl,
-  },
-});
