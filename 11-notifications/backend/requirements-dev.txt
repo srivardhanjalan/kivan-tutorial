@@ -1,0 +1,6 @@
+# Test-only dependencies for tests/: pytest + moto's in-memory AWS emulation.
+# Kept OUT of requirements.txt on purpose: the Dockerfile installs only
+# requirements.txt, so none of this ships in the App Runner runtime image.
+# Install locally with:  pip install -r requirements.txt -r requirements-dev.txt
+pytest==9.1.1
+moto[dynamodb]==5.2.2
