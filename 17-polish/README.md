@@ -653,8 +653,10 @@ Frontend (visual/workflow convergence, behavior held):
       `owner_ids` at create (`CreateWishlistScreen.tsx:149-161`, `:95-96`).
       *tutorial:* `WishlistFormScreen` (the merged create/edit form) exposes no
       co-owner picker; co-owners are added from the detail after creation. The
-      backend still accepts `owner_ids` at create (phase A); only the UI entry is
-      deferred, to keep the shared form from carrying a people-search picker.
+      backend still accepts `owner_ids` at create (phase A), but the tutorial
+      frontend defers the whole seeding path: no picker UI, and `WishlistCreate`
+      carries no `owner_ids` field (a request body should not declare a field no
+      caller sends), so convergence re-adds the picker and the field together.
 - [ ] Privacy control lives in the one wishlist form. *source:* a shared
       `PrivacySelector` (public/private `Switch` with a contextual icon, title,
       and description) in both `CreateWishlistScreen` and

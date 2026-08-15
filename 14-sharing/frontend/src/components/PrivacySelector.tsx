@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, Switch, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AppSwitch from './AppSwitch';
 import Colors from '../constants/Colors';
 import BorderRadius from '../constants/BorderRadius';
 import Typography from '../constants/Typography';
@@ -37,11 +38,9 @@ const PrivacySelector: React.FC<PrivacySelectorProps> = ({ value, onChange }) =>
             : 'Only you and any co-owners can view this wishlist.'}
         </Text>
       </View>
-      <Switch
+      <AppSwitch
         value={isPublic}
         onValueChange={(next) => onChange(next ? 'public' : 'private')}
-        trackColor={{ true: Colors.primary }}
-        accessibilityLabel="Public wishlist"
       />
     </View>
   );
