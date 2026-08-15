@@ -219,6 +219,44 @@ converges the tutorial toward the finished design) must NOT "restore" them.
       dead-end tap (no route to the screen that shows the wish). *tutorial:* the
       wish resource also carries `wishlist_id`, so the tap opens the wish inside
       its parent list. Keep `wishlist_id` on the wish resource.
-- [ ] Visual/workflow convergence (feed screen, unread badge, settings screen,
-      notification-row styling) is added to this section by the step's frontend
-      phase, once those screens exist.
+The step's frontend phase ships the feed, the settings screen, and the tab
+badge in the tutorial's simpler idiom. Their visual/workflow divergences from
+the finished design (behavior held at parity):
+
+- [ ] Delete affordance. *source:* swipe-to-delete. A `Swipeable` row
+      (react-native-gesture-handler) reveals a translucent trash action on a
+      left-swipe. *tutorial:* long-press a row opens the shared `ConfirmModal`,
+      then delete. The app carries no gesture-handler dependency, so the delete
+      reuses the existing confirm idiom instead of adding one; polish brings the
+      swipe.
+- [ ] Notification-row surface. *source:* a shared `ListItemCard` (a raised card
+      with the avatar, the type badge, title, meta, and an `unread` treatment)
+      used across features. *tutorial:* a lighter in-screen `NotificationRow`
+      (avatar with the type-badge overlay, the message, the timestamp, and an
+      unread dot) in plain rows. The app has no `ListItemCard`.
+- [ ] Header unread pill placement. *source:* the unread-count pill sits inline
+      beside the large "Notifications" title in a split header. *tutorial:* the
+      pill sits in the right header cluster next to the mark-all action, because
+      the tutorial's `FloatingHeaderLayout` takes a plain string title with a
+      single `headerRight` slot (no split-header).
+- [ ] Mark-all-read control. *source:* a "Mark all read" text button in the
+      header. *tutorial:* an icon action (`checkmark-done-outline` via
+      `HeaderIconButton`), matching the tutorial's icon-only header convention.
+- [ ] Per-type icon colors. *source:* raw hex literals (`#4CAF50`, `#FF9800`,
+      `#E91E63`) beside `Colors.primary` in the screen. *tutorial:* the three
+      literals become semantic `Colors` tokens (`notifyWishlistCreated`,
+      `notifyWishAdded`, `notifyWishlistLoved`) and `follow` reuses
+      `Colors.primary`, with no redundant `notifyFollow` alias, per the token rule
+      (a value used with semantic meaning becomes a token; duplicate names
+      collapse). This is a token-hygiene divergence only; the four colors match.
+- [ ] Settings surface. *source:* grouped `SettingItemList` cards and a
+      primary-tinted info card with an icon; the switch track is a primary-alpha
+      wash (`Colors.primary + '40'`). *tutorial:* plain hairline-divided toggle
+      rows, a plain muted info line with an info icon (no tinted-card surface),
+      and a solid primary switch track with a white thumb, avoiding an
+      alpha-tint color literal for a single-use surface. The inverted switch
+      semantic (ON = receiving, OFF = muted) is held exactly.
+- [ ] Mark-read timing. *source:* awaits the mark-read request, then flips the
+      row read. *tutorial:* flips the row and drops the unread count
+      optimistically, then fires the request (the next focus reload reconciles a
+      failure). A workflow refinement, not a convergence target.
