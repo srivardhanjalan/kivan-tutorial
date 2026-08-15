@@ -5,6 +5,7 @@ import NOTIFICATION_TYPE_ICON from '../constants/notificationTypeIcons';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import SectionHeader from '../components/SectionHeader';
 import { useToast } from '../components/ToastProvider';
+import useFetch from '../hooks/useFetch';
 import {
   NotificationType,
   fetchNotificationSettings,
@@ -49,31 +50,14 @@ const muteKeyFor = (type: NotificationType): MuteKey => `mute_${type}` as MuteKe
  */
 export default function NotificationSettingsScreen() {
   const toast = useToast();
+  // The app's fetch-into-mutable-state idiom (see WishDetailScreen): useFetch
+  // owns the load, the local copy exists so the optimistic toggle can flip it.
+  const { data, loading } = useFetch(fetchNotificationSettings);
   const [settings, setSettings] = useState<NotificationSettings | null>(null);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
   useEffect(() => {
-    let live = true;
-    fetchNotificationSettings()
-      .then((data) => {
-        if (live) {
-          setSettings(data);
-          setLoading(false);
-        }
-      })
-      .catch(() => {
-        if (live) {
-          setLoading(false);
-          toast.show('Could not load notification settings', { type: 'error' });
-        }
-      });
-    return () => {
-      live = false;
-    };
-    // toast identity is stable; loading once on mount is intentional
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (data) setSettings(data);
+  }, [data]);
 
   const handleToggle = (key: MuteKey) => {
     if (!settings || saving) return;
