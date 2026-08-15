@@ -1,0 +1,92 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+
+from app.routes import (
+    admin,
+    brands,
+    events,
+    followers,
+    health,
+    life_events,
+    loves,
+    notifications,
+    products,
+    scraping,
+    storefronts,
+    upload,
+    users,
+    wishes,
+    wishlists,
+)
+
+app = FastAPI(
+    title="Kivan API",
+    description="Backend API for Kivan app",
+    version="1.0.0"
+)
+
+# Gzip for responses over 1 KB — the OpenAPI document, and now this step's
+# list endpoints (a wishlist grid or the life-events taxonomy crosses it)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# CORS middleware. The wildcard origin is safe for THIS api: auth is a
+# Bearer header, not a cookie, so there are no credentials to leak — which
+# is also why allow_credentials is absent (with it, Starlette would mirror
+# every Origin as a credentialed one).
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Routers live in app/routes/, one domain per file; main.py only assembles
+app.include_router(health.router)
+app.include_router(users.router)
+app.include_router(upload.router)
+app.include_router(life_events.router)
+# The admin write side of the taxonomy (step 15), gated by require_admin
+app.include_router(life_events.admin_router)
+app.include_router(wishlists.router)
+app.include_router(wishes.router)
+# The wishlist-scoped wishes listing lives on a second router under /wishlists
+app.include_router(wishes.wishlist_wishes_router)
+# The curated catalog: stores, plus the storefront-scoped product listing
+app.include_router(storefronts.router)
+app.include_router(products.router)
+# The admin write side of the catalog (step 15), gated by require_admin: stores,
+# plus the storefront-scoped product CRUD
+app.include_router(storefronts.admin_router)
+app.include_router(products.admin_router)
+# The real-store directory the in-app browser opens, and the Firecrawl proxy
+# that scrapes a browsed product page into a wish
+app.include_router(brands.router)
+# The admin write side of the directory (step 15), gated by require_admin
+app.include_router(brands.admin_router)
+app.include_router(scraping.router)
+# Social (step 10): the follow graph and loves. followers and the loved-list
+# hang off /users (their {user_id} paths are deeper than users.router's
+# catch-all, so they never collide); the love actions hang off /wishlists.
+app.include_router(followers.router)
+app.include_router(loves.love_router)
+app.include_router(loves.loved_router)
+# Notifications (step 11): the read/manage side of the in-app feed. The write
+# side is asynchronous — producers publish to SQS, a Lambda writes the rows.
+app.include_router(notifications.router)
+# Events (step 13): an occasion that gathers hosts, invitees, and the wishlists
+# linked to it. This step lands the data model, core CRUD, and wishlist linking;
+# invitees/RSVP and the notification legs follow.
+app.include_router(events.router)
+# Admin (step 15): the global user role lands with its first readers — the
+# admin-gated user roster and role promote/demote, behind require_admin.
+app.include_router(admin.router)
+
+
+@app.get("/")
+async def root():
+    return {
+        "message": "Kivan API",
+        "version": app.version,
+        "docs": "/docs"
+    }
