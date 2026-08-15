@@ -27,3 +27,17 @@ output "notifications_queue_url" {
   description = "URL of the SQS notifications queue the backend publishes events to"
   value       = aws_sqs_queue.notifications.url
 }
+
+output "alarms_console_url" {
+  description = "URL to the CloudWatch Alarms console"
+  value       = "https://console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#alarmsV2:"
+}
+
+output "critical_alarms" {
+  description = "The critical-severity alarms (DLQ + both composites)"
+  value = [
+    aws_cloudwatch_metric_alarm.metric["sqs-dlq-messages"].alarm_name,
+    aws_cloudwatch_composite_alarm.service_degradation.alarm_name,
+    aws_cloudwatch_composite_alarm.notification_system_failure.alarm_name
+  ]
+}

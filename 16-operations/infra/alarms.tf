@@ -296,21 +296,3 @@ resource "aws_cloudwatch_composite_alarm" "notification_system_failure" {
     Severity = "critical"
   }
 }
-
-# ==========================================
-# Outputs
-# ==========================================
-
-output "alarms_console_url" {
-  description = "URL to the CloudWatch Alarms console"
-  value       = "https://console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#alarmsV2:"
-}
-
-output "critical_alarms" {
-  description = "The critical-severity alarms (DLQ + both composites)"
-  value = [
-    aws_cloudwatch_metric_alarm.metric["sqs-dlq-messages"].alarm_name,
-    aws_cloudwatch_composite_alarm.service_degradation.alarm_name,
-    aws_cloudwatch_composite_alarm.notification_system_failure.alarm_name
-  ]
-}
