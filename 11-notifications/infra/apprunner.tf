@@ -18,12 +18,13 @@ resource "aws_apprunner_service" "backend_ecr" {
         port = "8000"
 
         runtime_environment_variables = {
-          # Entries join when the backend first reads them (queue names
-          # arrive with their features in later steps)
           ENVIRONMENT = var.environment
           AWS_REGION  = var.aws_region
           # s3.tf owns the one true bucket name; config.py reads this back
           PHOTOS_BUCKET_NAME = aws_s3_bucket.photos.bucket
+          # sqs.tf owns the queue; the notification producers publish here
+          # (config.py reads it as notifications_queue_url)
+          NOTIFICATIONS_QUEUE_URL = aws_sqs_queue.notifications.url
         }
 
         # Secrets resolve from SSM at instance start via the instance role's

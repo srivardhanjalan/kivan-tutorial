@@ -276,3 +276,68 @@ resource "aws_dynamodb_table" "wishlist_loves" {
     Name = "${local.project_name}-${local.environment}-wishlist-loves"
   }
 }
+
+# Notifications table (step 11) — one row per in-app notification, written only
+# by the Lambda consumer, read by the /notifications routes. Hash id for the
+# single-row reads (mark read, delete); UserNotificationsIndex answers "my feed,
+# newest first" as one Query (user_id partitions, created_at sorts). TTL on the
+# `ttl` attribute reaps a row 90 days after it's written — the consumer sets
+# that attribute on every record, so old notifications actually expire (cost and
+# feed length both stay bounded without a sweeper).
+resource "aws_dynamodb_table" "notifications" {
+  name         = "${local.project_name}-${local.environment}-notifications"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "id"
+
+  attribute {
+    name = "id"
+    type = "S"
+  }
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  # ISO timestamp, the range key the feed sorts by (lexical = chronological).
+  attribute {
+    name = "created_at"
+    type = "S"
+  }
+
+  # The feed: a recipient's notifications under one partition, read newest-first.
+  global_secondary_index {
+    name            = "UserNotificationsIndex"
+    hash_key        = "user_id"
+    range_key       = "created_at"
+    projection_type = "ALL"
+  }
+
+  # Epoch-seconds attribute the consumer writes; DynamoDB reaps the row past it.
+  ttl {
+    attribute_name = "ttl"
+    enabled        = true
+  }
+
+  tags = {
+    Name = "${local.project_name}-${local.environment}-notifications"
+  }
+}
+
+# Notification-settings table (step 11) — one row per user, their per-type mute
+# preferences. Keyed by user_id and read/written by a direct GetItem/UpdateItem;
+# no GSI (nothing lists settings, they're always fetched by the owner).
+resource "aws_dynamodb_table" "notification_settings" {
+  name         = "${local.project_name}-${local.environment}-notification-settings"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "user_id"
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  tags = {
+    Name = "${local.project_name}-${local.environment}-notification-settings"
+  }
+}

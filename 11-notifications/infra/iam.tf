@@ -204,6 +204,24 @@ resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
   })
 }
 
+# IAM Policy for the running backend to publish notification events. The
+# producers only ever send_message (the queue URL is injected as an env var, so
+# nothing resolves it by name) — so SendMessage alone, scoped to the one queue.
+resource "aws_iam_role_policy" "apprunner_instance_sqs" {
+  name = "${local.project_name}-apprunner-sqs-policy-${local.environment}"
+  role = aws_iam_role.apprunner_instance.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["sqs:SendMessage"]
+        Resource = aws_sqs_queue.notifications.arn
+      }
+    ]
+  })
+}
+
 # IAM Role for App Runner Instance
 resource "aws_iam_role" "apprunner_instance" {
   name = "${local.project_name}-apprunner-instance-role-${local.environment}"
