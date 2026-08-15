@@ -533,10 +533,10 @@ interface NotificationActor {
   image_url: string | null;
 }
 
-/** The thing a notification points at, resolved for display. `type` is the
-    resource kind ('wishlist' | 'wish' | 'user'); `wishlist_id` rides along on a
-    wish so the tap can open it inside its parent list. Null when the resource
-    was deleted after the notification fired (the backend drops the link).
+/** The thing a notification points at: the id the tap navigates to, plus
+    `wishlist_id` riding along on a wish so the tap can open it inside its
+    parent list. Null when the resource was deleted after the notification
+    fired (the backend drops the link).
     Read only through NotificationWithActor.resource, so it stays module-private. */
 interface NotificationResource {
   id: string;
