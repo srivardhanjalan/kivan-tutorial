@@ -1,6 +1,7 @@
 # The notification processor (step 11): a zip-deployed Lambda triggered by the
-# SQS queue in sqs.tf. It is the only writer of the notifications table. The zip
-# is built by ../lambda/build.sh (just handler.py — boto3 ships with the
+# SQS queue in sqs.tf. It is the only writer of the notifications table, and
+# (step 12) mails each recipient a copy via Mailgun. The zip is built by
+# ../lambda/build.sh (handler.py plus vendored `requests`; boto3 ships with the
 # runtime) and must exist before `terraform apply`.
 
 # Execution role the function assumes.
@@ -73,6 +74,25 @@ resource "aws_iam_role_policy" "notification_processor_dynamodb" {
   })
 }
 
+# SSM: the Mailgun API key is a SecureString the handler fetches by name at cold
+# start (step 12). GetParameter scoped to that one parameter: the default
+# aws/ssm key needs no extra kms:Decrypt grant, matching the App Runner instance
+# role's SSM idiom (see iam.tf / apprunner.tf).
+resource "aws_iam_role_policy" "notification_processor_ssm" {
+  name = "${local.project_name}-${local.environment}-notification-processor-ssm"
+  role = aws_iam_role.notification_processor.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["ssm:GetParameter"]
+        Resource = aws_ssm_parameter.mailgun_api_key.arn
+      }
+    ]
+  })
+}
+
 # CloudWatch Logs write access for the function (create streams + put events).
 resource "aws_iam_role_policy_attachment" "notification_processor_logs" {
   role       = aws_iam_role.notification_processor.name
@@ -115,6 +135,12 @@ resource "aws_lambda_function" "notification_processor" {
       NOTIFICATION_SETTINGS_TABLE = aws_dynamodb_table.notification_settings.name
       USERS_TABLE                 = aws_dynamodb_table.users.name
       AWS_REGION_NAME             = var.aws_region
+      # Mailgun (step 12). The API key is NOT here: a Lambda env var is
+      # plaintext at rest, so the handler fetches it from SSM by this parameter
+      # NAME. The domain and from-address are not secret and ride as plain env.
+      MAILGUN_API_KEY_PARAM = aws_ssm_parameter.mailgun_api_key.name
+      MAILGUN_DOMAIN        = var.mailgun_domain
+      MAILGUN_FROM_EMAIL    = var.mailgun_from_email
     }
   }
 
@@ -122,6 +148,7 @@ resource "aws_lambda_function" "notification_processor" {
     aws_cloudwatch_log_group.notification_processor,
     aws_iam_role_policy.notification_processor_sqs,
     aws_iam_role_policy.notification_processor_dynamodb,
+    aws_iam_role_policy.notification_processor_ssm,
     aws_iam_role_policy_attachment.notification_processor_logs
   ]
 

@@ -565,24 +565,28 @@ export interface NotificationsResponse {
   next_offset: number | null;
 }
 
-/** A user's per-type mute preferences. Every flag defaults false (nothing
-    muted). The names are singular (`mute_follow`) to match the consumer's
-    `mute_{type}` derivation exactly, so a muted type is actually honored. */
+/** A user's notification preferences: the per-type mute flags (every one
+    defaults false, nothing muted; singular names like `mute_follow` match the
+    consumer's `mute_{type}` derivation exactly, so a muted type is actually
+    honored) plus `email_notifications`, whether email copies are sent (defaults
+    true, opt-out). */
 export interface NotificationSettings {
   user_id: string;
   mute_follow: boolean;
   mute_wishlist_created: boolean;
   mute_wish_added: boolean;
   mute_wishlist_loved: boolean;
+  email_notifications: boolean;
   updated_at: string;
 }
 
-/** PUT /notifications/settings body: send only the flags that changed. */
+/** PUT /notifications/settings body: send only the fields that changed. */
 export interface NotificationSettingsUpdate {
   mute_follow?: boolean;
   mute_wishlist_created?: boolean;
   mute_wish_added?: boolean;
   mute_wishlist_loved?: boolean;
+  email_notifications?: boolean;
 }
 
 /** One page of the caller's notifications, newest first; the counts in the
@@ -618,13 +622,14 @@ export async function deleteNotification(id: string): Promise<void> {
   await request(`/notifications/${id}`, { method: 'DELETE' });
 }
 
-/** The caller's mute preferences (defaults to nothing muted for a new user). */
+/** The caller's notification preferences (defaults to nothing muted and email
+    copies on for a new user). */
 export async function fetchNotificationSettings(): Promise<NotificationSettings> {
   const res = await request('/notifications/settings');
   return res.json();
 }
 
-/** Toggle any subset of the mute flags; returns the updated settings. */
+/** Toggle any subset of the settings fields; returns the updated settings. */
 export async function updateNotificationSettings(
   update: NotificationSettingsUpdate
 ): Promise<NotificationSettings> {

@@ -63,25 +63,31 @@ class MarkReadResponse(BaseModel):
 
 
 class NotificationSettings(BaseModel):
-    """A user's per-type mute preferences. One flag per notification type, all
-    defaulting False (nothing muted) so a user who never opened the settings
-    screen still serializes. The field names match the Lambda consumer's
-    f"mute_{notification_type}" derivation EXACTLY (singular `mute_follow`), so
-    a muted type is actually honored."""
+    """A user's notification preferences: the per-type mute flags plus whether
+    email copies are on. The mutes default False (nothing muted) and email
+    copies default True (opt-out), so a user who never opened the settings
+    screen still serializes with sensible defaults. The mute field names match
+    the Lambda consumer's f"mute_{notification_type}" derivation EXACTLY
+    (singular `mute_follow`), so a muted type is actually honored; the consumer
+    reads `email_notifications` by that exact name."""
 
     user_id: str
     mute_follow: bool = False
     mute_wishlist_created: bool = False
     mute_wish_added: bool = False
     mute_wishlist_loved: bool = False
+    # Email copies of notifications (step 12). Default True, so email is on until
+    # a user turns it off; the Lambda mailer honors this same default.
+    email_notifications: bool = True
     updated_at: str
 
 
 class NotificationSettingsUpdate(BaseModel):
-    """PUT /notifications/settings body — every flag optional; only the ones
+    """PUT /notifications/settings body: every field optional; only the ones
     sent are written."""
 
     mute_follow: Optional[bool] = None
     mute_wishlist_created: Optional[bool] = None
     mute_wish_added: Optional[bool] = None
     mute_wishlist_loved: Optional[bool] = None
+    email_notifications: Optional[bool] = None

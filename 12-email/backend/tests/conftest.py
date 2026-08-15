@@ -41,14 +41,15 @@ USERS_TABLE = f"kivan-{ENVIRONMENT}-users"
 WISHLISTS_TABLE = f"kivan-{ENVIRONMENT}-wishlists"
 FOLLOWERS_TABLE = f"kivan-{ENVIRONMENT}-followers"
 WISHLIST_LOVES_TABLE = f"kivan-{ENVIRONMENT}-wishlist-loves"
+NOTIFICATION_SETTINGS_TABLE = f"kivan-{ENVIRONMENT}-notification-settings"
 
 
 def _create_tables(client) -> None:
-    """Create exactly the four tables the tested routes touch, each a faithful
+    """Create exactly the five tables the tested routes touch, each a faithful
     copy of its infra/dynamodb.tf definition. Reference tables (life-events,
-    storefronts, brands, products) and the wishes table are omitted: no code
-    path under test reads them, and a table without a caller is bloat here just
-    as it would be in the app."""
+    storefronts, brands, products) and the wishes/notifications tables are
+    omitted: no code path under test reads them, and a table without a caller is
+    bloat here just as it would be in the app."""
     # Users: hash id; NameSearchIndex (typeahead prefix search) and
     # PopularUsersIndex (Discover rail) both hash on the constant entity_type.
     # NameSearchIndex is SPARSE: name_lowercase is a String key, so DynamoDB
@@ -147,11 +148,19 @@ def _create_tables(client) -> None:
             {"AttributeName": "wishlist_id", "KeyType": "RANGE"},
         ],
     )
+    # Notification settings: one row per user, keyed user_id; no GSI. The
+    # settings route reads and upserts it (mutes + the email_notifications flag).
+    client.create_table(
+        TableName=NOTIFICATION_SETTINGS_TABLE,
+        BillingMode="PAY_PER_REQUEST",
+        AttributeDefinitions=[{"AttributeName": "user_id", "AttributeType": "S"}],
+        KeySchema=[{"AttributeName": "user_id", "KeyType": "HASH"}],
+    )
 
 
 @pytest.fixture
 def aws(monkeypatch):
-    """A fresh moto backend with the four tables, torn down after each test.
+    """A fresh moto backend with the five tables, torn down after each test.
 
     Also clears the module-level provisioning cache: it is process-lifetime, so
     a user id remembered by one test would let ensure_user_provisioned skip the

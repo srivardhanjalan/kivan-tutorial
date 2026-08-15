@@ -19,8 +19,11 @@ import Colors from '../constants/Colors';
 import Typography from '../constants/Typography';
 import { Spacing } from '../constants/ScreenStyles';
 
-/** The mute flag a row toggles: the four optional keys of the update body. */
-type MuteKey = keyof NotificationSettingsUpdate;
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
+/** A boolean settings field a row toggles: any optional key of the update body
+    (the four mute flags plus `email_notifications`). */
+type ToggleKey = keyof NotificationSettingsUpdate;
 
 /** The four toggleable notification types, in feed order. Each row is keyed
     by the TYPE; its mute field is derived as `mute_\${type}`, the same
@@ -38,15 +41,55 @@ const ROWS: {
   { type: 'wishlist_loved', label: 'Wishlist loved', description: 'When someone loves your wishlist' },
 ];
 
-const muteKeyFor = (type: NotificationType): MuteKey => `mute_${type}` as MuteKey;
+const muteKeyFor = (type: NotificationType): ToggleKey => `mute_${type}` as ToggleKey;
+
+/** One settings row: an icon, a label and description, and a switch. `value` is
+    already resolved for display (the caller inverts it for a mute row), so this
+    component holds only the look, not the mute-vs-email semantics. */
+function ToggleRow({
+  icon,
+  label,
+  description,
+  value,
+  onToggle,
+  disabled,
+}: {
+  icon: IoniconName;
+  label: string;
+  description: string;
+  value: boolean;
+  onToggle: () => void;
+  disabled: boolean;
+}) {
+  return (
+    <View style={styles.row}>
+      <View style={styles.iconWrap}>
+        <Ionicons name={icon} size={20} color={Colors.grey} />
+      </View>
+      <View style={styles.rowText}>
+        <Text style={styles.label}>{label}</Text>
+        <Text style={styles.description}>{description}</Text>
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onToggle}
+        trackColor={{ false: Colors.lightGrey, true: Colors.primary }}
+        thumbColor={Colors.white}
+        ios_backgroundColor={Colors.lightGrey}
+        disabled={disabled}
+      />
+    </View>
+  );
+}
 
 /**
- * The mute preferences screen, reached from Settings. Each row is a type of
- * notification with a switch. The switch is INVERTED on purpose: the backend
- * stores a `mute_*` flag, but the row reads as "receive this", so ON means
- * receiving (mute = false) and OFF means muted (mute = true). A toggle saves
- * optimistically and rolls back on failure, the same dance the follow and love
- * buttons run, applied here to the settings object.
+ * The notification preferences screen, reached from Settings. The Notifications
+ * section is one row per type with a switch that is INVERTED on purpose: the
+ * backend stores a `mute_*` flag, but the row reads as "receive this", so ON
+ * means receiving (mute = false) and OFF means muted (mute = true). The Email
+ * section adds one switch for `email_notifications`, which is NOT inverted: ON
+ * means email copies are on. A toggle saves optimistically and rolls back on
+ * failure, the same dance the follow and love buttons run.
  */
 export default function NotificationSettingsScreen() {
   const toast = useToast();
@@ -59,16 +102,16 @@ export default function NotificationSettingsScreen() {
     if (data) setSettings(data);
   }, [data]);
 
-  const handleToggle = (key: MuteKey) => {
+  const handleToggle = (key: ToggleKey) => {
     if (!settings || saving) return;
-    const nextMuted = !settings[key];
-    setSettings({ ...settings, [key]: nextMuted }); // optimistic
+    const next = !settings[key];
+    setSettings({ ...settings, [key]: next }); // optimistic
     setSaving(true);
-    updateNotificationSettings({ [key]: nextMuted })
+    updateNotificationSettings({ [key]: next })
       .then((updated) => setSettings(updated))
       .catch(() => {
         // The save lost: undo the flip and say so.
-        setSettings((prev) => (prev ? { ...prev, [key]: !nextMuted } : prev));
+        setSettings((prev) => (prev ? { ...prev, [key]: !next } : prev));
         toast.show('Could not update notification settings', { type: 'error' });
       })
       .finally(() => setSaving(false));
@@ -79,30 +122,34 @@ export default function NotificationSettingsScreen() {
       <SectionHeader title="Notifications" />
 
       {ROWS.map((row) => (
-        <View key={row.type} style={styles.row}>
-          <View style={styles.iconWrap}>
-            <Ionicons name={NOTIFICATION_TYPE_ICON[row.type]} size={20} color={Colors.grey} />
-          </View>
-          <View style={styles.rowText}>
-            <Text style={styles.label}>{row.label}</Text>
-            <Text style={styles.description}>{row.description}</Text>
-          </View>
-          <Switch
-            // ON = receiving (not muted): the stored flag is inverted for display
-            value={settings ? !settings[muteKeyFor(row.type)] : true}
-            onValueChange={() => handleToggle(muteKeyFor(row.type))}
-            trackColor={{ false: Colors.lightGrey, true: Colors.primary }}
-            thumbColor={Colors.white}
-            ios_backgroundColor={Colors.lightGrey}
-            disabled={saving || !settings}
-          />
-        </View>
+        <ToggleRow
+          key={row.type}
+          icon={NOTIFICATION_TYPE_ICON[row.type]}
+          label={row.label}
+          description={row.description}
+          // ON = receiving (not muted): the stored flag is inverted for display
+          value={settings ? !settings[muteKeyFor(row.type)] : true}
+          onToggle={() => handleToggle(muteKeyFor(row.type))}
+          disabled={saving || !settings}
+        />
       ))}
 
       <View style={styles.info}>
         <Ionicons name="information-circle-outline" size={18} color={Colors.textSecondary} />
         <Text style={styles.infoText}>Muted types will not appear in your notification feed.</Text>
       </View>
+
+      <SectionHeader title="Email" />
+
+      <ToggleRow
+        icon="mail-outline"
+        label="Email copies"
+        description="Get an email when you receive a notification"
+        // NOT inverted: ON = email copies on (email_notifications = true)
+        value={settings ? settings.email_notifications : true}
+        onToggle={() => handleToggle('email_notifications')}
+        disabled={saving || !settings}
+      />
     </FloatingHeaderLayout>
   );
 }

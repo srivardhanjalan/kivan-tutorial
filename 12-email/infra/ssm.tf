@@ -25,3 +25,20 @@ resource "aws_ssm_parameter" "firecrawl_api_key" {
     Name = "${local.project_name}-firecrawl-api-key-${local.environment}"
   }
 }
+
+# The Mailgun API key (step 12's email leg) is a secret too, so it follows the
+# same SecureString pattern. Unlike the App Runner keys above, its consumer is
+# the notification-processor Lambda, which fetches and decrypts it by parameter
+# name at cold start (a Lambda env var is plaintext at rest, so the key can't
+# ride there (see lambda.tf and handler.py). An empty value = email sending
+# disabled: the handler treats a blank key as "not configured" and skips the
+# send, so the whole leg is off until a real key is supplied.
+resource "aws_ssm_parameter" "mailgun_api_key" {
+  name  = "/${local.project_name}/${local.environment}/mailgun-api-key"
+  type  = "SecureString"
+  value = var.mailgun_api_key
+
+  tags = {
+    Name = "${local.project_name}-mailgun-api-key-${local.environment}"
+  }
+}

@@ -34,4 +34,22 @@ variable "firecrawl_api_key" {
   sensitive   = true
 }
 
+variable "mailgun_api_key" {
+  description = "Mailgun API key: the notification Lambda uses it to send email copies of notifications"
+  type        = string
+  sensitive   = true
+  default     = "" # empty = email sending disabled
+}
+
+variable "mailgun_domain" {
+  description = "Mailgun sending domain (e.g. mg.example.com or a sandbox domain). Not secret"
+  type        = string
+  default     = ""
+}
+
+variable "mailgun_from_email" {
+  description = "From address for notification emails (e.g. notifications@mg.example.com). Not secret"
+  type        = string
+  default     = ""
+}
 

@@ -5,3 +5,12 @@ aws_region        = "us-east-1"
 environment       = "production"
 clerk_secret_key  = "sk_test_..."
 firecrawl_api_key = "fc-your-key-here"
+
+# Mailgun (step 12's email leg). From mailgun.com → Sending → your domain (a
+# sandbox domain works, but only mails pre-authorized recipients). Leave
+# mailgun_api_key empty to ship with email sending disabled: the Lambda treats
+# a blank key as "not configured" and skips the send. Domain and from-address
+# are not secret.
+mailgun_api_key    = ""
+mailgun_domain     = ""
+mailgun_from_email = ""
