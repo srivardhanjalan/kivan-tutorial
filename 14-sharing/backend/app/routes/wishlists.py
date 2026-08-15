@@ -32,6 +32,7 @@ from app.utils.wishlist_access import (
     delete_wishlist_and_contents,
     get_wishlist_or_404,
     is_wishlist_owner,
+    wishlist_is_public,
 )
 
 logger = logging.getLogger(__name__)
@@ -110,6 +111,7 @@ def create_wishlist(
         "name": wishlist.name,
         "image_url": stored,
         "life_event_id": wishlist.life_event_id,
+        "privacy_type": wishlist.privacy_type,
         "created_by": user_id,
         "created_at": now,
         # The denormalized love tally starts at zero (step 10); adjust_count
@@ -131,8 +133,9 @@ def create_wishlist(
         claim_pending_photo(to_claim)
 
     # Fan the new wishlist out to the owner's followers, best-effort: a
-    # notification failure must never fail the create the user asked for. Every
-    # wishlist is public this step (privacy is step 14), so no gate here.
+    # notification failure must never fail the create the user asked for. The
+    # privacy gate lives INSIDE notify_wishlist_created (a private wishlist fans
+    # out to no one), so there's no guard to write, or forget, here.
     try:
         notify_wishlist_created(
             actor_id=user_id, wishlist_id=item["id"], wishlist_name=item["name"]
@@ -161,26 +164,29 @@ def get_popular_wishlists(
     limit: int = Query(default=10, ge=1, le=50),
     _user_id: str = Depends(get_current_user_id),
 ):
-    """Discover's "wishlists to love" rail: the most-loved wishlists. A Query on
-    PopularWishlistsIndex in descending love_count order, capped at `limit`: the
-    rail is a short preview, so this reads only the top page, never the whole
-    index. Every wishlist is publicly viewable this step, so no privacy filter.
-    Declared before /{wishlist_id} so "popular" is never read as a wishlist id."""
-    response = wishlists_table.query(
+    """Discover's "wishlists to love" rail: the most-loved PUBLIC wishlists. A
+    Query on PopularWishlistsIndex in descending love_count order: a private
+    wishlist is visible to its owners, never on a discovery feed, so public-only
+    is filtered here (privacy_type isn't an index key). The filter runs before
+    the `limit` cap, so a private list high on the love ranking doesn't crowd a
+    public one off the short preview. Declared before /{wishlist_id} so
+    "popular" is never read as a wishlist id."""
+    ranked = query_all_pages(
+        wishlists_table,
         IndexName="PopularWishlistsIndex",
         KeyConditionExpression=Key("entity_type").eq("WISHLIST"),
         ScanIndexForward=False,  # highest love_count first
-        Limit=limit,
     )
-    return response.get("Items", [])
+    return [w for w in ranked if wishlist_is_public(w)][:limit]
 
 
 @router.get("/{wishlist_id}", response_model=Wishlist)
 def get_wishlist(wishlist_id: str, user_id: str = Depends(get_current_user_id)):
-    """A single wishlist, a public read this step: 404 if missing, but any
-    signed-in user can view any wishlist (a friend's collection off their
-    profile, one you're about to love). The view branch of the one gate; editing
-    it still requires ownership."""
+    """A single wishlist: 404 if missing, then the view branch of the one gate.
+    A public wishlist is readable by any signed-in user (a friend's collection
+    off their profile, one you're about to love); a private one only by its
+    owners and co-owners (a non-owner viewer is a 403). Editing it still requires
+    ownership."""
     return check_wishlist_access(wishlist_id, user_id)
 
 
@@ -209,6 +215,11 @@ def update_wishlist(
         changes["name"] = update_data["name"]
     if update_data.get("life_event_id") is not None:
         changes["life_event_id"] = update_data["life_event_id"]
+    # privacy_type is non-nullable too (a present-but-None is ignored); a real
+    # value flips the wishlist between public and private. The Literal already
+    # 422'd anything outside the two-value set at the boundary.
+    if update_data.get("privacy_type") is not None:
+        changes["privacy_type"] = update_data["privacy_type"]
     # image_url: a new non-None value swaps the photo; image_url:null is ignored
     # — removing a photo isn't a step-07 flow.
     if update_data.get("image_url") is not None:

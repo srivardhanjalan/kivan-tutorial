@@ -30,6 +30,23 @@ def is_wishlist_owner(wishlist_id: str, user_id: str) -> bool:
     return "Item" in response
 
 
+def wishlist_is_public(wishlist: dict) -> bool:
+    """Is this wishlist publicly viewable? A stored record with no privacy_type
+    (created before the field existed) reads as public, the visibility every
+    wishlist had before privacy landed. The one place the "public" spelling
+    lives, so the read filters and the gate can't drift apart."""
+    return wishlist.get("privacy_type", "public") == "public"
+
+
+def can_view_wishlist(wishlist: dict, user_id: str) -> bool:
+    """Whether this user may VIEW a wishlist: it's public, or they own/co-own it.
+    The boolean form of check_wishlist_access's view branch, for the read
+    surfaces that filter a LIST (a profile grid, the loved shelf, an event's
+    linked wishlists) rather than gate a single fetch. Same rule, one place, no
+    per-item raise; the owner probe only runs when the wishlist isn't public."""
+    return wishlist_is_public(wishlist) or is_wishlist_owner(wishlist["id"], user_id)
+
+
 def check_wishlist_access(
     wishlist_id: str, user_id: str, require_edit: bool = False
 ) -> dict:
@@ -39,15 +56,16 @@ def check_wishlist_access(
     delete, and wish mutation funnels through, so a wish's write access is just
     its wishlist's ownership.
 
-    The view path (require_edit=False) stays open this step: any signed-in user
-    can read any wishlist (a friend's collection off their profile, one you're
-    about to love), exactly as reading has been since step 10. Privacy filtering
-    lands on this same branch in a later step; keeping every read on this one
-    gate is what lets it arrive in one place instead of at every call site."""
+    The view path (require_edit=False) enforces privacy: a public wishlist is
+    readable by any signed-in user (a friend's collection off their profile, one
+    you're about to love), a private one only by its owners and co-owners: a
+    non-owner viewer of a private wishlist is a 403, matching the source. Every
+    read funnels through this one gate, so privacy is decided in one place, not
+    re-checked at each call site."""
     wishlist = get_wishlist_or_404(wishlist_id)
     if is_wishlist_owner(wishlist_id, user_id):
         return wishlist
-    if require_edit:
+    if require_edit or not wishlist_is_public(wishlist):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't have access to this wishlist",

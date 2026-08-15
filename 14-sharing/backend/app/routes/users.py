@@ -27,7 +27,7 @@ from app.utils.timestamps import utc_now_iso
 from app.utils.user_access import get_public_user
 from app.utils.user_provisioning import forget_user
 from app.utils.user_search import name_lowercase
-from app.utils.wishlist_access import delete_wishlist_and_contents
+from app.utils.wishlist_access import can_view_wishlist, delete_wishlist_and_contents
 
 logger = logging.getLogger(__name__)
 
@@ -394,15 +394,19 @@ def get_user(user_id: str, viewer_id: str = Depends(get_current_user_id)):
 
 
 @router.get("/{user_id}/wishlists", response_model=list[Wishlist])
-def get_user_wishlists(user_id: str, _viewer: str = Depends(get_current_user_id)):
-    """A user's wishlists, newest first: the public read behind their profile.
-    Every wishlist is viewable this step (privacy is step 14); the same
-    CreatedByIndex Query as GET /wishlists/me, just for another user."""
+def get_user_wishlists(user_id: str, viewer_id: str = Depends(get_current_user_id)):
+    """A user's wishlists behind their profile grid, newest first, privacy
+    filtered: a public wishlist shows to anyone, a private one only to its owners
+    and co-owners. Viewing your own profile you see them all (you own every list
+    this Query returns); viewing another's you see their public lists plus any
+    private one you co-own. Same CreatedByIndex Query as GET /wishlists/me, then
+    the shared view rule per item."""
     get_public_user(user_id)
     items = query_all_pages(
         wishlists_table,
         IndexName="CreatedByIndex",
         KeyConditionExpression=Key("created_by").eq(user_id),
     )
-    items.sort(key=lambda w: w["created_at"], reverse=True)
-    return items
+    visible = [w for w in items if can_view_wishlist(w, viewer_id)]
+    visible.sort(key=lambda w: w["created_at"], reverse=True)
+    return visible

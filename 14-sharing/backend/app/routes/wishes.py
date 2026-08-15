@@ -82,7 +82,9 @@ def create_wish(wish: WishCreate, user_id: str = Depends(get_current_user_id)):
 
     # Fan the new wish out to the owner's followers, best-effort: a notification
     # failure must never fail the add. wishlist_id rides along so the tap can
-    # open the wish inside its list. Public-by-default this step (privacy is 14).
+    # open the wish inside its list. The privacy gate lives INSIDE
+    # notify_wish_added (a wish on a private wishlist fans out to no one), so
+    # there's no guard to write, or forget, here.
     try:
         notify_wish_added(
             actor_id=user_id,
@@ -124,8 +126,9 @@ def get_my_wishes(user_id: str = Depends(get_current_user_id)):
 @router.get("/{wish_id}", response_model=Wish)
 def get_wish(wish_id: str, user_id: str = Depends(get_current_user_id)):
     """A single wish, a view read like its wishlist and the wishlist's listing:
-    404 if the wish is gone, then the wishlist's view gate (open this step).
-    Editing it still requires ownership."""
+    404 if the wish is gone, then the wishlist's view gate: visible on a public
+    wishlist, owners-only on a private one. Editing it still requires
+    ownership."""
     wish = _get_wish_or_404(wish_id)
     check_wishlist_access(wish["wishlist_id"], user_id)
     return wish
@@ -197,9 +200,12 @@ def delete_wish(wish_id: str, user_id: str = Depends(get_current_user_id)):
 @router.post("/{wish_id}/complete", response_model=Wish)
 def complete_wish(wish_id: str, user_id: str = Depends(get_current_user_id)):
     """Mark a wish completed. Deliberately the VIEW gate, not edit: completing a
-    wish is a gift-claiming act, so anyone who can see the wishlist (this step,
-    any signed-in viewer) can mark a wish taken; that's the whole point of
-    sharing a list. Uncompleting is the asymmetric case below."""
+    wish is a gift-claiming act, so anyone who can SEE the wishlist can mark a
+    wish taken; that's the whole point of sharing a list. With privacy enforced,
+    "can see" now means privacy-filtered view access: a stranger who can't view
+    a private wishlist gets the same 403 completing one of its wishes as they do
+    reading it, so a private list stays private end to end. Uncompleting is the
+    asymmetric case below."""
     wish = _get_wish_or_404(wish_id)
     check_wishlist_access(wish["wishlist_id"], user_id)  # 404 + view gate
     return _set_completed(wish_id, completed=True)
@@ -227,11 +233,12 @@ def _set_completed(wish_id: str, *, completed: bool) -> dict:
 def get_wishlist_wishes(
     wishlist_id: str, user_id: str = Depends(get_current_user_id)
 ):
-    """A wishlist's wishes in insertion order (created_at ASC). A public read
-    like GET /wishlists/{id}: the view branch of the one gate, so you see the
-    wishes of any wishlist you can view (a friend's, off their profile). The GSI
-    has no range key, so the sort is here. Adding or editing a wish still
-    requires ownership."""
+    """A wishlist's wishes in insertion order (created_at ASC). A view read like
+    GET /wishlists/{id}: the view branch of the one gate, so you see the wishes
+    of any wishlist you can view: a public list off a friend's profile, or a
+    private one you own or co-own (a non-owner viewer of a private wishlist is a
+    403). The GSI has no range key, so the sort is here. Adding or editing a wish
+    still requires ownership."""
     check_wishlist_access(wishlist_id, user_id)
     wishes = query_all_pages(
         wishes_table,
