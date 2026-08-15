@@ -493,3 +493,54 @@ Frontend (visual/workflow convergence, behavior held):
       now asserts `f"mute_{type}"` is a real settings field AND a writable mute
       for all six types with no orphans either way, locking the model, the route,
       and the type list together. Additive.
+
+## Sharing (step 14, phase A)
+
+Step 14 lands sharing. Phase A ships co-ownership and the gate generalization:
+the `wishlist-owners` join table, the one `check_wishlist_access` gate, owner
+CRUD, and `owner_ids`-at-create. Privacy enforcement (`privacy_type`) is phase
+B, and the deep-links / Share-modal frontend is phase C. As with the earlier
+features, some of what phase A records is deliberate BACKEND divergence the
+polish pass must NOT "restore".
+
+Backend (deliberate, do-not-restore):
+
+- [ ] One gate, one name. *source:* the owner check is spelled two ways: the
+      wishlists routes call `is_wishlist_owner` inline (hand-writing the 404 and
+      403 twice), while the wishes routes route through
+      `check_wishlist_access(require_edit=True)`, an equivalent outcome with
+      duplicated logic. *tutorial:* a single `check_wishlist_access(wishlist_id,
+      user_id, require_edit)` that BOTH the wishlists and wishes routes funnel
+      through (reads pass `require_edit=False`, mutations `True`), with
+      `is_wishlist_owner` as its one membership test. One concept, one name; keep
+      the unified gate.
+- [ ] No denormalized `owner_count`. *source:* the wishlist row carries an
+      `owner_count:int` set at create and moved by `adjust_count` on every
+      add/remove (a second write, and a value that can drift from the join
+      table). *tutorial:* no count; the owners are a Query on the
+      `wishlist-owners` table and the last-owner guard reads that query's length,
+      exactly as `event_hosts` does (events shipped no `host_count`). Keep the
+      table as the single source of truth; do not add the denormalized count.
+- [ ] Event-host-style owner removal, not a conditional delete. *source:*
+      `DELETE /owners/{id}` runs a conditional `delete_item`
+      (`attribute_exists`) and 404s if the target isn't an owner. *tutorial:* the
+      same shape `event_hosts` ships: the last-owner guard, then a plain
+      idempotent `delete_item` (removing a non-owner is a harmless no-op).
+      Keep the membership-table idiom the tutorial already established in step 13.
+- [ ] complete/uncomplete asymmetry (parity note). *source & tutorial:*
+      `POST /wishes/{id}/complete` uses the VIEW gate (any signed-in viewer may
+      mark a wish taken: gift-claiming is the point of sharing a list) while
+      `uncomplete` uses the EDIT gate (owner-or-co-owner only). Kept exactly, with
+      an honest comment where the two gates differ. Recorded so polish does not
+      "symmetrize" the two.
+- [ ] No co-owner notification type. *source & tutorial:* adding a co-owner (like
+      adding an event host) fires NO notification; the six-type system is
+      untouched. Recorded so polish does not invent a `wishlist_shared` /
+      `co_owner_added` type the finished design never had.
+- [ ] Account-deletion sweep left as-is under co-ownership. *source & tutorial:*
+      the deletion sweep runs by `CreatedByIndex`, so it tears down the wishlists
+      the leaving user CREATED (now including their owner edges) and leaves a
+      wishlist the user only CO-owns alone (its stale owner edge points at a
+      flagged account that can never authenticate). No ownership-transfer flow
+      this step; the honest comment says so. Recorded so polish does not read the
+      residual co-owner edge as a bug to "fix" here.
