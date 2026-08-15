@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useUser } from '@clerk/clerk-expo';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
@@ -9,7 +9,7 @@ import EmptyStateView from '../components/EmptyStateView';
 import TileGrid from '../components/TileGrid';
 import WishCard from '../components/WishCard';
 import AddTileCard from '../components/AddTileCard';
-import ArtTile from '../components/ArtTile';
+import LifeEventDetailHero from '../components/LifeEventDetailHero';
 import ConfirmModal from '../components/ConfirmModal';
 import LoveButton from '../components/LoveButton';
 import WishlistPlaceholderGlyph from '../components/WishlistPlaceholderGlyph';
@@ -18,8 +18,6 @@ import useLifeEvents from '../hooks/useLifeEvents';
 import useWishOrigin from '../hooks/useWishOrigin';
 import useConfirmedDelete from '../hooks/useConfirmedDelete';
 import { fetchWishlist, fetchWishes, deleteWishlist, fetchLoveStatus } from '../services/api';
-import pastelForLifeEvent from '../constants/lifeEventPastels';
-import Typography from '../constants/Typography';
 import { Spacing } from '../constants/ScreenStyles';
 
 /**
@@ -68,15 +66,13 @@ export default function WishlistDetailScreen() {
     >
       {wishlist && (
         <>
-          <ArtTile
-            height={Spacing.detailHeroHeight}
-            color={pastelForLifeEvent(wishlist.life_event_id)}
+          <LifeEventDetailHero
+            lifeEvent={lifeEvent}
             imageUrl={wishlist.image_url}
             placeholder={
               <WishlistPlaceholderGlyph lifeEvent={lifeEvent} size={Spacing.detailHeroGlyphSize} />
             }
           />
-          {lifeEvent && <Text style={styles.eventName}>{lifeEvent.name}</Text>}
 
           {/* Someone else's wishlist: love it. Mounts once love status loads. */}
           {!isOwner && loved !== null && (
@@ -133,10 +129,6 @@ export default function WishlistDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  eventName: {
-    ...Typography.bodySecondary,
-    marginTop: Spacing.md,
-  },
   loveRow: {
     marginTop: Spacing.lg,
   },

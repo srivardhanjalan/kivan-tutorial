@@ -12,7 +12,7 @@ import SectionHeader from '../components/SectionHeader';
 import EmptyStateView from '../components/EmptyStateView';
 // jscpd:ignore-end
 import WishlistGrid from '../components/WishlistGrid';
-import ArtTile from '../components/ArtTile';
+import LifeEventDetailHero from '../components/LifeEventDetailHero';
 import ImagePlaceholderGlyph from '../components/ImagePlaceholderGlyph';
 import ConfirmModal from '../components/ConfirmModal';
 import RsvpControl from '../components/RsvpControl';
@@ -30,10 +30,9 @@ import {
   removeEventInvitee,
 } from '../services/api';
 import type { EventInvitee, RsvpChoice } from '../services/api';
-import { userDisplayName } from '../utils/userName';
+import { inviteeDisplayName, userDisplayName } from '../utils/userName';
 import { clerkPrimaryEmail } from '../utils/clerkName';
 import formatEventDate from '../utils/formatEventDate';
-import pastelForLifeEvent from '../constants/lifeEventPastels';
 import Typography from '../constants/Typography';
 import { Spacing } from '../constants/ScreenStyles';
 
@@ -117,13 +116,11 @@ export default function EventDetailScreen() {
     >
       {detail && event && (
         <>
-          <ArtTile
-            height={Spacing.detailHeroHeight}
-            color={pastelForLifeEvent(event.event_type ?? '')}
+          <LifeEventDetailHero
+            lifeEvent={lifeEvent}
             imageUrl={event.image_url}
             placeholder={<ImagePlaceholderGlyph size={Spacing.detailHeroGlyphSize} />}
           />
-          {lifeEvent && <Text style={styles.eventType}>{lifeEvent.name}</Text>}
 
           <Text style={styles.meta}>{formatEventDate(event.event_date)}</Text>
           {event.location ? <Text style={styles.meta}>{event.location}</Text> : null}
@@ -197,11 +194,7 @@ export default function EventDetailScreen() {
         title="Remove guest?"
         message={
           removeTarget
-            ? `Remove ${
-                removeTarget.user
-                  ? userDisplayName(removeTarget.user)
-                  : removeTarget.invitee_id
-              } from this event?`
+            ? `Remove ${inviteeDisplayName(removeTarget)} from this event?`
             : ''
         }
         confirmTitle="Remove"
@@ -221,10 +214,6 @@ export default function EventDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  eventType: {
-    ...Typography.bodySecondary,
-    marginTop: Spacing.md,
-  },
   meta: {
     ...Typography.bodySecondary,
     marginTop: Spacing.sm,

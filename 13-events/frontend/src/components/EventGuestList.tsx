@@ -2,7 +2,7 @@ import React from 'react';
 import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import PersonRow from './PersonRow';
-import { userDisplayName } from '../utils/userName';
+import { inviteeDisplayName } from '../utils/userName';
 import Colors from '../constants/Colors';
 import Opacity from '../constants/Opacity';
 import { RSVP_LABEL } from '../constants/rsvpLabels';
@@ -16,12 +16,6 @@ const RSVP_COLOR: Record<RsvpStatus, string> = {
   maybe: Colors.textSecondary,
   not_going: Colors.textMuted,
 };
-
-/** A guest's title: their name when the invite reached a user, else the raw
-    email it was addressed to (an email invite carries no user record). */
-function guestName(invitee: EventInvitee): string {
-  return invitee.user ? userDisplayName(invitee.user) : invitee.invitee_id;
-}
 
 interface EventGuestListProps {
   /** Already filtered by the caller (a host sees everyone; a guest sees only
@@ -44,7 +38,7 @@ const EventGuestList: React.FC<EventGuestListProps> = ({ guests, onRemove }) => 
       <PersonRow
         key={invitee.invitee_id}
         imageUrl={invitee.user?.image_url}
-        name={guestName(invitee)}
+        name={inviteeDisplayName(invitee)}
         subtitle={RSVP_LABEL[invitee.rsvp_status]}
         subtitleColor={RSVP_COLOR[invitee.rsvp_status]}
         trailing={
@@ -53,7 +47,7 @@ const EventGuestList: React.FC<EventGuestListProps> = ({ guests, onRemove }) => 
               onPress={() => onRemove(invitee)}
               activeOpacity={Opacity.pressed}
               accessibilityRole="button"
-              accessibilityLabel={`Remove ${guestName(invitee)}`}
+              accessibilityLabel={`Remove ${inviteeDisplayName(invitee)}`}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Ionicons name="close" size={22} color={Colors.textMuted} />
