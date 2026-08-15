@@ -1,13 +1,10 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import Colors from '../constants/Colors';
-import BorderRadius from '../constants/BorderRadius';
-import Typography from '../constants/Typography';
-import Opacity from '../constants/Opacity';
+import { View, StyleSheet } from 'react-native';
+import SelectablePill from './SelectablePill';
 import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 import type { RsvpStatus, RsvpChoice } from '../services/api';
 
-/** The three answers an invitee can give, in the order they read as warm →
+/** The three answers an invitee can give, in the order they read as warm ->
     cool. "pending" is never here: it's the server's initial state, shown as no
     chip selected until the invitee picks. */
 const CHOICES: { key: RsvpChoice; label: string }[] = [
@@ -25,30 +22,20 @@ interface RsvpControlProps {
 }
 
 /**
- * An invitee's own RSVP: a row of Going / Maybe / Can't go chips, the chosen
- * one filled with the brand accent. It borrows the life-event selector's chip
- * look so a selected answer reads the same as a selected life event, and drives
- * the PATCH the detail screen owns.
+ * An invitee's own RSVP: a row of Going / Maybe / Can't go chips rendered as
+ * the shared SelectablePill, driving the PATCH the detail screen owns.
  */
 const RsvpControl: React.FC<RsvpControlProps> = ({ value, onChange, busy }) => (
   <View style={[styles.row, busy && CommonScreenStyles.dimmed]}>
-    {CHOICES.map(({ key, label }) => {
-      const selected = value === key;
-      return (
-        <TouchableOpacity
-          key={key}
-          onPress={() => onChange(key)}
-          disabled={busy}
-          activeOpacity={Opacity.pressed}
-          accessibilityRole="button"
-          accessibilityState={{ selected }}
-          accessibilityLabel={label}
-          style={[styles.chip, selected ? CommonScreenStyles.outlinedPillSelected : CommonScreenStyles.outlinedPill]}
-        >
-          <Text style={[styles.label, selected && CommonScreenStyles.selectedPillLabel]}>{label}</Text>
-        </TouchableOpacity>
-      );
-    })}
+    {CHOICES.map(({ key, label }) => (
+      <SelectablePill
+        key={key}
+        label={label}
+        selected={value === key}
+        onPress={() => onChange(key)}
+        disabled={busy}
+      />
+    ))}
   </View>
 );
 
@@ -57,13 +44,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.sm,
     marginTop: Spacing.md,
-  },
-  chip: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-  },
-  label: {
-    ...Typography.bodySecondaryStrong,
   },
 });
 
