@@ -93,6 +93,18 @@ export const CommonScreenStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.hairline,
   },
+  /** The selected state of the same pill: brand fill, full round. The
+      life-event selector and the RSVP control both flip to it, so a
+      selected chip reads identically everywhere. Pair the label with
+      selectedPillLabel. */
+  outlinedPillSelected: {
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.full,
+  },
+  /** The label a selected pill carries: white over the brand fill. */
+  selectedPillLabel: {
+    color: Colors.white,
+  },
   /** The one dim every button in flight wears: composed in with `loading && `.
       One spelling of "this control is busy/disabled", the CTA, OAuth, follow,
       love, and tile cards all share. */

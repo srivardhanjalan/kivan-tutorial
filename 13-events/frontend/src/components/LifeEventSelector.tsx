@@ -41,10 +41,10 @@ const LifeEventSelector: React.FC<LifeEventSelectorProps> = ({ selectedId, onSel
             accessibilityRole="button"
             accessibilityState={{ selected }}
             accessibilityLabel={event.name}
-            style={[styles.chip, selected ? styles.chipSelected : CommonScreenStyles.outlinedPill]}
+            style={[styles.chip, selected ? CommonScreenStyles.outlinedPillSelected : CommonScreenStyles.outlinedPill]}
           >
             {event.icon && <Text style={styles.emoji}>{event.icon}</Text>}
-            <Text style={[styles.label, selected && styles.labelSelected]}>{event.name}</Text>
+            <Text style={[styles.label, selected && CommonScreenStyles.selectedPillLabel]}>{event.name}</Text>
           </TouchableOpacity>
         );
       })}
@@ -68,18 +68,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
   },
-  chipSelected: {
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.full,
-  },
   emoji: {
     fontSize: Typography.body.fontSize,
   },
   label: {
     ...Typography.bodySecondaryStrong,
-  },
-  labelSelected: {
-    color: Colors.white,
   },
 });
 

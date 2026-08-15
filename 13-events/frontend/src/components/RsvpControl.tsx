@@ -43,9 +43,9 @@ const RsvpControl: React.FC<RsvpControlProps> = ({ value, onChange, busy }) => (
           accessibilityRole="button"
           accessibilityState={{ selected }}
           accessibilityLabel={label}
-          style={[styles.chip, selected ? styles.chipSelected : CommonScreenStyles.outlinedPill]}
+          style={[styles.chip, selected ? CommonScreenStyles.outlinedPillSelected : CommonScreenStyles.outlinedPill]}
         >
-          <Text style={[styles.label, selected && styles.labelSelected]}>{label}</Text>
+          <Text style={[styles.label, selected && CommonScreenStyles.selectedPillLabel]}>{label}</Text>
         </TouchableOpacity>
       );
     })}
@@ -62,15 +62,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
   },
-  chipSelected: {
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.full,
-  },
   label: {
     ...Typography.bodySecondaryStrong,
-  },
-  labelSelected: {
-    color: Colors.white,
   },
 });
 
