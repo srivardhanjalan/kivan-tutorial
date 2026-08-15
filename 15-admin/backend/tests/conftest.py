@@ -49,6 +49,7 @@ EVENT_HOSTS_TABLE = f"kivan-{ENVIRONMENT}-event-hosts"
 EVENT_INVITEES_TABLE = f"kivan-{ENVIRONMENT}-event-invitees"
 EVENT_WISHLISTS_TABLE = f"kivan-{ENVIRONMENT}-event-wishlists"
 BRANDS_TABLE = f"kivan-{ENVIRONMENT}-brands"
+LIFE_EVENTS_TABLE = f"kivan-{ENVIRONMENT}-life-events"
 
 
 def _create_tables(client) -> None:
@@ -302,6 +303,15 @@ def _create_tables(client) -> None:
         AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
         KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
     )
+    # Life events (step 15 admin): the occasion taxonomy, reference data hashed
+    # on id with no GSI. The admin delete scans wishlists/events for references,
+    # so those tables (created above) back its 409 contract.
+    client.create_table(
+        TableName=LIFE_EVENTS_TABLE,
+        BillingMode="PAY_PER_REQUEST",
+        AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
+        KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
+    )
 
 
 @pytest.fixture
@@ -392,6 +402,7 @@ def put_wishlist(
     love_count: int = 0,
     co_owners: list[str] | None = None,
     privacy_type: str = "public",
+    life_event_id: str = "general",
 ):
     """Seed a wishlist AND its owner edges: the creator plus any co_owners. The
     route auto-inserts the creator as the first owner, so a wishlist seeded
@@ -403,7 +414,7 @@ def put_wishlist(
     item = {
         "id": wishlist_id,
         "name": name,
-        "life_event_id": "general",
+        "life_event_id": life_event_id,
         "created_by": created_by,
         "entity_type": "WISHLIST",
         "love_count": love_count,
@@ -446,4 +457,20 @@ def put_brand(
         "display_order": display_order,
     }
     aws.Table(BRANDS_TABLE).put_item(Item=item)
+    return item
+
+
+def put_life_event(
+    aws,
+    event_id: str,
+    *,
+    name: str = "An occasion",
+    icon: str | None = None,
+    display_order: int = 0,
+):
+    """Seed a life-event row the way the seed script leaves it."""
+    item = {"id": event_id, "name": name, "display_order": display_order}
+    if icon is not None:
+        item["icon"] = icon
+    aws.Table(LIFE_EVENTS_TABLE).put_item(Item=item)
     return item

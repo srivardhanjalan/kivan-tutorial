@@ -46,6 +46,8 @@ app.include_router(health.router)
 app.include_router(users.router)
 app.include_router(upload.router)
 app.include_router(life_events.router)
+# The admin write side of the taxonomy (step 15), gated by require_admin
+app.include_router(life_events.admin_router)
 app.include_router(wishlists.router)
 app.include_router(wishes.router)
 # The wishlist-scoped wishes listing lives on a second router under /wishlists
