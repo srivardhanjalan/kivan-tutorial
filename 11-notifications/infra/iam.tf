@@ -148,11 +148,13 @@ resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
       },
       {
         # Wishes: item CRUD (UpdateItem flips `completed`), Query on
-        # WishlistIdIndex (listing + cascade delete), and BatchWriteItem for
-        # the cascade's batched deletes.
+        # WishlistIdIndex (listing + cascade delete), BatchWriteItem for
+        # the cascade's batched deletes, and BatchGetItem for the
+        # notification feed's wish_added resource enrichment.
         Effect = "Allow"
         Action = [
           "dynamodb:GetItem",
+          "dynamodb:BatchGetItem",
           "dynamodb:PutItem",
           "dynamodb:UpdateItem",
           "dynamodb:DeleteItem",
