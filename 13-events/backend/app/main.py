@@ -4,6 +4,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 
 from app.routes import (
     brands,
+    events,
     followers,
     health,
     life_events,
@@ -64,6 +65,10 @@ app.include_router(loves.loved_router)
 # Notifications (step 11): the read/manage side of the in-app feed. The write
 # side is asynchronous — producers publish to SQS, a Lambda writes the rows.
 app.include_router(notifications.router)
+# Events (step 13): an occasion that gathers hosts, invitees, and the wishlists
+# linked to it. This step lands the data model, core CRUD, and wishlist linking;
+# invitees/RSVP and the notification legs follow.
+app.include_router(events.router)
 
 
 @app.get("/")

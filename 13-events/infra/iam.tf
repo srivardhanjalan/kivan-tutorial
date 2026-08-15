@@ -232,6 +232,73 @@ resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
           "dynamodb:Query"
         ]
         Resource = aws_dynamodb_table.wishlist_loves.arn
+      },
+      {
+        # Events (step 13): item CRUD (create PutItem, edit UpdateItem, delete
+        # DeleteItem, get GetItem), BatchGetItem to hydrate the /events/me id
+        # list, and Query on PublicEventsIndex (the public feed).
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:BatchGetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query"
+        ]
+        Resource = [
+          aws_dynamodb_table.events.arn,
+          "${aws_dynamodb_table.events.arn}/index/*"
+        ]
+      },
+      {
+        # Event hosts: put/delete a host edge, GetItem for "am I a host", Query
+        # on the base table (an event's hosts, the delete cascade) and
+        # UserIdIndex (events I host, for /events/me), and BatchWriteItem for the
+        # cascade's batched deletes.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+          "dynamodb:BatchWriteItem"
+        ]
+        Resource = [
+          aws_dynamodb_table.event_hosts.arn,
+          "${aws_dynamodb_table.event_hosts.arn}/index/*"
+        ]
+      },
+      {
+        # Event invitees: GetItem for the access check, Query on the base table
+        # (an event's invitees, the delete cascade) and InviteeIdIndex (events
+        # I'm invited to by id and by email, for /events/me), and BatchWriteItem
+        # for the cascade. Writing invitees (put/delete) arrives with the invitee
+        # step, so those actions are withheld here.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:Query",
+          "dynamodb:BatchWriteItem"
+        ]
+        Resource = [
+          aws_dynamodb_table.event_invitees.arn,
+          "${aws_dynamodb_table.event_invitees.arn}/index/*"
+        ]
+      },
+      {
+        # Event-wishlist links: put/delete a link, GetItem for "already linked",
+        # Query on the base table (an event's linked wishlists, the delete
+        # cascade), and BatchWriteItem for the cascade. No GSI on this table.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+          "dynamodb:BatchWriteItem"
+        ]
+        Resource = aws_dynamodb_table.event_wishlists.arn
       }
     ]
   })
