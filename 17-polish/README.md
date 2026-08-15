@@ -444,3 +444,52 @@ Frontend (visual/workflow convergence, behavior held):
       on-screen RSVP, invite, or remove whose server-computed result
       (`my_rsvp_status`, `is_invitee`, enriched invitees) can't be reconstructed
       client-side. Additive; existing callers are untouched.
+
+## Events (step 13, phase C)
+
+Phase C wires the two event notification types (`event_created`,
+`event_invitation`) into the four-type system: producers, mute fields, the
+settings rows, the feed icons/colors, and the tap-through. The phase-B deferral
+("no notification calls yet, restore in phase C") is now fulfilled. As before,
+some of what phase C records is deliberate divergence the polish pass must NOT
+"restore".
+
+Backend (deliberate, do-not-restore):
+
+- [ ] Invitation notify fires from the ONE shared `add_invitees` helper.
+      *source:* `create_event` and `add_event_invitees` each build a
+      `user_invitee_ids_added` list and call `notify_event_invitation` at two
+      duplicated sites. *tutorial:* the single `add_invitees` helper collects the
+      user invitees it actually wrote and fires the notification once, so both
+      create-time and add-later paths notify from one place (and only NEWLY
+      written invitees are notified, so a re-invite is silent). Keep it unified.
+- [ ] Producer names match the sibling convention. *source:*
+      `notify_followers_event_created`. *tutorial:* `notify_event_created`,
+      alongside `notify_wishlist_created` / `notify_wish_added` (one naming
+      shape for every fan-out producer). Keep the short name.
+- [ ] No per-type email templates. *source:* the Lambda mails ONE generic
+      template for every type (subject "You have a new notification on Kivan",
+      body = the message plus a humanized type label); there is no event-specific
+      subject/body anywhere. *tutorial:* identical, so the two event types need
+      zero Lambda change and mail exactly like the other four. Do NOT add
+      per-type event copy in polish; the feature never had it.
+- [ ] Consumer untouched, no new Lambda grant. *source & tutorial:* the consumer
+      is type-agnostic (writes any type, mutes by `f"mute_{type}"`). Resource
+      enrichment for the event tap-through (`{id, type, name}`) is added on the
+      backend read side (`_RESOURCE_TABLES` gains `event`), which already has
+      events-table access. The Lambda gets no events-table read. Keep it there.
+
+Frontend (visual/workflow convergence, behavior held):
+
+- [ ] Notification-type colors are tokens, not literals. *source:* the feed
+      hardcodes `#2196F3` (event_created) and `#9C27B0` (event_invitation) inline.
+      *tutorial:* `Colors.notifyEventCreated` / `Colors.notifyEventInvitation`,
+      matching the existing `notify*` accent tokens. Keep the tokens.
+- [ ] No dead `resource.event_id` fallback in the tap. *source:* the feed reads
+      `notification.resource?.id || notification.resource?.event_id` for events.
+      *tutorial:* just `resource.id` (the backend resource only ever carries
+      `id`; the event IS the tap target, no secondary key). Keep the single read.
+- [ ] Six-type derivation property test. *note:* `test_notification_settings.py`
+      now asserts `f"mute_{type}"` is a real settings field AND a writable mute
+      for all six types with no orphans either way, locking the model, the route,
+      and the type list together. Additive.
