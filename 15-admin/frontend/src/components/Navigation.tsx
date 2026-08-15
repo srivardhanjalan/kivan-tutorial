@@ -29,6 +29,10 @@ import AdminBrandsScreen from '../screens/AdminBrandsScreen';
 import AdminBrandFormScreen from '../screens/AdminBrandFormScreen';
 import AdminLifeEventsScreen from '../screens/AdminLifeEventsScreen';
 import AdminLifeEventFormScreen from '../screens/AdminLifeEventFormScreen';
+import AdminStorefrontsScreen from '../screens/AdminStorefrontsScreen';
+import AdminStorefrontFormScreen from '../screens/AdminStorefrontFormScreen';
+import AdminStorefrontProductsScreen from '../screens/AdminStorefrontProductsScreen';
+import AdminProductFormScreen from '../screens/AdminProductFormScreen';
 import {
   setAuthTokenGetter,
   fetchOnboardingCompleted,
@@ -255,6 +259,10 @@ export default function Navigation() {
           <Stack.Screen name="AdminBrandForm" component={AdminBrandFormScreen} />
           <Stack.Screen name="AdminLifeEvents" component={AdminLifeEventsScreen} />
           <Stack.Screen name="AdminLifeEventForm" component={AdminLifeEventFormScreen} />
+          <Stack.Screen name="AdminStorefronts" component={AdminStorefrontsScreen} />
+          <Stack.Screen name="AdminStorefrontForm" component={AdminStorefrontFormScreen} />
+          <Stack.Screen name="AdminStorefrontProducts" component={AdminStorefrontProductsScreen} />
+          <Stack.Screen name="AdminProductForm" component={AdminProductFormScreen} />
         </Stack.Navigator>
       </NavigationContainer>
       <OnboardingTutorial visible={showOnboarding} onDismiss={handleOnboardingDismiss} />
