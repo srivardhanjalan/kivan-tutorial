@@ -13,6 +13,7 @@ import ImageUploadField from '../components/ImageUploadField';
 import useFetch from '../hooks/useFetch';
 import useAsyncAction from '../hooks/useAsyncAction';
 import { usePendingImageUpload } from '../hooks/usePendingImageUpload';
+import { useAppNavigation } from '../hooks/useAppNavigation';
 import { deleteAccount, fetchCurrentUser, updateProfile } from '../services/api';
 import type { ProfileUpdate } from '../services/api';
 import { clerkFullName, clerkPrimaryEmail } from '../utils/clerkName';
@@ -71,6 +72,7 @@ const WheelColumn: React.FC<{
 export default function SettingsScreen() {
   const { user } = useUser();
   const { signOut } = useAuth();
+  const navigation = useAppNavigation();
   const { data: backendUser, loading } = useFetch(fetchCurrentUser);
   const { loading: saving, run } = useAsyncAction();
 
@@ -203,6 +205,12 @@ export default function SettingsScreen() {
         <ImageUploadField label="Cover photo" upload={coverPhoto} />
         <PrimaryButton title="Save Photos" onPress={savePhotos} loading={saving} />
       </View>
+
+      <SectionHeader title="Notifications" />
+      <SettingsRow
+        label="Notification settings"
+        onPress={() => navigation.navigate('NotificationSettings')}
+      />
 
       <SectionHeader title="Help" />
       <SettingsRow label="Replay the tutorial" onPress={() => setShowTutorial(true)} />

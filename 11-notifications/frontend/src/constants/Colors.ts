@@ -37,4 +37,13 @@ export default {
   success: '#34C759',
   /** Destructive/error */
   danger: '#EF4444',
+  // Notification-type accents: the icon-badge color that identifies a
+  // notification's type in the feed. `follow` reuses `primary` (its color
+  // already has a home), so only the other three types name a color here.
+  /** Wishlist-created notifications */
+  notifyWishlistCreated: '#4CAF50',
+  /** Wish-added notifications */
+  notifyWishAdded: '#FF9800',
+  /** Wishlist-loved notifications */
+  notifyWishlistLoved: '#E91E63',
 };
