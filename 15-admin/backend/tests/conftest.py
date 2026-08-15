@@ -345,6 +345,7 @@ def put_user(
     last_name: str | None = None,
     follower_count: int = 0,
     is_deleted: bool = False,
+    role: str | None = None,
 ):
     item = {
         "id": user_id,
@@ -360,6 +361,10 @@ def put_user(
     }
     if is_deleted:
         item["is_deleted"] = True
+    # role omitted by default: that IS a faithful pre-step-15 record, which the
+    # read-side default must serialize as "user". Pass role="admin" to seed one.
+    if role is not None:
+        item["role"] = role
     name = f"{first_name or ''} {last_name or ''}".strip().lower()
     if name:
         item["name_lowercase"] = name
