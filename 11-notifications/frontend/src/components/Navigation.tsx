@@ -18,6 +18,7 @@ import BrandsScreen from '../screens/BrandsScreen';
 import InAppBrowserScreen from '../screens/InAppBrowserScreen';
 import UserProfileScreen from '../screens/UserProfileScreen';
 import FollowListScreen from '../screens/FollowListScreen';
+import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
 import {
   setAuthTokenGetter,
   fetchOnboardingCompleted,
@@ -29,6 +30,8 @@ import type { Wishlist, Wish, Storefront, Product, Brand } from '../services/api
 export type RootStackParamList = {
   Tabs: undefined;
   Settings: undefined;
+  /** The per-type mute preferences, pushed from Settings */
+  NotificationSettings: undefined;
   /** Create (no param) or edit (the wishlist) one wishlist */
   WishlistForm: { wishlist?: Wishlist };
   WishlistDetail: { wishlistId: string };
@@ -112,6 +115,7 @@ export default function Navigation() {
         <Stack.Navigator id={undefined} screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Tabs" component={TabNavigation} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
           <Stack.Screen name="WishlistForm" component={WishlistFormScreen} />
           <Stack.Screen name="WishlistDetail" component={WishlistDetailScreen} />
           <Stack.Screen name="WishForm" component={WishFormScreen} />

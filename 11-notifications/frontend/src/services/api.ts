@@ -512,3 +512,125 @@ export async function loveWishlist(wishlistId: string): Promise<void> {
 export async function unloveWishlist(wishlistId: string): Promise<void> {
   await request(`/wishlists/${wishlistId}/love`, { method: 'DELETE' });
 }
+
+// ── Notifications: the feed, the unread badge, and mute settings ────────────
+
+/** The four notification types this app raises. Each maps to an icon and an
+    accent color in the feed, and to a mute flag in settings. */
+export type NotificationType =
+  | 'follow'
+  | 'wishlist_created'
+  | 'wish_added'
+  | 'wishlist_loved';
+
+/** The user who triggered a notification, as a feed row renders them: a lighter
+    projection than the full User, an avatar and a name and nothing else.
+    Read only through NotificationWithActor.actor, so it stays module-private. */
+interface NotificationActor {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  image_url: string | null;
+}
+
+/** The thing a notification points at: the id the tap navigates to, plus
+    `wishlist_id` riding along on a wish so the tap can open it inside its
+    parent list. Null when the resource was deleted after the notification
+    fired (the backend drops the link).
+    Read only through NotificationWithActor.resource, so it stays module-private. */
+interface NotificationResource {
+  id: string;
+  wishlist_id?: string;
+}
+
+/** One notification enriched for the feed: the row plus its resolved actor and
+    (when it references one) a small resource summary. */
+export interface NotificationWithActor {
+  id: string;
+  actor: NotificationActor;
+  notification_type: NotificationType;
+  message: string;
+  resource: NotificationResource | null;
+  read: boolean;
+  created_at: string;
+}
+
+/** GET /notifications/me: one page, plus counts over the FULL set (so the
+    unread pill renders without a second call) and the cursor for the next page. */
+export interface NotificationsResponse {
+  notifications: NotificationWithActor[];
+  total: number;
+  unread_count: number;
+  has_more: boolean;
+  next_offset: number | null;
+}
+
+/** A user's per-type mute preferences. Every flag defaults false (nothing
+    muted). The names are singular (`mute_follow`) to match the consumer's
+    `mute_{type}` derivation exactly, so a muted type is actually honored. */
+export interface NotificationSettings {
+  user_id: string;
+  mute_follow: boolean;
+  mute_wishlist_created: boolean;
+  mute_wish_added: boolean;
+  mute_wishlist_loved: boolean;
+  updated_at: string;
+}
+
+/** PUT /notifications/settings body: send only the flags that changed. */
+export interface NotificationSettingsUpdate {
+  mute_follow?: boolean;
+  mute_wishlist_created?: boolean;
+  mute_wish_added?: boolean;
+  mute_wishlist_loved?: boolean;
+}
+
+/** One page of the caller's notifications, newest first; the counts in the
+    response cover the full set. */
+export async function fetchNotifications(
+  limit: number,
+  offset: number
+): Promise<NotificationsResponse> {
+  const res = await request(`/notifications/me?limit=${limit}&offset=${offset}`);
+  return res.json();
+}
+
+/** The unread count behind the tab badge. Best-effort server-side (a transient
+    read error returns 0, never a 500), so the badge polls it without erroring. */
+export async function fetchUnreadNotificationCount(): Promise<number> {
+  const res = await request('/notifications/unread-count');
+  const data = await res.json();
+  return data.unread_count;
+}
+
+/** Mark one notification read. */
+export async function markNotificationRead(id: string): Promise<void> {
+  await request(`/notifications/${id}/read`, { method: 'PUT' });
+}
+
+/** Mark every unread notification read: the "clear the badge" action. */
+export async function markAllNotificationsRead(): Promise<void> {
+  await request('/notifications/read-all', { method: 'PUT' });
+}
+
+/** Delete one notification. */
+export async function deleteNotification(id: string): Promise<void> {
+  await request(`/notifications/${id}`, { method: 'DELETE' });
+}
+
+/** The caller's mute preferences (defaults to nothing muted for a new user). */
+export async function fetchNotificationSettings(): Promise<NotificationSettings> {
+  const res = await request('/notifications/settings');
+  return res.json();
+}
+
+/** Toggle any subset of the mute flags; returns the updated settings. */
+export async function updateNotificationSettings(
+  update: NotificationSettingsUpdate
+): Promise<NotificationSettings> {
+  const res = await request('/notifications/settings', {
+    method: 'PUT',
+    body: JSON.stringify(update),
+  });
+  return res.json();
+}

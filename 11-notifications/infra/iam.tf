@@ -116,12 +116,45 @@ resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
         ]
       },
       {
-        # Wishes: item CRUD (UpdateItem flips `completed`), Query on
-        # WishlistIdIndex (listing + cascade delete), and BatchWriteItem for
-        # the cascade's batched deletes.
+        # Notifications: the feed and unread count Query the
+        # UserNotificationsIndex, mark-read/read-all UpdateItem, delete
+        # DeleteItem, and the ownership check GetItem by id. The Lambda
+        # consumer writes the rows under its own role; this role never
+        # PutItems a notification.
         Effect = "Allow"
         Action = [
           "dynamodb:GetItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query"
+        ]
+        Resource = [
+          aws_dynamodb_table.notifications.arn,
+          "${aws_dynamodb_table.notifications.arn}/index/*"
+        ]
+      },
+      {
+        # Notification settings: GET reads the row (GetItem), PUT upserts the
+        # mute flags (UpdateItem creates the row on first write). Keyed by the
+        # caller's own user_id; no index, no delete path.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:UpdateItem"
+        ]
+        Resource = [
+          aws_dynamodb_table.notification_settings.arn
+        ]
+      },
+      {
+        # Wishes: item CRUD (UpdateItem flips `completed`), Query on
+        # WishlistIdIndex (listing + cascade delete), BatchWriteItem for
+        # the cascade's batched deletes, and BatchGetItem for the
+        # notification feed's wish_added resource enrichment.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:BatchGetItem",
           "dynamodb:PutItem",
           "dynamodb:UpdateItem",
           "dynamodb:DeleteItem",
@@ -199,6 +232,24 @@ resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
           "dynamodb:Query"
         ]
         Resource = aws_dynamodb_table.wishlist_loves.arn
+      }
+    ]
+  })
+}
+
+# IAM Policy for the running backend to publish notification events. The
+# producers only ever send_message (the queue URL is injected as an env var, so
+# nothing resolves it by name) — so SendMessage alone, scoped to the one queue.
+resource "aws_iam_role_policy" "apprunner_instance_sqs" {
+  name = "${local.project_name}-apprunner-sqs-policy-${local.environment}"
+  role = aws_iam_role.apprunner_instance.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["sqs:SendMessage"]
+        Resource = aws_sqs_queue.notifications.arn
       }
     ]
   })

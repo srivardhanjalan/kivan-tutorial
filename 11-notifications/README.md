@@ -1,35 +1,34 @@
-# Step 10: Social
+# Step 11: Notifications
 
-The app has been single-player until now: your wishlists, your stuff, a catalog
-you add from. This step makes it a **network**. You can search for people,
-**follow** them, open anyone's **public profile**, and **love** the wishlists
-you like. A profile shows who someone is, who follows them, the wishlists they
-own, and the ones they've loved, and every follower count taps through to the
-people behind it.
+Social gave the app a network, but it was a silent one: you could follow someone
+or love their wishlist and they'd never know. This step gives the network a
+**voice**. A follow, a new wishlist, a new wish, or a love now **tells the person
+it happened** with an in-app notification. There's a **feed** on the fourth tab
+(newest first, unread rows called out, tap to open what it points at), a **live
+unread badge** on that tab, and a **settings screen** where you mute the types
+you don't want.
 
-Social is a **platform feature**, not a collections one: it knows about *users*
-and *wishlists*, never about life-events or the catalog. It plugs in through two
-seams. Users gain the fields and indexes that make them searchable and
-rankable, and a wishlist gains a public read path and a love tally. Deleting the
-whole social layer would leave collections and storefronts exactly as they were.
+The notification write path is **asynchronous on purpose**. A follow doesn't wait
+on a notification: the route publishes a small event to an **SQS queue** and
+returns immediately, and a **Lambda consumer** is the one that fans the event
+out to followers and writes the rows. The user action and the notification it
+triggers are decoupled, so a slow or failing consumer never slows a tap, and the
+producers are best-effort (a publish failure is logged, never surfaced).
 
-What ships here is deliberately the follow graph and loves, nothing more. There
-are **no notifications** when someone follows or loves you (that pipeline is
-step 11), **no privacy** on a wishlist (every wishlist is publicly viewable this
-step; public/private and co-owner visibility arrive with sharing in step 14),
-and **no blocking or muting**. A wishlist you view that isn't yours is
-read-only: you can love it and see its wishes, but not edit them.
+What ships here is deliberately **in-app only**. There is **no email** (that's
+step 12), **no events** (`event_created` / `event_invitation` arrive in step 13),
+and no push. The four types are `follow`, `wishlist_created`, `wish_added`, and
+`wishlist_loved`, and nothing else.
 
 **The exact delta this step adds:**
 [PR #PLACEHOLDER · Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/PLACEHOLDER/files)
 
 ## Run it locally
 
-Same two terminals as step 09. The two new DynamoDB tables and the two new user
-indexes are read through your local AWS credentials, so a full local run wants
-the stack applied first (below). Unlike storefronts there is **no seed**: social
-data is user-generated, so the follow graph and loves fill in as you use the
-app. Everything else boots exactly as before.
+Same two terminals as step 10. The two new DynamoDB tables (notifications and
+notification-settings) are read through your local AWS credentials, so a full
+local run wants the stack applied first (below). Everything else boots exactly as
+before.
 
 ```bash
 cd backend
@@ -43,19 +42,20 @@ npx expo install            # SDK-matched versions, never hand-pinned
 npx expo start -c --localhost
 ```
 
-The search and Discover screens read the two new user GSIs, and those index a
-user only once their record carries `entity_type`, `name_lowercase`, and the two
-counts. Those fields are written at provisioning time, so **users provisioned
-before this step won't appear in search or Discover until their record is
-rewritten** (any profile edit does it). On a fresh local database this is a
-non-issue: every user you sign in provisions with the fields already set.
+One honest caveat about local: the **read** side works locally (the feed, the
+badge, and the settings screen all read and write the tables directly), but the
+**write** side does not. A notification row is written by the Lambda consuming
+SQS, and neither the queue nor the Lambda runs locally (`NOTIFICATIONS_QUEUE_URL`
+is empty off AWS, so the producers no-op rather than fail). So locally the feed
+renders whatever is already in the table (empty on a fresh database); to watch a
+follow actually produce a notification, deploy and try it end to end there.
 
 ## Running the backend tests
 
-This step adds the first backend tests: a pytest suite under `backend/tests/`
-that runs the social routes against moto's in-memory DynamoDB, so it needs no
-AWS account and no network. The dev-only deps live in `requirements-dev.txt`
-(kept out of the runtime image).
+Unchanged from step 10: the same pytest suite under `backend/tests/` runs the
+social routes against moto's in-memory DynamoDB. This step adds no new tests:
+the notification **read** routes and the async produce→consume pipeline are
+exercised end to end on the deployed stack, not in the moto suite.
 
 ```bash
 cd backend
@@ -63,165 +63,158 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt -r requiremen
 .venv/bin/python -m pytest
 ```
 
-The suite works on Python 3.11 to 3.13 (pydantic-core has no 3.14 wheel yet).
+The suite works on Python 3.11 to 3.13 (pydantic-core has no 3.14 wheel yet), and
+is 26 tests green.
 
 ## Deploy it
 
-This step **adds infrastructure**: two DynamoDB tables (`followers`, with a
-`FollowingIndex` GSI; `wishlist-loves`, no GSI), two GSIs on the existing users
-table (`NameSearchIndex`, `PopularUsersIndex`), and the matching IAM grants on
-the App Runner instance role. On a stack that is already up:
+This step **adds infrastructure**: two DynamoDB tables (`notifications`, with a
+`UserNotificationsIndex` GSI and a 90-day TTL; `notification-settings`, no GSI),
+an **SQS queue** with a dead-letter queue behind it, the **notification-processor
+Lambda** wired to the queue, and the IAM for all of it. The App Runner instance
+now also carries `NOTIFICATIONS_QUEUE_URL` so the producers can publish.
+
+The Lambda is **zip-deployed**, and `infra/lambda.tf` reads that zip as a file at
+plan time. **You must build the zip before `terraform apply`** or the plan fails
+on a missing artifact:
 
 ```bash
-cd infra
-terraform apply        # + 2 tables, + 2 user GSIs, + IAM for both
-./scripts/deploy.sh    # rebuild :latest with the new routes
+cd lambda
+./build.sh                     # REQUIRED first: packages notification_processor.zip
+cd ../infra
+terraform apply                # + 2 tables, SQS + DLQ, the Lambda, and IAM
+./scripts/deploy.sh            # rebuild :latest with the producers + read routes
 ```
 
-Adding a GSI to a live, populated table is an **online backfill**: DynamoDB
-builds the index in the background and the table stays readable throughout, but
-the index returns partial results until the backfill finishes (seconds on a
-small table). There is no seed and no data-migration script: the new user fields
-land on each record the next time it is written, and the follow and love tables
-start empty.
+`build.sh` is just a `zip` of `handler.py` (the handler imports only the standard
+library and boto3, and boto3 ships with the Lambda runtime, so there's nothing to
+vendor). `lambda.tf`'s `source_code_hash` is guarded by `fileexists`, so a plan
+before the first build won't crash, but the apply that creates the function
+needs the zip present. Rebuild the zip and re-apply whenever `handler.py` changes;
+the hash change triggers the redeploy.
 
 Deploying fresh? Follow step 03's staged bootstrap (registry, push, apply), then
-the deploy. There is nothing extra to seed for social.
+build the zip and apply as above. There is nothing to seed for notifications: the
+tables start empty and fill as you use the app.
 
-**Try it end to end:** open the **Discover** tab (the search icon in the right
-pill). With an empty box it shows the most-followed people; type a name to
-search. Tap someone to open their profile: their follower/following counts,
-their wishlists, and the wishlists they've loved. Tap **Follow** and the label
-flips instantly. Tap a follower count to walk the graph. Open one of their
-wishlists and tap the **heart** to love it, and the tally moves with you. Open a
-wishlist of your own and you'll see edit and delete where a stranger sees a heart.
+**Try it end to end (on the deployed stack):** sign in as two users on two
+devices (or two simulators). From user A, follow user B, create a wishlist, add a
+wish to it, and love one of B's wishlists. Within about 30 seconds (or the moment
+they open the tab), B's **Notifications** tab shows a red badge. Open it: the
+events are there newest first, unread rows read bolder with a dot. Tap the follow
+to land on A's profile; tap a wishlist notification to open that wishlist. Hit the
+**mark-all** action to clear the pill. Long-press a row and confirm to delete it.
+Open **Settings → Notification settings**, switch **Wishlist loved** off, and A's
+next love produces no row for B.
 
 ## What's here
 
 ```
-backend/
-  app/routes/followers.py       + follow / unfollow (idempotent conditional
-                                  writes) and the followers / following lists
-  app/routes/loves.py           + love / unlove a wishlist, the per-viewer love
-                                  status, and a user's loved-wishlists list
-                                  (two routers, /wishlists and /users, like wishes)
-  app/routes/users.py           + search (NameSearchIndex prefix), popular
-                                  (PopularUsersIndex), the public profile
-                                  GET /users/{id} with counts + is_following,
-                                  and a user's public wishlists; PUT /me now
-                                  keeps name_lowercase in sync on a rename
-  app/routes/wishlists.py       GET /wishlists/{id} is now a public read;
-                                  create seeds love_count = 0
-  app/routes/wishes.py          the wishlist-scoped wishes listing is now public
-  app/utils/user_access.py      + get_public_user: 404 for missing OR deleted,
-                                  the read guard the follow graph and loves share
-  app/utils/user_search.py      + name_lowercase: the search key derived in one
-                                  place (provisioning AND a rename)
-  app/utils/wishlist_access.py  + get_wishlist_or_404 (public read) beside
-                                  get_owned_wishlist (owner-only write)
-  app/utils/dynamo.py           + adjust_count (best-effort denormalized counter,
-                                  floored at 0) and batch_get_items (the N+1 fix)
-  app/utils/user_provisioning.py new users get entity_type, name_lowercase, and
-                                  follower_count / following_count = 0
-  app/models/{users,loves,wishlists}.py  UserWithCounts, LoveStatus, love_count
-  app/main.py / database.py / config.py  the new routers, table handles, names
+backend/                        step 10's API plus:
+  app/routes/notifications.py     the READ/manage side: the feed (GET /me, paged,
+                                  counts over the full set), the unread count,
+                                  mark-read / mark-all, delete, and settings get/put
+  app/models/notifications.py     NotificationWithActor (+ its actor/resource
+                                  projection), the settings model with the four
+                                  singular mute flags, the response shapes
+  app/utils/notifications.py      the producers: notify_follow / _wishlist_created
+                                  / _wish_added / _wishlist_loved, each resolving
+                                  the recipients and building the event(s)
+  app/utils/notification_queue.py the SQS publisher (single + batched sends)
+  app/routes/followers.py         + fires notify_follow on a new follow
+  app/routes/loves.py             + fires notify_wishlist_loved on a love
+  app/routes/wishes.py            + fires notify_wish_added on a new wish
+  app/routes/wishlists.py         + fires notify_wishlist_created on a new wishlist
+  app/{config,database,main}.py   the queue URL, the two table handles, the router
 infra/
-  dynamodb.tf                   + followers (FollowingIndex), wishlist-loves,
-                                  and the two user GSIs with their attributes
-  iam.tf                        + Query/BatchGetItem on users and its indexes,
-                                  and least-privilege statements for both new tables
-frontend/                       step 09's app plus:
-  src/screens/DiscoverScreen.tsx      the Discover tab: debounced search + popular
-  src/screens/UserProfileScreen.tsx   a public profile: counts, follow, wishlists, loved
-  src/screens/FollowListScreen.tsx    followers/following, one screen for both
-  src/components/FollowButton.tsx     the optimistic Follow / Following toggle
-  src/components/LoveButton.tsx       the heart with its live tally
-  src/components/Avatar.tsx           a circular avatar with an initial fallback
-  src/components/UserRow.tsx          the shared person row (search + follow lists)
-  src/components/WishlistGrid.tsx     the wishlist tile grid My Stuff and profiles share
-  src/hooks/useOptimisticToggle.ts    the flip-count-revert both buttons run
-  src/utils/{userName,pluralize}.ts   one spelling of a display name, one of a count
-  src/screens/WishlistDetailScreen.tsx  owner sees edit/delete/add, a viewer a heart
-  src/services/api.ts                 + the social contracts
-  src/components/{Navigation,TabNavigation}.tsx  the profile/list screens + Discover mount
+  sqs.tf                          the notifications queue + its dead-letter queue
+                                  (maxReceiveCount 3, visibility >= the Lambda timeout)
+  lambda.tf                       the notification-processor function (zip-deployed,
+                                  SQS event source, partial-batch-failure reporting)
+                                  and its execution role
+  dynamodb.tf                     + notifications (UserNotificationsIndex + 90-day
+                                  TTL) and notification-settings
+  iam.tf                          + SQS publish for App Runner, table access for both
+  apprunner.tf / outputs.tf       inject NOTIFICATIONS_QUEUE_URL; export the queue
+lambda/
+  notification_processor/handler.py the ONLY writer of the notifications table:
+                                  reads an SQS batch, honors each user's mutes,
+                                  writes a row per recipient with a ttl
+  build.sh                        packages handler.py into the deploy zip
+frontend/                       step 10's app plus:
+  src/screens/NotificationsScreen.tsx      the feed: focus-reload, infinite scroll,
+                                  unread state, per-type icon, tap-to-open, delete
+  src/screens/NotificationSettingsScreen.tsx  the four mute switches (inverted:
+                                  ON = receiving), optimistic with rollback
+  src/services/api.ts                      + the notification contracts (six routes)
+  src/constants/Colors.ts                  + the per-type accent tokens
+  src/components/TabNavigation.tsx         mounts the feed + the live unread badge
+  src/components/layouts/FloatingHeaderLayout.tsx  + scroll={false} for the FlatList
+  src/components/Navigation.tsx            + the NotificationSettings route
+  src/screens/SettingsScreen.tsx           + the Notification settings entry
 ```
 
 ## The ideas this step plants
 
-- **The edge is the truth, the count is a cache.** A follow is a row in the
-  followers table; the follower/following numbers on a profile are denormalized
-  copies kept by `adjust_count`. A conditional put makes the edge exist exactly
-  once, so a double-tap follow moves the count once and a repeat is a no-op. The
-  same shape drives loves. A lost increment leaves a count slightly low, never a
-  wrong graph, so the counter write is best-effort and the decrement is floored
-  at zero.
-- **One partition, sorted two ways.** Every user carries a constant
-  `entity_type = "USER"`. That single value is the partition key both user GSIs
-  hash on, so "all users, by name" and "all users, by follower count" are each a
-  single Query against one partition, never a Scan-and-sort. Search sorts on
-  `name_lowercase` and prefix-matches; Discover sorts on `follower_count`
-  descending.
-- **Reading is open, writing stays owned.** Social makes every wishlist publicly
-  viewable, so `get_wishlist_or_404` (404 only) now backs the reads while
-  `get_owned_wishlist` (404 + 403) still guards every write. One screen serves
-  both: it compares the wishlist's `created_by` to you and shows edit and delete
-  or a love heart accordingly.
-- **Extract on the second real caller, not before.** The follow and love buttons
-  are the same optimistic flip-count-revert, so that behavior is one hook they
-  both call. The wishlist tile grid became three callers the moment the profile
-  existed (My Stuff, and a profile's two grids), so it is one `WishlistGrid`.
-  Neither was built ahead of its second user.
+- **The action and its notification are decoupled by a queue.** A follow route's
+  job is to record the follow and return. Telling people is a separate concern it
+  hands to SQS: it publishes a tiny event and moves on, and the Lambda downstream
+  does the fan-out and the writes. The producer is best-effort (a failed publish
+  is logged, never raised), so the notification path can never fail the user's
+  action.
+- **One writer, many readers.** The Lambda consumer is the *only* thing that
+  writes the notifications table. The API only reads it and flips read-flags. That
+  single-writer rule is why the write side can be reasoned about as one place, and
+  why a mute is honored exactly once, at write time, by the consumer.
+- **Counts ride with the page.** `GET /notifications/me` returns the requested
+  page AND the total and unread counts over the *whole* set, so the unread pill
+  and the badge render without a second round trip. The feed pages in with
+  `next_offset` / `has_more`.
+- **A notification points somewhere, and the tap has to land.** Each type resolves
+  to a screen: a follow to the actor's profile, a wishlist or a love to that
+  wishlist, a new wish to the wishlist it landed in (the wish resource carries its
+  `wishlist_id` so the tap has a route, not a dead end).
 
 ## Gotchas
 
-- **A new screen re-creates the grid next to it.** The profile's wishlist grid
-  was a byte-for-byte clone of My Stuff's card map, and jscpd failed the gate on
-  it. The fix wasn't to tweak one copy: the wishlist grid now has three real
-  callers, so it is one `WishlistGrid` and both screens call it. The same round
-  turned up three smaller twins the semantic reviewer caught: a hairline
-  `marginTop` used in three places (now `Spacing.hairlineGap`), the love button's
-  outlined pill already spelled by the life-event chip (now
-  `CommonScreenStyles.outlinedPill`), and a "3 followers"/"3 products" label
-  written twice (now a `pluralize` util). A screen modeled on an existing one is
-  a duplication suspect before it is anything else, and each fix exposes the next.
-- **A `/{user_id}` route will swallow `/search`.** FastAPI matches routes in
-  declaration order, so the literal `/users/search` and `/users/popular` must be
-  declared **before** the catch-all `/users/{user_id}`, or "search" is read as a
-  user id and 404s. They live together in users.py in that order, below the
-  `/me` routes for the same reason.
-- **A rename that forgets the search key drops you out of search.**
-  `name_lowercase` is what `NameSearchIndex` prefix-matches, so a profile name
-  change has to move it in the *same* write, rebuilt from the incoming field plus
-  the untouched one on the record. Derive it in one place (`user_search.py`) so
-  provisioning and the rename can't spell it differently.
-- **A friend's wish is display-only, not a dead tap.** A wishlist you view that
-  isn't yours shows its wishes, but a single wish's detail (with its fulfilled
-  toggle and edit/delete) stays owner-only. Rather than open a screen that would
-  403, the wish tiles on someone else's wishlist render without an `onPress`:
-  `ArtTileCard` and `WishCard` take an optional handler, pressable on your own
-  wishlist and a plain display tile on theirs.
-- **A public profile 404s a deleted account, never 403s it.** Your own guards
-  403 a soft-deleted current user (you're real, your account is gone). Looking at
-  someone else, a deleted account is simply not there, so `get_public_user`
-  returns 404, and a deletion can't be probed by the status code the profile
-  hands back.
+- **The zip has to exist before `terraform apply`.** `lambda.tf` reads
+  `../lambda/notification_processor.zip` as a file; the apply that creates the
+  function needs it present. Run `lambda/build.sh` first, every fresh deploy, and
+  again after any `handler.py` change (the hash change redeploys).
+- **Literal routes before the `/{id}` catch-all.** `/notifications/unread-count`
+  and `/notifications/settings` are declared before `/notifications/{notification_id}`,
+  or FastAPI reads "unread-count" as a notification id and 404s.
+- **The feed's timestamps are already UTC-aware.** The backend stamps `created_at`
+  with a `+00:00` offset, so the feed parses it with `new Date` directly, with no
+  `Z` to append because the string isn't naive. (The source app's backend sent
+  naive timestamps and had to patch a `Z` on; ours doesn't, so that code would be
+  dead here.)
+- **A FlatList can't live inside the scroll layout.** `FloatingHeaderLayout` owns
+  a ScrollView by default, and nesting a virtualized list in it breaks scrolling.
+  The feed passes `scroll={false}` so its FlatList owns scrolling, and then owns
+  its own header clearance and content-edge padding.
+- **An authorless row is dropped, but still counted.** If a notification's actor
+  was deleted after it fired, the feed skips that row (an authorless entry is
+  noise) while still counting it in `total` and `unread_count`. So a page can
+  render fewer rows than the page size without meaning the feed ended.
 
 ## Done when
 
-- [ ] Open **Discover**: an empty box shows popular people; typing a name
-      searches, and each result opens that person's profile.
-- [ ] On another user's profile, **Follow** flips to **Following** instantly and
-      survives a screen refocus; tapping a follower/following count opens that
-      list, and its rows open more profiles.
-- [ ] Open one of their wishlists and tap the **heart**: it fills and the tally
-      moves; it shows their wishes as display-only tiles, no edit or add.
-- [ ] Open your own wishlist the same way: it shows edit, delete, and the add
-      tile, and no heart.
-- [ ] `curl $API/users/search?q=a` with a valid token returns matching users;
-      `curl $API/users/popular` returns them ranked by follower count.
-- [ ] `curl -X POST $API/users/<id>/follow` twice returns 204 both times and the
-      target's follower_count rises by exactly one.
+- [ ] On the deployed stack, a follow / new wishlist / new wish / love from one
+      user produces a notification for the right recipient(s); the fourth tab's
+      badge appears within ~30s or the moment the tab is opened.
+- [ ] Open **Notifications**: rows are newest first, unread ones read bolder with
+      a dot, and the header shows an unread pill and a mark-all action.
+- [ ] Tap a notification: it marks read (the pill and badge drop by one) and opens
+      its target: a follow to the profile, a wishlist / love / wish to the
+      wishlist.
+- [ ] **Mark all read** clears the pill; a long-press on a row, confirmed, deletes
+      it.
+- [ ] **Settings → Notification settings**: four switches, ON = receiving. Turn one
+      off and that type stops producing rows for you.
+- [ ] `curl $API/notifications/me` with a valid token returns the page plus `total`
+      and `unread_count`; `curl $API/notifications/unread-count` returns the badge
+      number; `curl -X PUT $API/notifications/read-all` clears the unread set.
 
-Next: `11-notifications`, an SQS to Lambda pipeline so a follow or a love finally
-tells the person it happened.
-```
+Next: `12-email`, a second consumer on the same events so a notification also
+lands in the recipient's inbox.

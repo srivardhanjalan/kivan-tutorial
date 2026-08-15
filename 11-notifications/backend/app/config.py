@@ -28,6 +28,12 @@ class Settings(BaseSettings):
     # Empty locally means every photo URL is treated as external and passes
     # through the s3_helpers untouched, so the app still boots without S3.
     photos_bucket_name: str = ""
+    # The SQS queue the producers publish notification events to (step 11).
+    # infra/sqs.tf owns the one true URL and apprunner.tf injects it here as
+    # NOTIFICATIONS_QUEUE_URL. Empty locally (and in tests) on purpose: the
+    # publish helpers short-circuit to a no-op when it is unset, so an action
+    # that fans out a notification still succeeds without a queue.
+    notifications_queue_url: str = ""
 
     @property
     def users_table(self) -> str:
@@ -60,6 +66,17 @@ class Settings(BaseSettings):
     @property
     def products_table(self) -> str:
         return f"kivan-{self.environment}-products"
+
+    @property
+    def notifications_table(self) -> str:
+        # In-app notifications the Lambda consumer writes and the /notifications
+        # routes read; TTL-reaped after 90 days (see infra/dynamodb.tf)
+        return f"kivan-{self.environment}-notifications"
+
+    @property
+    def notification_settings_table(self) -> str:
+        # Per-user mute preferences; dashed name matches infra/dynamodb.tf
+        return f"kivan-{self.environment}-notification-settings"
 
     @property
     def followers_table(self) -> str:

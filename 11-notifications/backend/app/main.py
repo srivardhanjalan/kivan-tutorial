@@ -8,6 +8,7 @@ from app.routes import (
     health,
     life_events,
     loves,
+    notifications,
     products,
     scraping,
     storefronts,
@@ -60,6 +61,9 @@ app.include_router(scraping.router)
 app.include_router(followers.router)
 app.include_router(loves.love_router)
 app.include_router(loves.loved_router)
+# Notifications (step 11): the read/manage side of the in-app feed. The write
+# side is asynchronous — producers publish to SQS, a Lambda writes the rows.
+app.include_router(notifications.router)
 
 
 @app.get("/")

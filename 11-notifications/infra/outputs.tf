@@ -22,3 +22,8 @@ output "photos_bucket_name" {
   description = "Private photos bucket; the storefronts seed uploads catalog images here (pass as PHOTOS_BUCKET_NAME)"
   value       = aws_s3_bucket.photos.bucket
 }
+
+output "notifications_queue_url" {
+  description = "URL of the SQS notifications queue the backend publishes events to"
+  value       = aws_sqs_queue.notifications.url
+}

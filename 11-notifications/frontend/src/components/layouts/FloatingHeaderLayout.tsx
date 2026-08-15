@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import FloatingHeader from '../FloatingHeader';
@@ -17,6 +17,14 @@ interface FloatingHeaderLayoutProps {
   headerRight?: React.ReactNode;
   /** Replaces the screen with the standard branded loading state */
   loading?: boolean;
+  /**
+   * The layout owns the ScrollView by default. Pass false when the screen
+   * manages its own scroll container (a FlatList for a paginated feed). The
+   * layout then renders children in a flex-1 View, and the screen must apply
+   * the header clearance (Spacing.floatingHeaderContentPadding) and the
+   * app-wide content edge (Spacing.contentHorizontal) on its list itself.
+   */
+  scroll?: boolean;
   children: React.ReactNode;
 }
 
@@ -36,6 +44,7 @@ const FloatingHeaderLayout: React.FC<FloatingHeaderLayoutProps> = ({
   showBack = false,
   headerRight,
   loading = false,
+  scroll = true,
   children,
 }) => {
   const navigation = useAppNavigation();
@@ -46,13 +55,17 @@ const FloatingHeaderLayout: React.FC<FloatingHeaderLayoutProps> = ({
 
   return (
     <SafeAreaView style={CommonScreenStyles.container} edges={['top', 'bottom']}>
-      <ScrollView
-        style={styles.flex}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {children}
-      </ScrollView>
+      {scroll ? (
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {children}
+        </ScrollView>
+      ) : (
+        <View style={styles.flex}>{children}</View>
+      )}
 
       <FloatingHeader
         title={title}

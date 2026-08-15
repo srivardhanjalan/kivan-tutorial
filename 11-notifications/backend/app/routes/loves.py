@@ -1,3 +1,5 @@
+import logging
+
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 from fastapi import APIRouter, Depends, status
@@ -7,8 +9,11 @@ from app.dependencies.auth import get_current_user_id
 from app.models.loves import LoveStatus
 from app.models.wishlists import Wishlist
 from app.utils.dynamo import adjust_count, batch_get_items, query_all_pages
+from app.utils.notifications import notify_wishlist_loved
 from app.utils.user_access import get_public_user
 from app.utils.wishlist_access import get_wishlist_or_404
+
+logger = logging.getLogger(__name__)
 
 # Loves span two nouns: the action is wishlist-scoped (POST /wishlists/{id}/love)
 # and the collection is user-scoped (a user's loved wishlists). One concern, two
@@ -24,7 +29,7 @@ def love_wishlist(wishlist_id: str, user_id: str = Depends(get_current_user_id))
     """Love a wishlist. Idempotent via a conditional put, exactly the follow
     edge's discipline, so the denormalized love_count moves only on the first
     love and a repeat is a harmless 204."""
-    get_wishlist_or_404(wishlist_id)  # 404 a love aimed at nothing
+    wishlist = get_wishlist_or_404(wishlist_id)  # 404 a love aimed at nothing
 
     try:
         wishlist_loves_table.put_item(
@@ -37,6 +42,18 @@ def love_wishlist(wishlist_id: str, user_id: str = Depends(get_current_user_id))
         raise
 
     adjust_count(wishlists_table, {"id": wishlist_id}, "love_count", 1)
+
+    # Tell the owner, best-effort: a notification failure must never fail the
+    # love. Only reached on a genuinely new love (a repeat returned above), so
+    # the owner isn't re-notified on every idempotent retry.
+    try:
+        notify_wishlist_loved(
+            actor_id=user_id,
+            wishlist_id=wishlist_id,
+            owner_id=wishlist["created_by"],
+        )
+    except Exception as notif_error:
+        logger.error(f"Failed to publish wishlist_loved notification: {notif_error}")
 
 
 @love_router.delete("/{wishlist_id}/love", status_code=status.HTTP_204_NO_CONTENT)

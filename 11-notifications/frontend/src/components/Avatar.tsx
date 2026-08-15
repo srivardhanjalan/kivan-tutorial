@@ -4,6 +4,11 @@ import Colors from '../constants/Colors';
 import BorderRadius from '../constants/BorderRadius';
 import { CommonScreenStyles } from '../constants/ScreenStyles';
 
+/** The one list-row avatar diameter: every list row that shows a person
+    (a follow row, a notification row) renders the avatar at this size, so
+    rows can't drift apart one metric at a time. */
+export const LIST_ROW_AVATAR_SIZE = 48;
+
 interface AvatarProps {
   imageUrl?: string | null;
   /** The name the initial falls back to when there's no image */

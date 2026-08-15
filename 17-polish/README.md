@@ -193,3 +193,70 @@ scope, not this one.
       verification and OAuth), and the onboarding tutorial already hold
       functional parity; only styling and onboarding-slide copy need a polish
       pass here.
+
+## Notifications (step 11)
+
+The notifications feature lands in step 11 (in-app only; email is step 12,
+events are step 13). Its screens ship in the step's frontend phase, so their
+visual/workflow convergence items are added here THEN, not now. What this entry
+records today is the set of deliberate BACKEND divergences from the source: the
+tutorial fixes three source defects on purpose, so the polish pass (which
+converges the tutorial toward the finished design) must NOT "restore" them.
+
+- [ ] Mute-field naming. *source:* the settings model stores `mute_follows`
+      (plural) while the consumer derives `mute_{type}` = `mute_follow`
+      (singular), so a follow can never actually be muted. *tutorial:* the four
+      flags are named `mute_follow`/`mute_wishlist_created`/`mute_wish_added`/
+      `mute_wishlist_loved` so the derivation matches exactly. Keep the singular
+      names; do not converge to the source's plural.
+- [ ] Notification TTL is written, not just declared. *source:* the table
+      enables a 90-day TTL on a `ttl` attribute no code ever sets, so nothing
+      expires (a lying config). *tutorial:* the consumer writes `ttl` (epoch
+      seconds, 90 days out) on every row, so the reaper actually runs. Keep the
+      writer.
+- [ ] Wish notifications deep-link into their list. *source:* a `wish_added`
+      notification's enriched resource carries `{id, type, name}` only, a
+      dead-end tap (no route to the screen that shows the wish). *tutorial:* the
+      wish resource also carries `wishlist_id`, so the tap opens the wish inside
+      its parent list. Keep `wishlist_id` on the wish resource.
+The step's frontend phase ships the feed, the settings screen, and the tab
+badge in the tutorial's simpler idiom. Their visual/workflow divergences from
+the finished design (behavior held at parity):
+
+- [ ] Delete affordance. *source:* swipe-to-delete. A `Swipeable` row
+      (react-native-gesture-handler) reveals a translucent trash action on a
+      left-swipe. *tutorial:* long-press a row opens the shared `ConfirmModal`,
+      then delete. The app carries no gesture-handler dependency, so the delete
+      reuses the existing confirm idiom instead of adding one; polish brings the
+      swipe.
+- [ ] Notification-row surface. *source:* a shared `ListItemCard` (a raised card
+      with the avatar, the type badge, title, meta, and an `unread` treatment)
+      used across features. *tutorial:* a lighter in-screen `NotificationRow`
+      (avatar with the type-badge overlay, the message, the timestamp, and an
+      unread dot) in plain rows. The app has no `ListItemCard`.
+- [ ] Header unread pill placement. *source:* the unread-count pill sits inline
+      beside the large "Notifications" title in a split header. *tutorial:* the
+      pill sits in the right header cluster next to the mark-all action, because
+      the tutorial's `FloatingHeaderLayout` takes a plain string title with a
+      single `headerRight` slot (no split-header).
+- [ ] Mark-all-read control. *source:* a "Mark all read" text button in the
+      header. *tutorial:* an icon action (`checkmark-done-outline` via
+      `HeaderIconButton`), matching the tutorial's icon-only header convention.
+- [ ] Per-type icon colors. *source:* raw hex literals (`#4CAF50`, `#FF9800`,
+      `#E91E63`) beside `Colors.primary` in the screen. *tutorial:* the three
+      literals become semantic `Colors` tokens (`notifyWishlistCreated`,
+      `notifyWishAdded`, `notifyWishlistLoved`) and `follow` reuses
+      `Colors.primary`, with no redundant `notifyFollow` alias, per the token rule
+      (a value used with semantic meaning becomes a token; duplicate names
+      collapse). This is a token-hygiene divergence only; the four colors match.
+- [ ] Settings surface. *source:* grouped `SettingItemList` cards and a
+      primary-tinted info card with an icon; the switch track is a primary-alpha
+      wash (`Colors.primary + '40'`). *tutorial:* plain hairline-divided toggle
+      rows, a plain muted info line with an info icon (no tinted-card surface),
+      and a solid primary switch track with a white thumb, avoiding an
+      alpha-tint color literal for a single-use surface. The inverted switch
+      semantic (ON = receiving, OFF = muted) is held exactly.
+- [ ] Mark-read timing. *source:* awaits the mark-read request, then flips the
+      row read. *tutorial:* flips the row and drops the unread count
+      optimistically, then fires the request (the next focus reload reconciles a
+      failure). A workflow refinement, not a convergence target.

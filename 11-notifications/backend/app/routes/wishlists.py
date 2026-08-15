@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from boto3.dynamodb.conditions import Key
@@ -6,6 +7,7 @@ from fastapi import APIRouter, Depends, Query, status
 from app.database import wishlists_table
 from app.dependencies.auth import get_current_user_id
 from app.models.wishlists import Wishlist, WishlistCreate, WishlistUpdate
+from app.utils.notifications import notify_wishlist_created
 from app.utils.s3_helpers import (
     claim_pending_photo,
     delete_photo_by_url,
@@ -18,6 +20,8 @@ from app.utils.wishlist_access import (
     get_owned_wishlist,
     get_wishlist_or_404,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/wishlists", tags=["wishlists"])
 
@@ -62,6 +66,16 @@ def create_wishlist(
     wishlists_table.put_item(Item=item)
     if to_claim:
         claim_pending_photo(to_claim)
+
+    # Fan the new wishlist out to the owner's followers, best-effort: a
+    # notification failure must never fail the create the user asked for. Every
+    # wishlist is public this step (privacy is step 14), so no gate here.
+    try:
+        notify_wishlist_created(
+            actor_id=user_id, wishlist_id=item["id"], wishlist_name=item["name"]
+        )
+    except Exception as notif_error:
+        logger.error(f"Failed to publish wishlist_created notifications: {notif_error}")
     return item
 
 
