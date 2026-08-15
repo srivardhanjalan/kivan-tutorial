@@ -15,6 +15,7 @@ from fastapi import HTTPException, status
 
 from app.config import settings
 from app.database import users_table
+from app.models.users import DEFAULT_ROLE
 from app.utils.clerk_api import CLERK_API, CLERK_TIMEOUT, clerk_headers
 from app.utils.timestamps import utc_now_iso
 from app.utils.user_search import name_lowercase
@@ -145,6 +146,10 @@ def _create_user_record(user_id: str, profile: dict) -> None:
         "last_name": last_name,
         "image_url": profile.get("image_url"),
         "onboarding_completed": False,
+        # Global role (step 15): every new user starts as "user". Records
+        # provisioned before this step have no attribute and read as the same
+        # default (models.users.DEFAULT_ROLE), so no backfill is required.
+        "role": DEFAULT_ROLE,
         # Social (step 10): entity_type is the constant partition key both user
         # GSIs hash on. Set it at creation or the search/Discover indexes stay
         # empty. The two counts are the denormalized caches that profiles and
