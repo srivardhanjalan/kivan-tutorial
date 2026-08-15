@@ -215,10 +215,6 @@ export interface WishlistCreate {
   life_event_id?: string;
   /** Visibility (step 14); omitted on create the backend defaults it public. */
   privacy_type?: PrivacyType;
-  /** Co-owners to seed at creation (step 14): additional owner user ids beyond
-      the creator, who is always the first owner. Unknown ids are skipped by the
-      backend, not rejected. */
-  owner_ids?: string[];
 }
 
 /** POST /wishes/ body — wishlist_id and name required, the rest optional.
