@@ -526,3 +526,31 @@ def put_storefront(
     }
     aws.Table(STOREFRONTS_TABLE).put_item(Item=item)
     return item
+
+
+def put_product(
+    aws,
+    product_id: str,
+    *,
+    storefront_id: str,
+    name: str = "A product",
+    price: str = "1999",
+    category: str = "General",
+    link_url: str = "https://example.com/p",
+    display_order: int = 0,
+):
+    """Seed a product row the way the seed script leaves it: price as a Decimal
+    (DynamoDB rejects float), keyed to its storefront via storefront_id."""
+    from decimal import Decimal
+
+    item = {
+        "id": product_id,
+        "storefront_id": storefront_id,
+        "name": name,
+        "price": Decimal(price),
+        "category": category,
+        "link_url": link_url,
+        "display_order": display_order,
+    }
+    aws.Table(PRODUCTS_TABLE).put_item(Item=item)
+    return item

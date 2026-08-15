@@ -1,8 +1,45 @@
 from typing import Optional
 
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel, Field, field_serializer
 
 from app.utils.s3_helpers import get_signed_url_for_s3
+
+
+class ProductCreate(BaseModel):
+    """POST /admin/storefronts/{storefront_id}/products body. `id` is a
+    client-supplied slug (the seed writes products by a stable id), put
+    conditionally so a collision is a 409. `storefront_id` is NOT here — it comes
+    from the path, the same way an event host's event_id does, and the route
+    checks that store exists before writing. `image_url` is omitted like a
+    brand's logo (a seed-owned catalog object; no photo-upload UI in the plain
+    dashboard yet), so an admin-created product starts imageless.
+
+    `price` is a plain number here; the route stores it as a Decimal (DynamoDB
+    rejects float) exactly as a wish's cost. Length caps mirror the rest of the
+    app so a validated body can never blow past DynamoDB's 400 KB item limit."""
+
+    id: str = Field(max_length=100)
+    name: str = Field(max_length=200)
+    description: Optional[str] = Field(default=None, max_length=2048)
+    price: float = Field(ge=0)
+    category: str = Field(max_length=100)
+    link_url: str = Field(max_length=2048)
+    display_order: int = 0
+
+
+class ProductUpdate(BaseModel):
+    """PUT body — send only what changes; omitted or null fields are left
+    untouched. `storefront_id` is not editable: moving a product between stores
+    would have to move BOTH stores' denormalized product_count too, out of scope
+    here (delete it from one store and create it under the other). `id` and the
+    seed-owned `image_url` are not editable either."""
+
+    name: Optional[str] = Field(default=None, max_length=200)
+    description: Optional[str] = Field(default=None, max_length=2048)
+    price: Optional[float] = Field(default=None, ge=0)
+    category: Optional[str] = Field(default=None, max_length=100)
+    link_url: Optional[str] = Field(default=None, max_length=2048)
+    display_order: Optional[int] = None
 
 
 class Product(BaseModel):
