@@ -116,6 +116,26 @@ resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
         ]
       },
       {
+        # Wishlist owners (step 14): put/delete an owner edge, GetItem for "am I
+        # an owner" (the write gate), BatchGetItem to hydrate the owners list,
+        # Query on the base table (a wishlist's owners, the delete cascade) and
+        # UserIdIndex (wishlists I co-own), and BatchWriteItem for the cascade's
+        # batched deletes. Same access shape as event_hosts.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:BatchGetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+          "dynamodb:BatchWriteItem"
+        ]
+        Resource = [
+          aws_dynamodb_table.wishlist_owners.arn,
+          "${aws_dynamodb_table.wishlist_owners.arn}/index/*"
+        ]
+      },
+      {
         # Notifications: the feed and unread count Query the
         # UserNotificationsIndex, mark-read/read-all UpdateItem, delete
         # DeleteItem, and the ownership check GetItem by id. The Lambda

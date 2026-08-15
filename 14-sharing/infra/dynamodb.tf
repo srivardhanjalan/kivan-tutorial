@@ -106,6 +106,40 @@ resource "aws_dynamodb_table" "wishlists" {
   }
 }
 
+# Wishlist-owners table (step 14): one row per owner edge, keyed
+# (wishlist_id, user_id): "who owns this wishlist" is a base-table Query, and
+# "am I an owner" a direct GetItem. UserIdIndex flips the edge (hash user_id) to
+# answer "wishlists I co-own". Same shape as event_hosts: the creator is
+# auto-inserted as the first owner, co-owners are added directly (no
+# invite/accept), and the wishlist can never lose its last owner.
+resource "aws_dynamodb_table" "wishlist_owners" {
+  name         = "${local.project_name}-${local.environment}-wishlist-owners"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "wishlist_id"
+  range_key    = "user_id"
+
+  attribute {
+    name = "wishlist_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name            = "UserIdIndex"
+    hash_key        = "user_id"
+    range_key       = "wishlist_id"
+    projection_type = "ALL"
+  }
+
+  tags = {
+    Name = "${local.project_name}-${local.environment}-wishlist-owners"
+  }
+}
+
 # Wishes table — one row per wish, each belonging to a wishlist. WishlistIdIndex
 # serves the wishlist-scoped listing and the cascade-delete without a Scan.
 resource "aws_dynamodb_table" "wishes" {
