@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 // screens lean on the same already-shared primitives; there is no logic here to
 // extract, so this run is kept out of jscpd's clone report.
 // jscpd:ignore-start
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { useUser } from '@clerk/clerk-expo';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
