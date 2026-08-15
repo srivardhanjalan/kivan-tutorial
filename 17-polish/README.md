@@ -590,3 +590,107 @@ Backend (deliberate, do-not-restore):
       the one place the view rule lives, reused by the gate and every list
       filter, so the single-fetch gate and the list filters cannot drift apart.
       Keep the shared predicate.
+
+## Sharing (step 14, phase C)
+
+Phase C lands the frontend of sharing: the `kivan://` deep-link scheme, the
+manual link parser wired into cold-start and warm navigation, the four Share
+modals with their header entry points, the wishlist privacy toggle, and the
+co-owner management UI. It also settles one carry-over adjudication from phase B
+(the loved-shelf filter). As with the earlier phases, some of what phase C
+records is deliberate divergence the polish pass must NOT "restore".
+
+Behavior (deliberate, do-not-restore):
+
+- [ ] Your own loved shelf is privacy-filtered by the ONE view rule (carry-over
+      adjudication, settled). *source:* `get_user_loved_wishlists`
+      (`backend/app/routes/users.py:~528`) passes a wishlist when
+      `privacy_type == "public"` **or** `current_user_id == user_id` **or**
+      `is_wishlist_owner(...)`, so viewing your OWN loved list is an
+      unconditional bypass: a wishlist you loved that later went private and that
+      you do NOT co-own still shows on your own shelf. *tutorial:* the loved
+      shelf (`loves.py get_loved_wishlists`) runs the same
+      `can_view_wishlist(wishlist, viewer)` rule every other list surface uses
+      (`public or is_wishlist_owner`), with no `viewer == owner-of-the-shelf`
+      bypass, so a private wishlist you loved but don't co-own drops off your own
+      shelf too. This was adjudicated for phase C: the source really does show
+      your own loved list unfiltered; the tutorial keeps ONE view rule across the
+      profile grid, the loved shelf, and the single-wishlist gate rather than
+      special-casing the shelf. Keep the uniform rule; do not re-add the
+      self-viewer privacy bypass.
+- [ ] Event deep links resolve to the screen, with no auto-invite side effect.
+      *source:* opening a `kivan://event/<id>` link auto-adds the viewer as an
+      invitee via `apiClient.addEventInvitee(eventId, {user_id})` before
+      navigating (`Navigation.tsx:227-236`, `:350-357`; signed-out defers with
+      `autoAddAsGuest`), so a share recipient can RSVP immediately. *tutorial:*
+      `parseDeepLink` resolves the link to `EventDetail` and navigates, with no
+      membership side effect; a recipient views the event and a host invites them
+      to unlock RSVP, exactly as reaching the event any other way does. Keep the
+      link as pure navigation; do not fold a write into it.
+
+Frontend (visual/workflow convergence, behavior held):
+
+- [ ] Co-owner management is inline on the detail screen, not a settings editor.
+      *source:* co-owners are managed in a dedicated `WishlistSettingsScreen`
+      (reached via an owner-only gear on the detail), listing owners with a
+      last-owner-guarded remove and a `UserPickerSection` to add, buffered and
+      applied on **Save Changes**. *tutorial:* the app has no wishlist-settings
+      screen, so an owner-only "Co-owners" section sits inline on
+      `WishlistDetailScreen` (a `WishlistOwnerList` with a last-owner-guarded
+      remove, plus a `ManageOwnersModal` that mirrors the event
+      `InviteGuestModal`), applying each add/remove immediately, the same
+      direct-apply the event guest surface uses. Both reachable; placement and
+      apply-timing only.
+- [ ] Ownership keys off the owners join table, not `created_by`. *note:* the
+      detail screen's owner check moves from `wishlist.created_by === user.id`
+      (single-creator) to membership in the fetched owners list, so a co-owner
+      sees the edit/delete/manage actions the backend already grants them. One
+      extra `GET /wishlists/{id}/owners` per view; the finished design carries
+      the owners inline on the wishlist read instead. Behavior-correct either
+      way; polish may fold owners into the wishlist payload.
+- [ ] Creation-time co-owner seeding is not exposed in the form. *source:*
+      `CreateWishlistScreen` carries a co-owner `UserPickerSection` that sends
+      `owner_ids` at create (`CreateWishlistScreen.tsx:149-161`, `:95-96`).
+      *tutorial:* `WishlistFormScreen` (the merged create/edit form) exposes no
+      co-owner picker; co-owners are added from the detail after creation. The
+      backend still accepts `owner_ids` at create (phase A); only the UI entry is
+      deferred, to keep the shared form from carrying a people-search picker.
+- [ ] Privacy control lives in the one wishlist form. *source:* a shared
+      `PrivacySelector` (public/private `Switch` with a contextual icon, title,
+      and description) in both `CreateWishlistScreen` and
+      `WishlistSettingsScreen`. *tutorial:* the same `PrivacySelector` idiom (the
+      event `Switch` idiom already recorded in step 13), placed once in the
+      merged `WishlistFormScreen`, writing `privacy_type` on create and edit.
+      Two values only, matching the backend's two-value enum.
+- [ ] Share modal reuses the `ModalCard` surface. *source:* each entity's Share
+      modal delegates to a `ShareLinkModal` engine built on `CommonModalStyles`
+      (a bespoke header, a tappable link box, and two side-by-side outline
+      Copy/Share buttons). *tutorial:* the same three entity wrappers
+      (`ShareWishlistModal` / `ShareUserProfileModal` / `ShareEventModal`)
+      delegate to a `ShareLinkModal` engine built on the shared `ModalCard`
+      (title + message + a tappable link box + stacked `PrimaryButton`s: Share,
+      Copy link, Done). Identical behavior (clipboard copy via `expo-clipboard`,
+      OS share sheet via `Share.share`, the bare `kivan://` link); modal chrome
+      only. The `share-outline` `HeaderIconButton` entry point matches the source
+      on all three detail screens (shown to everyone, not just owners).
+- [ ] Deep-link parse is one pure function, not inline-duplicated. *source:* the
+      cold-start (`getInitialURL`) and warm (`addEventListener`) handlers each
+      re-spell the three hostname/regex branches inline
+      (`Navigation.tsx:136-236`, `:253-374`). *tutorial:* both handlers call a
+      single pure `parseDeepLink(url)` (`utils/deepLinks.ts`) that returns a
+      typed target or null, so the branch logic lives once. Both disable React
+      Navigation's declarative routing (`getStateFromPath: () => undefined`) and
+      defer a signed-out link until after sign-in. Same behavior; one parser.
+- [ ] Deep-link parser covered by E2E, not a unit test. *note:* the frontend
+      carries no jest setup and none was added this step; `parseDeepLink` is a
+      pure URL-string-in, target-out function proven by the step's E2E deep-link
+      check (`xcrun simctl openurl booted kivan://wishlist/<id>` and the warm/cold
+      variants), not a jest unit test. Polish may add a jest harness later; the
+      parser is already shaped for it.
+- [ ] Absent surfaces held absent (parity note). *source & tutorial:* there are
+      NO wish, storefront, or product deep links; NO wish/storefront Share
+      modals; NO iOS universal links or Kivan https content domain; and NO
+      web/App-Store fallback for a recipient without the app (a `kivan://` link
+      simply has no non-app handler). Recorded so polish does not invent any of
+      them; the finished design ships exactly the three link kinds and three
+      Share modals above.

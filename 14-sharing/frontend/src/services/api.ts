@@ -163,6 +163,12 @@ export interface LifeEvent {
 
 /** A wishlist the user owns — the art block reads image_url first, else the
     life event's pastel. */
+/** A wishlist's visibility (step 14): `public` shows to anyone, `private` only
+    to its owners and co-owners. Two values, not three: the backend's
+    documented-but-dead "shared" tier was dropped, so the type can't express a
+    value nothing enforces. */
+export type PrivacyType = 'public' | 'private';
+
 export interface Wishlist {
   id: string;
   name: string;
@@ -174,6 +180,9 @@ export interface Wishlist {
   created_at: string;
   /** Denormalized love tally (step 10): how many users have loved it. */
   love_count: number;
+  /** Who can see it (step 14). A record stored before privacy existed reads
+      back "public", the visibility every wishlist had then. */
+  privacy_type: PrivacyType;
 }
 
 /** One item inside a wishlist. `completed` drives the got-it visual state.
@@ -204,6 +213,12 @@ export interface WishlistCreate {
   name: string;
   image_url?: string;
   life_event_id?: string;
+  /** Visibility (step 14); omitted on create the backend defaults it public. */
+  privacy_type?: PrivacyType;
+  /** Co-owners to seed at creation (step 14): additional owner user ids beyond
+      the creator, who is always the first owner. Unknown ids are skipped by the
+      backend, not rejected. */
+  owner_ids?: string[];
 }
 
 /** POST /wishes/ body — wishlist_id and name required, the rest optional.
@@ -272,6 +287,37 @@ export async function updateWishlist(
 
 export async function deleteWishlist(id: string): Promise<void> {
   await request(`/wishlists/${id}`, { method: 'DELETE' });
+}
+
+/** A wishlist's owners: the creator and every co-owner, as full User records
+    (step 14). View-gated on the backend, so any viewer who can see the wishlist
+    can see who owns it. */
+export async function fetchWishlistOwners(wishlistId: string): Promise<User[]> {
+  const res = await request(`/wishlists/${wishlistId}/owners`);
+  return res.json();
+}
+
+/** Promote a user to co-owner of a wishlist (owner-only). The added user
+    becomes a full owner immediately, with no invite/accept step. */
+export async function addWishlistOwner(
+  wishlistId: string,
+  userId: string
+): Promise<void> {
+  await request(`/wishlists/${wishlistId}/owners`, {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId }),
+  });
+}
+
+/** Remove a co-owner (owner-only). The backend refuses to remove the last
+    owner: a wishlist always keeps at least one. */
+export async function removeWishlistOwner(
+  wishlistId: string,
+  ownerId: string
+): Promise<void> {
+  await request(`/wishlists/${wishlistId}/owners/${encodeURIComponent(ownerId)}`, {
+    method: 'DELETE',
+  });
 }
 
 /** A wishlist's wishes, in creation order (the backend sorts). */
