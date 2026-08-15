@@ -71,3 +71,15 @@ variable "mailgun_from_email" {
   default     = ""
 }
 
+variable "github_repository" {
+  description = <<-EOT
+    "owner/repo" slug of the repository the backend deploy workflow runs from.
+    Empty (the default) creates NO GitHub OIDC provider or deploy role (see
+    cicd.tf) — a non-empty default would mint a live, assumable deploy role on
+    every learner's account. Set it to your own fork (e.g. "your-org/kivan") to
+    provision the CI/CD plumbing scoped to that repo.
+  EOT
+  type        = string
+  default     = ""
+}
+
