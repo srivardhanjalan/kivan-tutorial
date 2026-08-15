@@ -100,9 +100,9 @@ def get_current_user_id(token_data: dict = Depends(verify_clerk_token)) -> str:
 def require_admin(user_id: str = Depends(get_current_user_id)) -> str:
     """Gate a route to admins, returning the caller's (admin) id for the route.
 
-    The same shape as is_storefront_admin (utils/user_access is its sibling for
-    the profile side): one GetItem on the caller's own row, one boolean check,
-    no new mechanism. Default-deny by construction — a missing row or a record
+    The same shape as the step-14 access gate (utils/wishlist_access, with
+    utils/user_access as the profile-side sibling): one GetItem, one boolean
+    check, no new mechanism. Default-deny by construction — a missing row or a record
     without the `role` attribute reads as DEFAULT_ROLE, so only an explicit
     role == ADMIN_ROLE passes. That is exactly why a pre-step-15 record needs no
     backfill: absence of the attribute is denial, never accidental access.
