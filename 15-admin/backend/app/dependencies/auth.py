@@ -5,6 +5,8 @@ import jwt as pyjwt
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from app.database import users_table
+from app.models.users import ADMIN_ROLE, DEFAULT_ROLE
 from app.utils.clerk_api import CLERK_API, clerk_headers
 from app.utils.user_provisioning import ensure_user_provisioned
 
@@ -91,5 +93,25 @@ def get_current_user_id(token_data: dict = Depends(verify_clerk_token)) -> str:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token: user ID not found",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user_id
+
+
+def require_admin(user_id: str = Depends(get_current_user_id)) -> str:
+    """Gate a route to admins, returning the caller's (admin) id for the route.
+
+    The same shape as is_storefront_admin (utils/user_access is its sibling for
+    the profile side): one GetItem on the caller's own row, one boolean check,
+    no new mechanism. Default-deny by construction — a missing row or a record
+    without the `role` attribute reads as DEFAULT_ROLE, so only an explicit
+    role == ADMIN_ROLE passes. That is exactly why a pre-step-15 record needs no
+    backfill: absence of the attribute is denial, never accidental access.
+    """
+    response = users_table.get_item(Key={"id": user_id})
+    user = response.get("Item")
+    if not user or user.get("role", DEFAULT_ROLE) != ADMIN_ROLE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
         )
     return user_id
