@@ -107,6 +107,19 @@ and event notifications ride the same generic email template as every other type
 Resource enrichment for the tap-through (the event's `{id, type, name}`) happens
 on the backend read side, which already has events-table access.
 
+### Cost anomaly detection (not provisioned)
+
+The budgets in `cost-management.tf` cover threshold alerts; AWS Cost Anomaly
+Detection is deliberately left out (no dead HCL) because most accounts already
+run a `Default-Services-Monitor` that holds the dimensional-monitor quota. To
+add a Kivan-scoped monitor once quota is free (delete that default monitor or
+raise the quota), declare an `aws_ce_anomaly_monitor` (`monitor_type =
+"DIMENSIONAL"`, `monitor_dimension = "SERVICE"`) plus an
+`aws_ce_anomaly_subscription` whose subscriber is
+`aws_sns_topic.budget_alerts.arn`. One-time: run
+`infra/scripts/activate-cost-tags.sh` so the tags become billing filters (up to
+24 h to show in Cost Explorer).
+
 ## What's here (the events delta over step 12)
 
 ```
