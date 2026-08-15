@@ -38,7 +38,7 @@ from app.utils.s3_helpers import (
     plan_photo_update,
 )
 from app.utils.timestamps import utc_now_iso
-from app.utils.wishlist_access import get_owned_wishlist
+from app.utils.wishlist_access import check_wishlist_access
 
 logger = logging.getLogger(__name__)
 
@@ -646,12 +646,12 @@ def link_wishlist_to_event(
     user_id: str = Depends(get_current_user_id),
 ):
     """Link a wishlist to an event. Host-only, and the caller must OWN the
-    wishlist (get_owned_wishlist 404s a missing one and 403s one you don't own):
-    a host attaches their own collections, never someone else's. 400 if it's
-    already linked."""
+    wishlist (check_wishlist_access with require_edit 404s a missing one and
+    403s one you neither own nor co-own): a host attaches a collection they can
+    edit, never someone else's. 400 if it's already linked."""
     get_event_or_404(event_id)
     require_host(event_id, user_id, "link wishlists to this event")
-    get_owned_wishlist(link.wishlist_id, user_id)
+    check_wishlist_access(link.wishlist_id, user_id, require_edit=True)
     existing = event_wishlists_table.get_item(
         Key={"event_id": event_id, "wishlist_id": link.wishlist_id}
     )

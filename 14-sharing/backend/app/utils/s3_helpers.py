@@ -163,8 +163,9 @@ def plan_photo_update(new_url: str, old_url, user_id: str):
 
     # Echo no-ops FIRST, ownership second: echoing the record's current photo
     # changes nothing, so it must never trip the uploader check — keys stamp
-    # the ORIGINAL uploader, and the moment co-owners arrive (step 14) the
-    # echo-er is legitimately not always the uploader.
+    # the ORIGINAL uploader, and now that co-owners exist (step 14) the echo-er
+    # is legitimately not always the uploader (a co-owner saving a wishlist
+    # whose photo the creator uploaded resubmits that key and must pass here).
     if new_key is not None and new_key == old_key:
         return None, None, None  # the current object echoed back — nothing to do
     is_pending = new_key is not None and new_key.startswith(PENDING_PREFIX)

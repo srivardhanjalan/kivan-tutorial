@@ -18,6 +18,11 @@ class WishlistCreate(BaseModel):
     name: str = Field(max_length=200)
     image_url: Optional[str] = Field(default=None, max_length=2048)
     life_event_id: str = Field(default="general", max_length=100)
+    # Co-owners to seed at creation (step 14). The creator is always the first
+    # owner; these are additional owners, validated against the users table (an
+    # unknown id is skipped, not a 422) and written as owner rows alongside the
+    # wishlist. Absent or empty leaves the wishlist single-owner.
+    owner_ids: Optional[list[str]] = None
 
 
 class WishlistUpdate(BaseModel):
@@ -31,10 +36,26 @@ class WishlistUpdate(BaseModel):
     life_event_id: Optional[str] = Field(default=None, max_length=100)
 
 
+class WishlistOwnerCreate(BaseModel):
+    """POST /wishlists/{id}/owners body: the user id to promote to co-owner."""
+
+    user_id: str = Field(max_length=256)
+
+
+class ActionResponse(BaseModel):
+    """The success/message envelope the owner mutations return (they change an
+    owner edge, not the wishlist itself, so there's no record to echo)."""
+
+    success: bool
+    message: str
+
+
 class Wishlist(BaseModel):
-    """A wishlist record as stored. Single-owner this step: created_by is the
-    sole owner and the only key access is checked against (co-owners join in
-    step 14)."""
+    """A wishlist record as stored. created_by is the creator (the first owner
+    and the CreatedByIndex key); ownership itself lives in the wishlist-owners
+    join table, so a wishlist can have co-owners the creator added (step 14).
+    Access is checked against that table via check_wishlist_access, never
+    against created_by."""
 
     id: str
     name: str

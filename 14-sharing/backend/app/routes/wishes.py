@@ -16,7 +16,7 @@ from app.utils.s3_helpers import (
 )
 from app.utils.dynamo import get_item_or_404, query_all_pages, update_item_fields
 from app.utils.timestamps import utc_now_iso
-from app.utils.wishlist_access import get_owned_wishlist, get_wishlist_or_404
+from app.utils.wishlist_access import check_wishlist_access
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +27,19 @@ router = APIRouter(prefix="/wishes", tags=["wishes"])
 wishlist_wishes_router = APIRouter(prefix="/wishlists", tags=["wishes"])
 
 
-def _get_owned_wish(wish_id: str, user_id: str) -> dict:
-    """Fetch a wish and enforce access through its wishlist's owner: 404 if the
-    wish is missing, then the wishlist's own 404/403 rules."""
-    wish = get_item_or_404(wishes_table, wish_id, "Wish not found")
-    get_owned_wishlist(wish["wishlist_id"], user_id)
+def _get_wish_or_404(wish_id: str) -> dict:
+    """Fetch a wish by id or 404. The wishlist gate (view for a read, edit for a
+    mutation) is each caller's to apply, so this only proves the wish exists."""
+    return get_item_or_404(wishes_table, wish_id, "Wish not found")
+
+
+def _get_wish_for_edit(wish_id: str, user_id: str) -> dict:
+    """Fetch a wish and enforce EDIT access through its wishlist: 404 if the
+    wish is missing, then the wishlist's owner-or-co-owner gate. A wish's write
+    access is just its wishlist's ownership, so every wish mutation funnels
+    through the one gate with require_edit."""
+    wish = _get_wish_or_404(wish_id)
+    check_wishlist_access(wish["wishlist_id"], user_id, require_edit=True)
     return wish
 
 
@@ -42,7 +50,8 @@ def create_wish(wish: WishCreate, user_id: str = Depends(get_current_user_id)):
     """Add a wish to one of the caller's wishlists. Same photo discipline as
     the PUT routes: store the planned permanent URL, write, then claim — a
     failed write must never leave a promoted object no record references."""
-    get_owned_wishlist(wish.wishlist_id, user_id)  # 404/403 before any write
+    # 404/403 before any write: only an owner or co-owner may add to a wishlist.
+    check_wishlist_access(wish.wishlist_id, user_id, require_edit=True)
     stored = to_claim = None
     if wish.image_url is not None:
         # No prior object on a create, so plan against None: nothing to delete
@@ -114,8 +123,12 @@ def get_my_wishes(user_id: str = Depends(get_current_user_id)):
 
 @router.get("/{wish_id}", response_model=Wish)
 def get_wish(wish_id: str, user_id: str = Depends(get_current_user_id)):
-    """A single wish — access checked through its wishlist's owner."""
-    return _get_owned_wish(wish_id, user_id)
+    """A single wish, a view read like its wishlist and the wishlist's listing:
+    404 if the wish is gone, then the wishlist's view gate (open this step).
+    Editing it still requires ownership."""
+    wish = _get_wish_or_404(wish_id)
+    check_wishlist_access(wish["wishlist_id"], user_id)
+    return wish
 
 
 @router.put("/{wish_id}", response_model=Wish)
@@ -127,8 +140,9 @@ def update_wish(
     write is field-scoped (update_item_fields), so an unrelated field a
     concurrent request changed — the complete toggle — is never rewritten from
     this handler's stale read. Photo swap uses the same key-based
-    plan-then-commit discipline as the other PUT routes."""
-    wish = _get_owned_wish(wish_id, user_id)
+    plan-then-commit discipline as the other PUT routes. Any owner or co-owner
+    may edit."""
+    wish = _get_wish_for_edit(wish_id, user_id)
     update_data = update.model_dump(exclude_unset=True)
 
     to_claim = to_delete = None
@@ -175,27 +189,35 @@ def delete_wish(wish_id: str, user_id: str = Depends(get_current_user_id)):
     interruption leaves a row a retried delete can still find (the cascade's
     ordering discipline and its accepted S3-failure gap; see
     delete_wishlist_and_contents)."""
-    wish = _get_owned_wish(wish_id, user_id)
+    wish = _get_wish_for_edit(wish_id, user_id)
     delete_photo_by_url(wish.get("image_url"))
     wishes_table.delete_item(Key={"id": wish_id})
 
 
 @router.post("/{wish_id}/complete", response_model=Wish)
 def complete_wish(wish_id: str, user_id: str = Depends(get_current_user_id)):
-    """Mark a wish completed."""
-    return _set_completed(wish_id, user_id, True)
+    """Mark a wish completed. Deliberately the VIEW gate, not edit: completing a
+    wish is a gift-claiming act, so anyone who can see the wishlist (this step,
+    any signed-in viewer) can mark a wish taken; that's the whole point of
+    sharing a list. Uncompleting is the asymmetric case below."""
+    wish = _get_wish_or_404(wish_id)
+    check_wishlist_access(wish["wishlist_id"], user_id)  # 404 + view gate
+    return _set_completed(wish_id, completed=True)
 
 
 @router.post("/{wish_id}/uncomplete", response_model=Wish)
 def uncomplete_wish(wish_id: str, user_id: str = Depends(get_current_user_id)):
-    """Mark a wish not completed."""
-    return _set_completed(wish_id, user_id, False)
+    """Mark a wish not completed. Owner-or-co-owner only, the deliberate
+    asymmetry with complete: any viewer may claim a gift, but only the list's
+    owners may reverse a claim (undoing someone else's is theirs to decide)."""
+    _get_wish_for_edit(wish_id, user_id)  # 404 + edit gate
+    return _set_completed(wish_id, completed=False)
 
 
-def _set_completed(wish_id: str, user_id: str, completed: bool) -> dict:
-    """Flip just the `completed` flag once access is confirmed — the same
-    guarded field-scoped write as PUT (see update_item_fields)."""
-    _get_owned_wish(wish_id, user_id)  # 404/403 guard
+def _set_completed(wish_id: str, *, completed: bool) -> dict:
+    """Flip just the `completed` flag, the same guarded field-scoped write as
+    PUT (see update_item_fields). The caller applies the access gate first
+    (complete and uncomplete gate differently)."""
     return update_item_fields(
         wishes_table, {"id": wish_id}, {"completed": completed}, "Wish not found"
     )
@@ -203,13 +225,14 @@ def _set_completed(wish_id: str, user_id: str, completed: bool) -> dict:
 
 @wishlist_wishes_router.get("/{wishlist_id}/wishes", response_model=list[Wish])
 def get_wishlist_wishes(
-    wishlist_id: str, _user_id: str = Depends(get_current_user_id)
+    wishlist_id: str, user_id: str = Depends(get_current_user_id)
 ):
     """A wishlist's wishes in insertion order (created_at ASC). A public read
-    like GET /wishlists/{id}: you see the wishes of any wishlist you can view
-    (a friend's, off their profile). The GSI has no range key, so the sort is
-    here. Adding or editing a wish still requires ownership."""
-    get_wishlist_or_404(wishlist_id)
+    like GET /wishlists/{id}: the view branch of the one gate, so you see the
+    wishes of any wishlist you can view (a friend's, off their profile). The GSI
+    has no range key, so the sort is here. Adding or editing a wish still
+    requires ownership."""
+    check_wishlist_access(wishlist_id, user_id)
     wishes = query_all_pages(
         wishes_table,
         IndexName="WishlistIdIndex",

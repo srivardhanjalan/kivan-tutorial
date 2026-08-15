@@ -1,32 +1,53 @@
 """
-Shared wishlist ownership: the single-owner access check both the wishlists
-and wishes routes funnel through, and the cascade-delete both DELETE
-/wishlists/{id} and account deletion reuse.
+Shared wishlist access: the ONE gate both the wishlists and wishes routes
+funnel through (view or edit), the owner-or-co-owner membership test it rests
+on, and the cascade-delete both DELETE /wishlists/{id} and account deletion
+reuse.
 """
 from boto3.dynamodb.conditions import Key
 from fastapi import HTTPException, status
 
-from app.database import wishes_table, wishlists_table
+from app.database import wishes_table, wishlist_owners_table, wishlists_table
 from app.utils.dynamo import get_item_or_404, query_all_pages
 from app.utils.s3_helpers import delete_photo_by_url
 
 
 def get_wishlist_or_404(wishlist_id: str) -> dict:
-    """Fetch a wishlist for READING, no ownership check: 404 if missing. Step
-    10 (social) makes every wishlist publicly viewable: a public profile shows
-    someone else's wishlists, and you love a wishlist you don't own. Privacy
-    (public/private, co-owner visibility) is a step-14 concern. WRITES still go
-    through get_owned_wishlist: reading is open, editing stays single-owner."""
+    """Fetch a wishlist by id, no access check: 404 if missing. The bare
+    existence probe check_wishlist_access builds on, and the one a love (which
+    any viewer may aim at any wishlist) needs on its own."""
     return get_item_or_404(wishlists_table, wishlist_id, "Wishlist not found")
 
 
-def get_owned_wishlist(wishlist_id: str, user_id: str) -> dict:
-    """Fetch a wishlist and enforce single-owner access for a WRITE: 404 if it
-    doesn't exist, 403 if the caller didn't create it. Editing, deleting, and
-    every wish mutation funnel through this: a wish's write access is its
-    wishlist's ownership."""
+def is_wishlist_owner(wishlist_id: str, user_id: str) -> bool:
+    """Is this user an owner of the wishlist? A direct GetItem on the
+    wishlist-owners edge keyed (wishlist_id, user_id). The creator and every
+    co-owner has a row, so this one test is the whole write credential:
+    owner-or-co-owner, no distinction between them (mirrors is_event_host)."""
+    response = wishlist_owners_table.get_item(
+        Key={"wishlist_id": wishlist_id, "user_id": user_id}
+    )
+    return "Item" in response
+
+
+def check_wishlist_access(
+    wishlist_id: str, user_id: str, require_edit: bool = False
+) -> dict:
+    """The single wishlist gate: 404 if it doesn't exist, then either view or
+    edit access. An owner or co-owner always passes. require_edit=True and a
+    non-owner is a 403. This is the write credential every wishlist edit,
+    delete, and wish mutation funnels through, so a wish's write access is just
+    its wishlist's ownership.
+
+    The view path (require_edit=False) stays open this step: any signed-in user
+    can read any wishlist (a friend's collection off their profile, one you're
+    about to love), exactly as reading has been since step 10. Privacy filtering
+    lands on this same branch in a later step; keeping every read on this one
+    gate is what lets it arrive in one place instead of at every call site."""
     wishlist = get_wishlist_or_404(wishlist_id)
-    if wishlist["created_by"] != user_id:
+    if is_wishlist_owner(wishlist_id, user_id):
+        return wishlist
+    if require_edit:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't have access to this wishlist",
@@ -35,11 +56,11 @@ def get_owned_wishlist(wishlist_id: str, user_id: str) -> dict:
 
 
 def delete_wishlist_and_contents(wishlist: dict) -> None:
-    """Delete a wishlist, all its wishes, and every uploaded photo they
-    referenced. Wishes come off WishlistIdIndex; delete_photo_by_url ignores
-    external URLs. Two callers: DELETE /wishlists/{id} and account deletion's
-    wishlist sweep — the access check is the caller's job, this only tears
-    down.
+    """Delete a wishlist, all its wishes, every uploaded photo they referenced,
+    and every owner edge. Wishes come off WishlistIdIndex, owner rows off the
+    base table; delete_photo_by_url ignores external URLs. Two callers: DELETE
+    /wishlists/{id} and account deletion's wishlist sweep; the access check is
+    the caller's job, this only tears down.
 
     Photos go FIRST, rows after, so an INTERRUPTED cascade (crash, instance
     recycle) leaves only states a retry can finish: a surviving row still
@@ -54,6 +75,10 @@ def delete_wishlist_and_contents(wishlist: dict) -> None:
         IndexName="WishlistIdIndex",
         KeyConditionExpression=Key("wishlist_id").eq(wishlist_id),
     )
+    owners = query_all_pages(
+        wishlist_owners_table,
+        KeyConditionExpression=Key("wishlist_id").eq(wishlist_id),
+    )
 
     delete_photo_by_url(wishlist.get("image_url"))
     for wish in wishes:
@@ -62,5 +87,10 @@ def delete_wishlist_and_contents(wishlist: dict) -> None:
     with wishes_table.batch_writer() as batch:
         for wish in wishes:
             batch.delete_item(Key={"id": wish["id"]})
+    with wishlist_owners_table.batch_writer() as batch:
+        for owner in owners:
+            batch.delete_item(
+                Key={"wishlist_id": wishlist_id, "user_id": owner["user_id"]}
+            )
 
     wishlists_table.delete_item(Key={"id": wishlist_id})

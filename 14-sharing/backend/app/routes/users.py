@@ -258,15 +258,18 @@ def delete_current_user(
     delete_photo_by_url(user_data.get("image_url"))
     delete_photo_by_url(user_data.get("cover_photo"))
 
-    # Tutorial-scoped: in this single-owner world a wishlist and its wishes
-    # belong to exactly one account and nothing else references them, so a
-    # deleted account's collections are swept outright — items and their
-    # photos. (The user record itself is only flagged, not removed, because
-    # later steps' data references it.) Step 14's co-ownership revisits what
-    # deletion must preserve when a wishlist can outlive one of its owners.
-    # Best-effort like the photo deletes above, and for the same reason: the
-    # Clerk account is already gone, so nothing may stop the flag write below
-    # from landing — a failed sweep leaves unreachable rows (no retry can
+    # Tutorial-scoped: the sweep is by CreatedByIndex, so it tears down the
+    # wishlists this account CREATED: items, photos, and their owner edges
+    # (delete_wishlist_and_contents removes all three). Co-ownership (step 14)
+    # is deliberately NOT reconciled here: a wishlist the leaving user created
+    # but co-owns with others is still destroyed for those co-owners (no
+    # ownership-transfer flow this step), and a wishlist the user only co-owns
+    # is left alone; its stale owner edge points at a flagged account that can
+    # never authenticate again, so it is residue, not access. (The user record
+    # itself is only flagged, not removed, because later steps' data references
+    # it.) Best-effort like the photo deletes above, and for the same reason:
+    # the Clerk account is already gone, so nothing may stop the flag write
+    # below from landing; a failed sweep leaves unreachable rows (no retry can
     # ever run: no login, no new token), which is residue, not access.
     try:
         owned_wishlists = query_all_pages(
