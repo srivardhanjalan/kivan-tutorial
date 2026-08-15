@@ -544,3 +544,49 @@ Backend (deliberate, do-not-restore):
       flagged account that can never authenticate). No ownership-transfer flow
       this step; the honest comment says so. Recorded so polish does not read the
       residual co-owner edge as a bug to "fix" here.
+
+## Sharing (step 14, phase B)
+
+Phase B lands privacy enforcement: the `privacy_type` field plus its default,
+and the read gate wired at every surface (the popular feed, the profile grid,
+the loved shelf, the single-wishlist and wishes reads, an event's linked
+wishlists, the follower fan-out, and gift-claiming). The deep-links / Share-modal
+frontend is phase C. As with the earlier phases, some of what phase B records is
+deliberate BACKEND divergence the polish pass must NOT "restore".
+
+Backend (deliberate, do-not-restore):
+
+- [ ] `privacy_type` is a two-value enum, not a three-value free string.
+      *source:* `privacy_type` is a free-form `str` documented as
+      `"public"`/`"private"`/`"shared"`, but no code path ever honors "shared":
+      every check is `== "public"`, so "shared" collapses to private, a value
+      with no behavior and a comment that lies. *tutorial:* a two-value
+      `Literal["public", "private"]` (aliased `PrivacyType`), so an out-of-set
+      value is a 422 at the model boundary and there is no defined-but-ignored
+      third tier. Keep the two-value enum; do not "restore" the "shared" spelling
+      the finished design never enforced.
+- [ ] Event-linked private wishlists are re-checked per viewer (leak fix).
+      *source:* `get_event_wishlist_responses` (`events.py:64-80`) returns the
+      full contents of every linked wishlist to any event viewer, gating only the
+      LINKER's ownership at link time, so a private wishlist linked to a public
+      event leaks to everyone who opens it. *tutorial:* `get_event_wishlists`
+      takes the viewer id and filters each linked wishlist through the shared
+      view rule (`can_view_wishlist`), so a private list shows only to its owners
+      and co-owners; linking is not a viewer-side grant. Keep the per-viewer
+      re-check; do not drop back to the link-time-only check.
+- [ ] Fan-out privacy guard lives INSIDE the producers, not at the call sites.
+      *source:* `notify_followers_wishlist_created` / `notify_followers_wish_added`
+      are unconditional internally, and each CALL SITE guards on
+      `privacy_type == "public"` separately, so any future caller that forgets
+      the guard leaks a private wishlist's activity to every follower.
+      *tutorial:* the `privacy_type == "public"` gate moves INTO the producers
+      (`_wishlist_fans_out`), so a private wishlist (or a wish on one) fans out to
+      no one no matter who calls, and the create routes carry no privacy guard to
+      forget. Keep the guard in the producer; do not re-add call-site guards.
+- [ ] Read-surface filters share one view rule (simpler idiom). *source:* the
+      profile grid, loved shelf, and popular feed each spell the
+      public-or-co-owner test inline. *tutorial:* the single
+      `wishlist_is_public` / `can_view_wishlist` pair in `wishlist_access.py` is
+      the one place the view rule lives, reused by the gate and every list
+      filter, so the single-fetch gate and the list filters cannot drift apart.
+      Keep the shared predicate.
