@@ -1,0 +1,25 @@
+import boto3
+
+from app.config import settings
+
+# boto3 resolves credentials from the standard chain: the App Runner instance
+# role in the cloud, your AWS profile/env locally. Table handles are lazy —
+# nothing talks to AWS until the first read/write.
+dynamodb = boto3.resource("dynamodb", region_name=settings.aws_region)
+
+users_table = dynamodb.Table(settings.users_table)
+wishlists_table = dynamodb.Table(settings.wishlists_table)
+wishlist_owners_table = dynamodb.Table(settings.wishlist_owners_table)
+wishes_table = dynamodb.Table(settings.wishes_table)
+life_events_table = dynamodb.Table(settings.life_events_table)
+storefronts_table = dynamodb.Table(settings.storefronts_table)
+products_table = dynamodb.Table(settings.products_table)
+brands_table = dynamodb.Table(settings.brands_table)
+events_table = dynamodb.Table(settings.events_table)
+event_hosts_table = dynamodb.Table(settings.event_hosts_table)
+event_invitees_table = dynamodb.Table(settings.event_invitees_table)
+event_wishlists_table = dynamodb.Table(settings.event_wishlists_table)
+followers_table = dynamodb.Table(settings.followers_table)
+wishlist_loves_table = dynamodb.Table(settings.wishlist_loves_table)
+notifications_table = dynamodb.Table(settings.notifications_table)
+notification_settings_table = dynamodb.Table(settings.notification_settings_table)
