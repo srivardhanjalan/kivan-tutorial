@@ -41,3 +41,24 @@ output "critical_alarms" {
     aws_cloudwatch_composite_alarm.notification_system_failure.alarm_name
   ]
 }
+
+# CloudWatch dashboard URLs (dashboards live in monitoring.tf)
+output "operations_dashboard_url" {
+  description = "URL to Operations Dashboard"
+  value       = "https://console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#dashboards:name=${aws_cloudwatch_dashboard.operations.dashboard_name}"
+}
+
+output "database_dashboard_url" {
+  description = "URL to Database Dashboard"
+  value       = "https://console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#dashboards:name=${aws_cloudwatch_dashboard.database.dashboard_name}"
+}
+
+output "lambda_sqs_dashboard_url" {
+  description = "URL to Lambda & SQS Dashboard"
+  value       = "https://console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#dashboards:name=${aws_cloudwatch_dashboard.lambda_sqs.dashboard_name}"
+}
+
+output "errors_dashboard_url" {
+  description = "URL to Errors Dashboard"
+  value       = "https://console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#dashboards:name=${aws_cloudwatch_dashboard.errors.dashboard_name}"
+}
