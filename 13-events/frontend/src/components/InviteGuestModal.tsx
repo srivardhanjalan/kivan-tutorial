@@ -4,6 +4,7 @@ import ModalCard from './ModalCard';
 import FormInput from './FormInput';
 import UserRow from './UserRow';
 import PrimaryButton from './PrimaryButton';
+import ConfirmCancelButtons from './ConfirmCancelButtons';
 import { useToast } from './ToastProvider';
 import useAsyncAction from '../hooks/useAsyncAction';
 import useUserSearch from '../hooks/useUserSearch';
@@ -131,9 +132,13 @@ export default function InviteGuestModal({
         keyboardType="email-address"
       />
       <View style={styles.gap} />
-      <PrimaryButton title="Invite by email" onPress={inviteByEmail} loading={inviting} />
-      <View style={styles.gap} />
-      <PrimaryButton title="Done" variant="secondary" onPress={onClose} />
+      <ConfirmCancelButtons
+        confirmTitle="Invite by email"
+        onConfirm={inviteByEmail}
+        loading={inviting}
+        cancelTitle="Done"
+        onCancel={onClose}
+      />
     </ModalCard>
   );
 }
