@@ -1,12 +1,6 @@
 import React from 'react';
 import { useAppRoute } from '../hooks/useAppNavigation';
-import AdminEntityForm, {
-  AdminField,
-  slugField,
-  nameField,
-  descriptionField,
-  displayOrderField,
-} from '../components/layouts/AdminEntityForm';
+import AdminEntityForm, { AdminField, field } from '../components/layouts/AdminEntityForm';
 import { createProduct, updateProduct, deleteProduct } from '../services/api';
 
 /**
@@ -21,13 +15,13 @@ export default function AdminProductFormScreen() {
   const editing = !!product;
 
   const fields: AdminField[] = [
-    slugField(product?.id, 'e.g. acme-mug', 'Give the product an id'),
-    nameField(product?.name, 'Product name', 'Give the product a name'),
-    descriptionField(product?.description),
+    field.slug(product?.id, 'e.g. acme-mug', 'Give the product an id'),
+    field.name(product?.name, 'Product name', 'Give the product a name'),
+    field.description(product?.description),
     { key: 'price', label: 'Price', placeholder: '0', initial: product ? String(product.price) : '', keyboardType: 'decimal-pad' },
-    { key: 'category', label: 'Category', placeholder: 'e.g. Mugs', initial: product?.category ?? '', maxLength: 100 },
-    { key: 'linkUrl', label: 'Link URL', placeholder: 'https://…', initial: product?.link_url ?? '', autoCapitalize: 'none', maxLength: 2048 },
-    displayOrderField(product?.display_order),
+    field.category(product?.category, 'e.g. Mugs'),
+    field.url('linkUrl', 'Link URL', product?.link_url),
+    field.displayOrder(product?.display_order),
   ];
 
   return (

@@ -1,12 +1,6 @@
 import React from 'react';
 import { useAppRoute } from '../hooks/useAppNavigation';
-import AdminEntityForm, {
-  AdminField,
-  slugField,
-  nameField,
-  descriptionField,
-  displayOrderField,
-} from '../components/layouts/AdminEntityForm';
+import AdminEntityForm, { AdminField, field } from '../components/layouts/AdminEntityForm';
 import { createBrand, updateBrand, deleteBrand } from '../services/api';
 
 /**
@@ -21,13 +15,13 @@ export default function AdminBrandFormScreen() {
   const editing = !!brand;
 
   const fields: AdminField[] = [
-    slugField(brand?.id, 'e.g. nike', 'Give the brand an id'),
-    nameField(brand?.name, 'Brand name', 'Give the brand a name'),
-    descriptionField(brand?.description),
-    { key: 'websiteUrl', label: 'Website URL', placeholder: 'https://…', initial: brand?.website_url ?? '', autoCapitalize: 'none', maxLength: 2048 },
-    { key: 'category', label: 'Category', placeholder: 'e.g. Fashion', initial: brand?.category ?? '', maxLength: 100 },
+    field.slug(brand?.id, 'e.g. nike', 'Give the brand an id'),
+    field.name(brand?.name, 'Brand name', 'Give the brand a name'),
+    field.description(brand?.description),
+    field.url('websiteUrl', 'Website URL', brand?.website_url),
+    field.category(brand?.category, 'e.g. Fashion'),
     { key: 'country', label: 'Country', placeholder: 'e.g. India', initial: brand?.country ?? '', maxLength: 100 },
-    displayOrderField(brand?.display_order),
+    field.displayOrder(brand?.display_order),
   ];
 
   return (

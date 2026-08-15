@@ -30,16 +30,19 @@ export interface AdminField {
 }
 
 /**
- * The four fields every admin form shares verbatim get a builder each, so the
- * shape (and the boilerplate that must stay in lockstep) lives in one place and
- * each screen names only what differs — the seed value, and for the slug and
- * name the entity-specific placeholder and empty-value copy.
+ * Every field shared by more than one admin form is built here, so its shape
+ * (and the input constraints that must stay in lockstep) lives in one place and
+ * each screen names only what differs — the seed value, and where it varies the
+ * placeholder, label, or empty-value copy. One `field` namespace rather than
+ * loose exports so a screen pulls the whole kit in a single import no matter how
+ * many builders it uses. Single-use fields (a life event's icon, a product's
+ * price, a brand's country) stay spelled inline on their one screen; a builder
+ * there would be indirection without reuse.
  */
-
-/** The client-supplied slug id an entity opens with: shown only on create,
-    fixed once it exists. Placeholder and the empty-value toast name the entity. */
-export function slugField(current: string | undefined, placeholder: string, required: string): AdminField {
-  return {
+export const field = {
+  /** The client-supplied slug id an entity opens with: shown only on create,
+      fixed once it exists. Placeholder and the empty-value toast name it. */
+  slug: (current: string | undefined, placeholder: string, required: string): AdminField => ({
     key: 'id',
     label: 'ID (slug)',
     placeholder,
@@ -48,42 +51,56 @@ export function slugField(current: string | undefined, placeholder: string, requ
     required,
     autoCapitalize: 'none',
     maxLength: 100,
-  };
-}
+  }),
 
-/** The required display name every entity carries; the backend caps it at 200. */
-export function nameField(current: string | undefined, placeholder: string, required: string): AdminField {
-  return {
+  /** The required display name every entity carries; the backend caps it at 200. */
+  name: (current: string | undefined, placeholder: string, required: string): AdminField => ({
     key: 'name',
     label: 'Name',
     placeholder,
     initial: current ?? '',
     required,
     maxLength: 200,
-  };
-}
+  }),
 
-/** The optional free-text description every entity carries. */
-export function descriptionField(current: string | undefined): AdminField {
-  return {
+  /** The optional free-text description every entity carries. */
+  description: (current: string | undefined): AdminField => ({
     key: 'description',
     label: 'Description',
     placeholder: 'Optional',
     initial: current ?? '',
     maxLength: 2048,
-  };
-}
+  }),
 
-/** The sort key every directory orders by, a plain number seeded to 0. */
-export function displayOrderField(current: number | undefined): AdminField {
-  return {
+  /** The sort key every directory orders by, a plain number seeded to 0. */
+  displayOrder: (current: number | undefined): AdminField => ({
     key: 'displayOrder',
     label: 'Display order',
     placeholder: '0',
     initial: String(current ?? 0),
     keyboardType: 'number-pad',
-  };
-}
+  }),
+
+  /** A free-text category label; the placeholder names an example per entity. */
+  category: (current: string | undefined, placeholder: string): AdminField => ({
+    key: 'category',
+    label: 'Category',
+    placeholder,
+    initial: current ?? '',
+    maxLength: 100,
+  }),
+
+  /** An outbound link — the no-caps, 2048-cap URL input a brand's site and a
+      product's link both use; key and label name which one. */
+  url: (key: string, label: string, current: string | undefined): AdminField => ({
+    key,
+    label,
+    placeholder: 'https://…',
+    initial: current ?? '',
+    autoCapitalize: 'none',
+    maxLength: 2048,
+  }),
+};
 
 interface AdminEntityFormProps {
   /** Titles the screen and every action's label: "New <noun>" / "Edit <noun>",
