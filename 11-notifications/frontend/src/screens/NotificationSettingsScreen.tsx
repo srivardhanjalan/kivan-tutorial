@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import NOTIFICATION_TYPE_ICON from '../constants/notificationTypeIcons';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import SectionHeader from '../components/SectionHeader';
 import { useToast } from '../components/ToastProvider';
 import {
+  NotificationType,
   fetchNotificationSettings,
   updateNotificationSettings,
 } from '../services/api';
@@ -19,18 +21,23 @@ import { Spacing } from '../constants/ScreenStyles';
 /** The mute flag a row toggles: the four optional keys of the update body. */
 type MuteKey = keyof NotificationSettingsUpdate;
 
-/** The four toggleable notification types, in feed order. */
+/** The four toggleable notification types, in feed order. Each row is keyed
+    by the TYPE; its mute field is derived as `mute_\${type}`, the same
+    derivation the Lambda consumer runs, so the relationship the API layer
+    documents is enforced here rather than restated. Icons come from the
+    shared per-type record. */
 const ROWS: {
-  key: MuteKey;
+  type: NotificationType;
   label: string;
   description: string;
-  icon: keyof typeof Ionicons.glyphMap;
 }[] = [
-  { key: 'mute_follow', label: 'New followers', description: 'When someone follows you', icon: 'person-add' },
-  { key: 'mute_wishlist_created', label: 'Wishlist created', description: 'When someone you follow creates a wishlist', icon: 'list' },
-  { key: 'mute_wish_added', label: 'Wish added', description: 'When someone you follow adds a wish', icon: 'gift' },
-  { key: 'mute_wishlist_loved', label: 'Wishlist loved', description: 'When someone loves your wishlist', icon: 'heart' },
+  { type: 'follow', label: 'New followers', description: 'When someone follows you' },
+  { type: 'wishlist_created', label: 'Wishlist created', description: 'When someone you follow creates a wishlist' },
+  { type: 'wish_added', label: 'Wish added', description: 'When someone you follow adds a wish' },
+  { type: 'wishlist_loved', label: 'Wishlist loved', description: 'When someone loves your wishlist' },
 ];
+
+const muteKeyFor = (type: NotificationType): MuteKey => `mute_${type}` as MuteKey;
 
 /**
  * The mute preferences screen, reached from Settings. Each row is a type of
@@ -88,9 +95,9 @@ export default function NotificationSettingsScreen() {
       <SectionHeader title="Notifications" />
 
       {ROWS.map((row) => (
-        <View key={row.key} style={styles.row}>
+        <View key={row.type} style={styles.row}>
           <View style={styles.iconWrap}>
-            <Ionicons name={row.icon} size={20} color={Colors.grey} />
+            <Ionicons name={NOTIFICATION_TYPE_ICON[row.type]} size={20} color={Colors.grey} />
           </View>
           <View style={styles.rowText}>
             <Text style={styles.label}>{row.label}</Text>
@@ -98,8 +105,8 @@ export default function NotificationSettingsScreen() {
           </View>
           <Switch
             // ON = receiving (not muted): the stored flag is inverted for display
-            value={settings ? !settings[row.key] : true}
-            onValueChange={() => handleToggle(row.key)}
+            value={settings ? !settings[muteKeyFor(row.type)] : true}
+            onValueChange={() => handleToggle(muteKeyFor(row.type))}
             trackColor={{ false: Colors.lightGrey, true: Colors.primary }}
             thumbColor={Colors.white}
             ios_backgroundColor={Colors.lightGrey}

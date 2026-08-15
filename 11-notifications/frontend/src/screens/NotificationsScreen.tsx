@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
 import formatUnreadCount from '../utils/formatUnreadCount';
+import NOTIFICATION_TYPE_ICON from '../constants/notificationTypeIcons';
 import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -26,14 +27,6 @@ import BorderRadius from '../constants/BorderRadius';
 
 /** The page size for the feed's infinite scroll (the backend caps limit at 50). */
 const PAGE_SIZE = 20;
-
-/** The icon that identifies each notification type in its avatar badge. */
-const TYPE_ICON: Record<NotificationType, keyof typeof Ionicons.glyphMap> = {
-  follow: 'person-add',
-  wishlist_created: 'list',
-  wish_added: 'gift',
-  wishlist_loved: 'heart',
-};
 
 /** The accent behind each type's badge icon. `follow` reuses the brand color;
     the other three are named tokens (their colors have one home in Colors). */
@@ -82,7 +75,7 @@ const NotificationRow: React.FC<{
       <View>
         <Avatar imageUrl={item.actor.image_url} name={name} size={LIST_ROW_AVATAR_SIZE} />
         <View style={[styles.typeBadge, { backgroundColor: TYPE_COLOR[item.notification_type] }]}>
-          <Ionicons name={TYPE_ICON[item.notification_type]} size={13} color={Colors.white} />
+          <Ionicons name={NOTIFICATION_TYPE_ICON[item.notification_type]} size={13} color={Colors.white} />
         </View>
       </View>
       <View style={styles.rowText}>
