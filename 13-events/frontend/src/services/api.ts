@@ -49,7 +49,8 @@ export type ResourceType =
   | 'profile_photo'
   | 'cover_photo'
   | 'wishlist_photo'
-  | 'wish_photo';
+  | 'wish_photo'
+  | 'event_photo';
 
 /** Extensions the signed-url endpoint accepts (drives the S3 key + MIME) */
 export type FileExtension = 'jpeg' | 'png' | 'gif' | 'webp';
@@ -638,4 +639,96 @@ export async function updateNotificationSettings(
     body: JSON.stringify(update),
   });
   return res.json();
+}
+
+// ── Events (step 13) ───────────────────────────────────────────────────────
+
+/** An event the user hosts or is invited to. `event_type` is a life-event id
+    (it keys the same pastel wash a wishlist's does); `event_date` is an ISO
+    string, `image_url` the single cover (re-signed on read). */
+export interface Event {
+  id: string;
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  is_public: boolean;
+  event_type: string | null;
+  event_date: string | null;
+  location: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/** POST /events/ and PUT /events/{id} body: the one form that calls both
+    always sends name and adds the optional fields when set or changed. */
+export interface EventCreate {
+  name: string;
+  description?: string;
+  image_url?: string;
+  is_public?: boolean;
+  event_type?: string;
+  event_date?: string;
+  location?: string;
+}
+
+/** GET /events/me: the events I host and the events I'm invited to. Phase A
+    surfaces hosting; the invited list carries an RSVP the invitee step reads. */
+export interface MyEvents {
+  hosting: Event[];
+  invited: Event[];
+}
+
+/** GET /events/{id}: the event with its hosts and linked wishlists, plus
+    whether the caller hosts it (which unlocks the edit/delete affordances). */
+export interface EventDetail {
+  event: Event;
+  hosts: User[];
+  wishlists: Wishlist[];
+  is_host: boolean;
+}
+
+/** Create an event; the creator becomes its first host server-side. The
+    trailing slash is required (see createWishlist). */
+export async function createEvent(body: EventCreate): Promise<Event> {
+  const res = await request('/events/', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+/** The events I host and am invited to. */
+export async function fetchMyEvents(): Promise<MyEvents> {
+  const res = await request('/events/me');
+  return res.json();
+}
+
+/** One event's full detail (hosts, linked wishlists, is_host). */
+export async function fetchEvent(id: string): Promise<EventDetail> {
+  const res = await request(`/events/${id}`);
+  return res.json();
+}
+
+export async function updateEvent(id: string, body: EventCreate): Promise<Event> {
+  const res = await request(`/events/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+export async function deleteEvent(id: string): Promise<void> {
+  await request(`/events/${id}`, { method: 'DELETE' });
+}
+
+/** Link a wishlist the caller owns to an event they host. */
+export async function linkWishlistToEvent(
+  eventId: string,
+  wishlistId: string
+): Promise<void> {
+  await request(`/events/${eventId}/wishlists`, {
+    method: 'POST',
+    body: JSON.stringify({ wishlist_id: wishlistId }),
+  });
 }
