@@ -120,6 +120,30 @@ raise the quota), declare an `aws_ce_anomaly_monitor` (`monitor_type =
 `infra/scripts/activate-cost-tags.sh` so the tags become billing filters (up to
 24 h to show in Cost Explorer).
 
+### CI/CD references
+
+`./scripts/deploy.sh` is the by-hand deploy. `cicd/` ships the automated one as a
+**copy-in reference**: `cicd/backend/deploy.yml` is a GitHub Actions workflow you
+drop into `.github/workflows/` of the repo holding your extracted backend. On a
+push to `main` it assumes an AWS role over OIDC, builds the image, pushes it to
+this stack's ECR repo, and App Runner auto-deploys it — the same amd64 image the
+local script builds, minus the colima/rosetta cross-build (the `ubuntu-latest`
+runner is amd64-native).
+
+The AWS side is `infra/cicd.tf`: a GitHub OIDC provider and an IAM role/policy
+scoped to this stack's ECR repo and App Runner service. Both are **count-gated on
+`var.github_repository`, which defaults to empty** — so no assumable deploy role
+is minted until you set it to your own fork. A default pointing at the tutorial's
+repo would be a live credential on every learner's account; the same
+absence-is-off idiom guards the Mailgun SSM parameter. `terraform output` the
+role ARN and store it as the workflow's `AWS_ROLE_ARN` secret.
+
+The upstream project also carries two iOS TestFlight workflows, both shipped
+`if: false` (disabled). They are **not ported**: the tutorial never provisions
+Expo/Fastlane/TestFlight, so they would be non-runnable YAML pointing at
+infrastructure that has no counterpart here. The deployable CI story is the
+backend path above, which `cicd.tf` actually backs.
+
 ## What's here (the events delta over step 12)
 
 ```
