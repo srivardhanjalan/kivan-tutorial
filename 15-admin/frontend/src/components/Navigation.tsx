@@ -24,6 +24,7 @@ import UserProfileScreen from '../screens/UserProfileScreen';
 import FollowListScreen from '../screens/FollowListScreen';
 import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
 import AdminHomeScreen from '../screens/AdminHomeScreen';
+import AdminUsersScreen from '../screens/AdminUsersScreen';
 import {
   setAuthTokenGetter,
   fetchOnboardingCompleted,
@@ -245,6 +246,7 @@ export default function Navigation() {
           <Stack.Screen name="UserProfile" component={UserProfileScreen} />
           <Stack.Screen name="FollowList" component={FollowListScreen} />
           <Stack.Screen name="AdminHome" component={AdminHomeScreen} />
+          <Stack.Screen name="AdminUsers" component={AdminUsersScreen} />
         </Stack.Navigator>
       </NavigationContainer>
       <OnboardingTutorial visible={showOnboarding} onDismiss={handleOnboardingDismiss} />
