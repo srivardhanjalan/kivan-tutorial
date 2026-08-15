@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
 from app.routes import (
+    admin,
     brands,
     events,
     followers,
@@ -69,6 +70,9 @@ app.include_router(notifications.router)
 # linked to it. This step lands the data model, core CRUD, and wishlist linking;
 # invitees/RSVP and the notification legs follow.
 app.include_router(events.router)
+# Admin (step 15): the global user role lands with its first readers — the
+# admin-gated user roster and role promote/demote, behind require_admin.
+app.include_router(admin.router)
 
 
 @app.get("/")
