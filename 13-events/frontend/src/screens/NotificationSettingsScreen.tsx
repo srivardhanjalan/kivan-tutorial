@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import AppSwitch from '../components/AppSwitch';
 import { View, Text, StyleSheet, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import NOTIFICATION_TYPE_ICON from '../constants/notificationTypeIcons';
@@ -72,14 +73,7 @@ function ToggleRow({
         <Text style={styles.label}>{label}</Text>
         <Text style={styles.description}>{description}</Text>
       </View>
-      <Switch
-        value={value}
-        onValueChange={onToggle}
-        trackColor={{ false: Colors.lightGrey, true: Colors.primary }}
-        thumbColor={Colors.white}
-        ios_backgroundColor={Colors.lightGrey}
-        disabled={disabled}
-      />
+      <AppSwitch value={value} onValueChange={onToggle} disabled={disabled} />
     </View>
   );
 }

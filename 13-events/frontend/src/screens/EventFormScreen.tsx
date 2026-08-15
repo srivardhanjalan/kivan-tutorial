@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, Switch, StyleSheet } from 'react-native';
+import AppSwitch from '../components/AppSwitch';
+import { View, Text, StyleSheet } from 'react-native';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FieldLabel from '../components/FieldLabel';
 import FormScreenScaffold from '../components/layouts/FormScreenScaffold';
@@ -102,13 +103,7 @@ export default function EventFormScreen() {
 
       <View style={styles.privacyRow}>
         <Text style={styles.privacyLabel}>Public event</Text>
-        <Switch
-          value={isPublic}
-          onValueChange={setIsPublic}
-          trackColor={{ false: Colors.lightGrey, true: Colors.primary }}
-          thumbColor={Colors.white}
-          ios_backgroundColor={Colors.lightGrey}
-        />
+        <AppSwitch value={isPublic} onValueChange={setIsPublic} />
       </View>
 
       <FormInput
