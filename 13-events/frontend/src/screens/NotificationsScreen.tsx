@@ -29,12 +29,14 @@ import BorderRadius from '../constants/BorderRadius';
 const PAGE_SIZE = 20;
 
 /** The accent behind each type's badge icon. `follow` reuses the brand color;
-    the other three are named tokens (their colors have one home in Colors). */
+    the other five are named tokens (their colors have one home in Colors). */
 const TYPE_COLOR: Record<NotificationType, string> = {
   follow: Colors.primary,
   wishlist_created: Colors.notifyWishlistCreated,
   wish_added: Colors.notifyWishAdded,
   wishlist_loved: Colors.notifyWishlistLoved,
+  event_created: Colors.notifyEventCreated,
+  event_invitation: Colors.notifyEventInvitation,
 };
 
 /**
@@ -93,7 +95,8 @@ const NotificationRow: React.FC<{
  * The notifications feed: the caller's notifications newest-first, reloaded on
  * every focus and paged in as you scroll. A tap marks the row read (optimistic)
  * and opens what it points at: a follow to the actor's profile, a wishlist or
- * love to that wishlist, a new wish to the wishlist it landed in. The header
+ * love to that wishlist, a new wish to the wishlist it landed in, an event
+ * (created or invitation) to that event's detail. The header
  * carries an unread pill and a mark-all-read action; a long-press deletes a row.
  */
 export default function NotificationsScreen() {
@@ -171,6 +174,18 @@ export default function NotificationsScreen() {
 
     if (item.notification_type === 'follow') {
       navigation.navigate('UserProfile', { userId: item.actor.id });
+      return;
+    }
+    // Event types point at the event itself: the event IS the target, so its id
+    // is resource.id (no wishlist_id analog). A missing resource (deleted since
+    // the notification fired) is a silent no-op.
+    if (
+      item.notification_type === 'event_created' ||
+      item.notification_type === 'event_invitation'
+    ) {
+      if (item.resource?.id) {
+        navigation.navigate('EventDetail', { eventId: item.resource.id });
+      }
       return;
     }
     // wish_added points at a wish, so its list is resource.wishlist_id; the

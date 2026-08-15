@@ -516,13 +516,15 @@ export async function unloveWishlist(wishlistId: string): Promise<void> {
 
 // ── Notifications: the feed, the unread badge, and mute settings ────────────
 
-/** The four notification types this app raises. Each maps to an icon and an
+/** The six notification types this app raises. Each maps to an icon and an
     accent color in the feed, and to a mute flag in settings. */
 export type NotificationType =
   | 'follow'
   | 'wishlist_created'
   | 'wish_added'
-  | 'wishlist_loved';
+  | 'wishlist_loved'
+  | 'event_created'
+  | 'event_invitation';
 
 /** The user who triggered a notification, as a feed row renders them: a lighter
     projection than the full User, an avatar and a name and nothing else.
@@ -577,6 +579,8 @@ export interface NotificationSettings {
   mute_wishlist_created: boolean;
   mute_wish_added: boolean;
   mute_wishlist_loved: boolean;
+  mute_event_created: boolean;
+  mute_event_invitation: boolean;
   email_notifications: boolean;
   updated_at: string;
 }
@@ -587,6 +591,8 @@ export interface NotificationSettingsUpdate {
   mute_wishlist_created?: boolean;
   mute_wish_added?: boolean;
   mute_wishlist_loved?: boolean;
+  mute_event_created?: boolean;
+  mute_event_invitation?: boolean;
   email_notifications?: boolean;
 }
 

@@ -25,7 +25,7 @@ type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
     (the four mute flags plus `email_notifications`). */
 type ToggleKey = keyof NotificationSettingsUpdate;
 
-/** The four toggleable notification types, in feed order. Each row is keyed
+/** The six toggleable notification types, in feed order. Each row is keyed
     by the TYPE; its mute field is derived as `mute_\${type}`, the same
     derivation the Lambda consumer runs, so the relationship the API layer
     documents is enforced here rather than restated. Icons come from the
@@ -39,6 +39,8 @@ const ROWS: {
   { type: 'wishlist_created', label: 'Wishlist created', description: 'When someone you follow creates a wishlist' },
   { type: 'wish_added', label: 'Wish added', description: 'When someone you follow adds a wish' },
   { type: 'wishlist_loved', label: 'Wishlist loved', description: 'When someone loves your wishlist' },
+  { type: 'event_created', label: 'Event created', description: 'When someone you follow creates an event' },
+  { type: 'event_invitation', label: 'Event invitations', description: "When you're invited to an event" },
 ];
 
 const muteKeyFor = (type: NotificationType): ToggleKey => `mute_${type}` as ToggleKey;

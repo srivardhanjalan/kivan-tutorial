@@ -39,11 +39,15 @@ export default {
   danger: '#EF4444',
   // Notification-type accents: the icon-badge color that identifies a
   // notification's type in the feed. `follow` reuses `primary` (its color
-  // already has a home), so only the other three types name a color here.
+  // already has a home), so the other five types name a color here.
   /** Wishlist-created notifications */
   notifyWishlistCreated: '#4CAF50',
   /** Wish-added notifications */
   notifyWishAdded: '#FF9800',
   /** Wishlist-loved notifications */
   notifyWishlistLoved: '#E91E63',
+  /** Event-created notifications */
+  notifyEventCreated: '#2196F3',
+  /** Event-invitation notifications */
+  notifyEventInvitation: '#9C27B0',
 };
