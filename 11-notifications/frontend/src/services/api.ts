@@ -540,8 +540,6 @@ interface NotificationActor {
     Read only through NotificationWithActor.resource, so it stays module-private. */
 interface NotificationResource {
   id: string;
-  type: string;
-  name: string;
   wishlist_id?: string;
 }
 
@@ -587,16 +585,13 @@ export interface NotificationSettingsUpdate {
   mute_wishlist_loved?: boolean;
 }
 
-/** One page of the caller's notifications, newest first. `unreadOnly` filters
-    the page to unread; the counts in the response still cover the full set. */
+/** One page of the caller's notifications, newest first; the counts in the
+    response cover the full set. */
 export async function fetchNotifications(
   limit: number,
-  offset: number,
-  unreadOnly = false
+  offset: number
 ): Promise<NotificationsResponse> {
-  const res = await request(
-    `/notifications/me?limit=${limit}&offset=${offset}&unread_only=${unreadOnly}`
-  );
+  const res = await request(`/notifications/me?limit=${limit}&offset=${offset}`);
   return res.json();
 }
 
