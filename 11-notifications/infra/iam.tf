@@ -116,6 +116,37 @@ resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
         ]
       },
       {
+        # Notifications: the feed and unread count Query the
+        # UserNotificationsIndex, mark-read/read-all UpdateItem, delete
+        # DeleteItem, and the ownership check GetItem by id. The Lambda
+        # consumer writes the rows under its own role; this role never
+        # PutItems a notification.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query"
+        ]
+        Resource = [
+          aws_dynamodb_table.notifications.arn,
+          "${aws_dynamodb_table.notifications.arn}/index/*"
+        ]
+      },
+      {
+        # Notification settings: GET reads the row (GetItem), PUT upserts the
+        # mute flags (UpdateItem creates the row on first write). Keyed by the
+        # caller's own user_id; no index, no delete path.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:UpdateItem"
+        ]
+        Resource = [
+          aws_dynamodb_table.notification_settings.arn
+        ]
+      },
+      {
         # Wishes: item CRUD (UpdateItem flips `completed`), Query on
         # WishlistIdIndex (listing + cascade delete), and BatchWriteItem for
         # the cascade's batched deletes.
