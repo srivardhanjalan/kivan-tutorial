@@ -7,6 +7,7 @@ import PrimaryButton from './PrimaryButton';
 import { useToast } from './ToastProvider';
 import Colors from '../constants/Colors';
 import BorderRadius from '../constants/BorderRadius';
+import Opacity from '../constants/Opacity';
 import Typography from '../constants/Typography';
 import { Spacing } from '../constants/ScreenStyles';
 
@@ -71,7 +72,7 @@ const ShareLinkModal: React.FC<ShareLinkModalProps> = ({
       <TouchableOpacity
         style={styles.linkBox}
         onPress={copyLink}
-        activeOpacity={0.7}
+        activeOpacity={Opacity.pressed}
         accessibilityRole="button"
         accessibilityLabel="Copy link"
       >
