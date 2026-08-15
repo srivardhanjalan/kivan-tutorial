@@ -55,6 +55,9 @@ app.include_router(wishes.wishlist_wishes_router)
 # The curated catalog: stores, plus the storefront-scoped product listing
 app.include_router(storefronts.router)
 app.include_router(products.router)
+# The admin write side of the catalog (step 15), gated by require_admin: stores,
+# plus the storefront-scoped product CRUD
+app.include_router(storefronts.admin_router)
 # The real-store directory the in-app browser opens, and the Firecrawl proxy
 # that scrapes a browsed product page into a wish
 app.include_router(brands.router)

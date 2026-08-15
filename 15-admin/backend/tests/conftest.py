@@ -50,6 +50,8 @@ EVENT_INVITEES_TABLE = f"kivan-{ENVIRONMENT}-event-invitees"
 EVENT_WISHLISTS_TABLE = f"kivan-{ENVIRONMENT}-event-wishlists"
 BRANDS_TABLE = f"kivan-{ENVIRONMENT}-brands"
 LIFE_EVENTS_TABLE = f"kivan-{ENVIRONMENT}-life-events"
+STOREFRONTS_TABLE = f"kivan-{ENVIRONMENT}-storefronts"
+PRODUCTS_TABLE = f"kivan-{ENVIRONMENT}-products"
 
 
 def _create_tables(client) -> None:
@@ -312,6 +314,36 @@ def _create_tables(client) -> None:
         AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
         KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
     )
+    # Storefronts (step 15 admin): the store catalog, reference data hashed on id
+    # with no GSI.
+    client.create_table(
+        TableName=STOREFRONTS_TABLE,
+        BillingMode="PAY_PER_REQUEST",
+        AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
+        KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
+    )
+    # Products (step 15 admin): one row per catalog product; StorefrontIdIndex
+    # (hash storefront_id) serves the storefront-scoped listing and backs the
+    # storefront delete guard's has-products Query — created here because the
+    # storefront routes are its first test reader, the product routes arrive next.
+    client.create_table(
+        TableName=PRODUCTS_TABLE,
+        BillingMode="PAY_PER_REQUEST",
+        AttributeDefinitions=[
+            {"AttributeName": "id", "AttributeType": "S"},
+            {"AttributeName": "storefront_id", "AttributeType": "S"},
+        ],
+        KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
+        GlobalSecondaryIndexes=[
+            {
+                "IndexName": "StorefrontIdIndex",
+                "KeySchema": [
+                    {"AttributeName": "storefront_id", "KeyType": "HASH"}
+                ],
+                "Projection": {"ProjectionType": "ALL"},
+            },
+        ],
+    )
 
 
 @pytest.fixture
@@ -473,4 +505,24 @@ def put_life_event(
     if icon is not None:
         item["icon"] = icon
     aws.Table(LIFE_EVENTS_TABLE).put_item(Item=item)
+    return item
+
+
+def put_storefront(
+    aws,
+    storefront_id: str,
+    *,
+    name: str = "A store",
+    product_count: int = 0,
+    display_order: int = 0,
+):
+    """Seed a storefront row the way the seed script leaves it: a complete
+    record with the denormalized product_count the store card reads."""
+    item = {
+        "id": storefront_id,
+        "name": name,
+        "product_count": product_count,
+        "display_order": display_order,
+    }
+    aws.Table(STOREFRONTS_TABLE).put_item(Item=item)
     return item

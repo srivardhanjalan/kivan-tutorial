@@ -1,8 +1,38 @@
 from typing import Optional
 
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel, Field, field_serializer
 
 from app.utils.s3_helpers import get_signed_url_for_s3
+
+
+class StorefrontCreate(BaseModel):
+    """POST /admin/storefronts body. `id` is a client-supplied slug (the seed
+    writes stores by a stable id), put conditionally so a collision with a
+    seeded store is a 409, not a clobber. `logo_url` is omitted for the same
+    reason as a brand's (a seed-owned catalog object; no logo-upload UI in the
+    plain dashboard yet), and `product_count` is omitted because it is
+    denormalized: a new store has zero products, and the count is maintained by
+    the product create/delete routes, never hand-set here.
+
+    Length caps mirror the rest of the app so a validated body can never blow
+    past DynamoDB's 400 KB item limit."""
+
+    id: str = Field(max_length=100)
+    name: str = Field(max_length=200)
+    description: Optional[str] = Field(default=None, max_length=2048)
+    display_order: int = 0
+
+
+class StorefrontUpdate(BaseModel):
+    """PUT /admin/storefronts/{id} body — send only what changes; omitted or
+    null fields are left untouched. `id` and the seed-owned `logo_url` are not
+    editable, and `product_count` is not either: it is a denormalized tally the
+    product routes keep, so a hand-edit here would let it drift from the
+    products actually under the store."""
+
+    name: Optional[str] = Field(default=None, max_length=200)
+    description: Optional[str] = Field(default=None, max_length=2048)
+    display_order: Optional[int] = None
 
 
 class Storefront(BaseModel):
