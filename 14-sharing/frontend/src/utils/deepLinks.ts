@@ -17,12 +17,6 @@ export type DeepLinkTarget =
   | { screen: 'UserProfile'; params: { userId: string } }
   | { screen: 'EventDetail'; params: { eventId: string } };
 
-/** Ids as they appear in a link: wishlist and event ids are uuids, a profile id
-    is a Clerk user id (letters, digits, `_` and `-`). Kept loose on purpose:
-    the screen the link opens is what truly validates the id by fetching it. */
-const UUID = '[a-f0-9-]+';
-const CLERK_ID = '[a-zA-Z0-9_-]+';
-
 /**
  * Turn a `kivan://…` URL into the screen it should open, or null if it's not a
  * link we route. Pure given the URL string: the whole of deep linking's logic
@@ -30,40 +24,28 @@ const CLERK_ID = '[a-zA-Z0-9_-]+';
  * parser, and so it can be reasoned about (and E2E-checked) on its own.
  *
  * `expo-linking`'s parse splits `kivan://wishlist/<id>` into hostname
- * `"wishlist"` and path `"<id>"`; a link that arrives with the kind in the path
- * instead (`.../go/wishlist/<id>`) is caught by the regex fallback. The kinds
- * are checked in a fixed order and the first match wins.
+ * `"wishlist"` and path `"<id>"`, so the path is the id for the matching kind.
+ * The kinds are checked in a fixed order and the first match wins.
  */
 export function parseDeepLink(url: string): DeepLinkTarget | null {
   const { path, hostname } = Linking.parse(url);
 
-  const wishlistId = idFor('wishlist', UUID, hostname, path);
+  const wishlistId = idFor('wishlist', hostname, path);
   if (wishlistId) return { screen: 'WishlistDetail', params: { wishlistId } };
 
-  const userId = idFor('user', CLERK_ID, hostname, path);
+  const userId = idFor('user', hostname, path);
   if (userId) return { screen: 'UserProfile', params: { userId } };
 
-  const eventId = idFor('event', UUID, hostname, path);
+  const eventId = idFor('event', hostname, path);
   if (eventId) return { screen: 'EventDetail', params: { eventId } };
 
   return null;
 }
 
-/** Pull an entity id out of a parsed link: the path IS the id when the kind rode
-    in as the hostname (`kivan://<kind>/<id>`), otherwise a `<kind>/<id>` run
-    anywhere in the path. Returns null when this kind isn't present. */
-function idFor(
-  kind: string,
-  idPattern: string,
-  hostname: string | null,
-  path: string | null
-): string | null {
-  if (hostname === kind && path) {
-    return path;
-  }
-  if (path) {
-    const match = path.match(new RegExp(`${kind}/(${idPattern})`, 'i'));
-    if (match) return match[1];
-  }
-  return null;
+/** The id a link carries: `kivan://<kind>/<id>` parses to hostname `<kind>` and
+    path `<id>`, so the path IS the id for the matching kind. Null when this link
+    is a different kind. The id is left loose on purpose: the screen the link
+    opens is what truly validates it, by fetching it. */
+function idFor(kind: string, hostname: string | null, path: string | null): string | null {
+  return hostname === kind && path ? path : null;
 }
