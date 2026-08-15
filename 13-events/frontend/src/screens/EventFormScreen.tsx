@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, Switch, StyleSheet } from 'react-native';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FieldLabel from '../components/FieldLabel';
-import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
+import FormScreenScaffold from '../components/layouts/FormScreenScaffold';
 import FormInput from '../components/FormInput';
-import LifeEventSelector from '../components/LifeEventSelector';
+import DescriptionField from '../components/DescriptionField';
+import LifeEventField from '../components/LifeEventField';
 import ImageUploadField from '../components/ImageUploadField';
 import SelectableList from '../components/SelectableList';
 import SelectableRow from '../components/SelectableRow';
-import PrimaryButton from '../components/PrimaryButton';
 import { useToast } from '../components/ToastProvider';
 import useAsyncAction from '../hooks/useAsyncAction';
 import useFetch from '../hooks/useFetch';
@@ -86,22 +86,17 @@ export default function EventFormScreen() {
   };
 
   return (
-    <FloatingHeaderLayout title={event ? 'Edit Event' : 'New Event'} showBack>
+    <FormScreenScaffold
+      editing={!!event}
+      noun="Event"
+      submitLabel="Create Event"
+      onSubmit={save}
+      saving={saving}
+    >
       <FormInput value={name} placeholder="Event name" onChangeText={setName} maxLength={200} />
-      <FormInput
-        value={description}
-        placeholder="Description"
-        onChangeText={setDescription}
-        multiline
-        maxLength={2000}
-      />
+      <DescriptionField value={description} onChangeText={setDescription} />
 
-      <FieldLabel>Life event</FieldLabel>
-      {/* The selector carries no margin of its own, so the gap to the next
-          field lives here (the wishlist-form idiom) */}
-      <View style={styles.selector}>
-        <LifeEventSelector selectedId={eventType} onSelect={setEventType} />
-      </View>
+      <LifeEventField selectedId={eventType} onSelect={setEventType} />
 
       <ImageUploadField label="Event cover" upload={photo} />
 
@@ -151,20 +146,11 @@ export default function EventFormScreen() {
           </SelectableList>
         </>
       )}
-
-      <PrimaryButton
-        title={event ? 'Save Changes' : 'Create Event'}
-        onPress={save}
-        loading={saving}
-      />
-    </FloatingHeaderLayout>
+    </FormScreenScaffold>
   );
 }
 
 const styles = StyleSheet.create({
-  selector: {
-    marginBottom: Spacing.lg,
-  },
   privacyRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
-import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
+import FormScreenScaffold from '../components/layouts/FormScreenScaffold';
 import FormInput from '../components/FormInput';
+import DescriptionField from '../components/DescriptionField';
 import ImageUploadField from '../components/ImageUploadField';
-import PrimaryButton from '../components/PrimaryButton';
 import { useToast } from '../components/ToastProvider';
 import useAsyncAction from '../hooks/useAsyncAction';
 import { usePendingImageUpload } from '../hooks/usePendingImageUpload';
@@ -74,20 +74,17 @@ export default function WishFormScreen() {
   };
 
   return (
-    <FloatingHeaderLayout
-      title={wish ? 'Edit Wish' : 'New Wish'}
-      showBack
+    <FormScreenScaffold
+      editing={!!wish}
+      noun="Wish"
+      submitLabel="Add Wish"
+      onSubmit={save}
+      saving={saving}
     >
       {/* maxLength mirrors the backend caps so an overlong paste truncates
           here instead of bouncing off validation with a generic toast */}
       <FormInput value={name} placeholder="Wish name" onChangeText={setName} maxLength={200} />
-      <FormInput
-        value={description}
-        placeholder="Description"
-        onChangeText={setDescription}
-        multiline
-        maxLength={2000}
-      />
+      <DescriptionField value={description} onChangeText={setDescription} />
       <FormInput
         value={cost}
         placeholder={`Cost (${AppConfig.currencySymbol})`}
@@ -105,8 +102,6 @@ export default function WishFormScreen() {
       />
 
       <ImageUploadField label="Wish image" upload={photo} />
-
-      <PrimaryButton title={wish ? 'Save Changes' : 'Add Wish'} onPress={save} loading={saving} />
-    </FloatingHeaderLayout>
+    </FormScreenScaffold>
   );
 }
