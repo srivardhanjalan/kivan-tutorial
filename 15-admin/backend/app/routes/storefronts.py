@@ -87,8 +87,13 @@ def delete_storefront(storefront_id: str, _admin_id: str = Depends(require_admin
     one store and carries its storefront_id, so deleting a store with products
     would orphan them (the products listing queries by that id). That is a
     deliberate 409: clear the store's products first. 404 if the id isn't there.
-    This interlocks with product delete, which decrements the store's count: a
-    store can never be deleted out from under a live product."""
+    The guard reads the actual products (via StorefrontIdIndex), not the
+    denormalized product_count, so a drifted count can never fool it. It is not
+    airtight against a very recently created product: StorefrontIdIndex is a GSI
+    (eventually consistent, no ConsistentRead), so a product not yet propagated
+    can be missed here — the same window the public products listing, which
+    reads the same index, already lives with. An admin-only rare path, and the
+    orphan would not list either, so this is an accepted bound, not a guarantee."""
     if _has_products(storefront_id):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

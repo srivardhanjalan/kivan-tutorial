@@ -74,14 +74,19 @@ def test_create_product_under_missing_store_is_404(aws, client):
     put_user(aws, "admin1", role="admin")
     resp = client("admin1").post("/admin/storefronts/ghost/products", json=_new_product())
     assert resp.status_code == 404
+    # No phantom store was invented by an errant count bump: the store check
+    # runs before any write, and adjust_count never ran.
+    assert "Item" not in aws.Table(STOREFRONTS_TABLE).get_item(Key={"id": "ghost"})
 
 
-def test_create_product_collision_is_409(aws, client):
+def test_create_product_collision_is_409_and_leaves_count(aws, client):
+    """A 409 must not bump the tally: adjust_count runs only after a safe put."""
     put_user(aws, "admin1", role="admin")
-    put_storefront(aws, "acme")
+    put_storefront(aws, "acme", product_count=1)
     put_product(aws, "widget", storefront_id="acme")
     resp = client("admin1").post("/admin/storefronts/acme/products", json=_new_product())
     assert resp.status_code == 409
+    assert _count(aws, "acme") == 1  # unchanged
 
 
 def test_create_product_missing_price_is_422(aws, client):
@@ -114,6 +119,18 @@ def test_update_product_edits_price_and_leaves_count(aws, client):
     assert resp.status_code == 200
     assert resp.json()["price"] == 24.5
     assert _count(aws, "acme") == 1  # an edit never moves the tally
+
+
+def test_update_product_empty_body_is_noop(aws, client):
+    """An empty body returns the product unchanged (the route echoes the row it
+    already fetched to confirm the store) and never moves the tally."""
+    put_user(aws, "admin1", role="admin")
+    put_storefront(aws, "acme", product_count=1)
+    put_product(aws, "widget", storefront_id="acme", name="Widget")
+    resp = client("admin1").put("/admin/storefronts/acme/products/widget", json={})
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "Widget"
+    assert _count(aws, "acme") == 1
 
 
 def test_update_product_under_wrong_store_is_404(aws, client):

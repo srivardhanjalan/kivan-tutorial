@@ -21,9 +21,11 @@ admin_router = APIRouter(prefix="/admin/life-events", tags=["admin", "life-event
 
 def _is_referenced(table, attribute: str, value: str) -> bool:
     """True if any row in `table` carries attribute == value. A filtered Scan,
-    paginated to the end: Limit applies BEFORE the filter, so a first page can
-    come back empty with more pages behind it — stop only on a real match or a
-    truly exhausted table.
+    paginated to the end: a Scan reads at most 1 MB per page and applies the
+    filter to that page, so a page can come back empty (Count 0) with more pages
+    behind it — stop only on a real match or a truly exhausted table. The read is
+    also eventually consistent (a Scan is non-consistent by default), so a row
+    written moments earlier could be missed; acceptable on this rare admin path.
 
     This is a full Scan of a potentially large table (wishlists, events) with no
     index on the reference attribute, so it is honest ONLY because it runs on a

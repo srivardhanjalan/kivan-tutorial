@@ -119,10 +119,10 @@ def delete_product(
     storefront_id: str, product_id: str, _admin_id: str = Depends(require_admin)
 ):
     """Remove a product from its store and move the store's product_count down
-    by one. Nothing hard-references a product (a captured wish copies its photo,
-    price and link by value at add-time), so this is otherwise unguarded — 404
-    if the product isn't under this store. The count decrement is the mirror of
-    create's increment, so the store's tally stays honest."""
+    by one — the mirror of create's increment (a best-effort cache, floored at
+    0 by adjust_count). Nothing hard-references a product (a captured wish copies
+    its photo, price and link by value at add-time), so this is otherwise
+    unguarded — 404 if the product isn't under this store."""
     _product_under_store(product_id, storefront_id)
     delete_item_or_404(products_table, {"id": product_id}, "Product not found")
     adjust_count(storefronts_table, {"id": storefront_id}, "product_count", -1)
