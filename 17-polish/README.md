@@ -370,3 +370,77 @@ Frontend (visual/workflow convergence, behavior held):
       in the event type's pastel with the date as its subtitle, in the My Stuff
       `TileGrid` behind a "New Event" add tile; hosting only this step (invited
       surfaces with RSVP).
+
+## Events (step 13, phase B)
+
+Phase B adds invitees and RSVP: the invite routes (create-time and add-later),
+the RSVP PATCH, and the detail-screen Guests view with its invite flow. The
+notification legs still wait for phase C. As with phase A, some of what phase B
+records is deliberate divergence the polish pass must NOT "restore".
+
+Backend (deliberate, do-not-restore):
+
+- [ ] No standalone `GET /events/{id}/invitees` route. *source:* a
+      `GET /events/{id}/invitees` returning raw `EventInvitee` rows, plus a
+      `getEventInvitees` API client method. *tutorial:* neither exists. The
+      detail response already carries the user-enriched invitees the Guests list
+      needs, and the source's client method had NO caller (its own
+      EventDetailScreen reads the detail's invitees). One invitee list, one
+      place; keep it folded into the detail response.
+- [ ] One shared add-invitees helper. *source:* `create_event` and the
+      add-invitees route each duplicate the user/email split (batch-validate
+      ids, write user rows, write email rows). *tutorial:* one `add_invitees`
+      helper (with `_is_invited` / `_put_invitee`) that both create-time and
+      add-later call, so the split lives once (the step-13 study flagged the
+      duplication). Keep it unified.
+- [ ] RSVP status validated at the model boundary. *source:* the PATCH route
+      hand-checks `rsvp_status` against a list and raises 400. *tutorial:*
+      `UpdateRsvpRequest.rsvp_status` is a `Literal["going","maybe","not_going"]`,
+      so an out-of-set value is a 422 at the boundary and the route carries no
+      validation branch. Behavior note: an invalid status is now 422, not 400.
+      Keep the Literal.
+- [ ] No notification calls yet (deferred to phase C, not a placeholder).
+      *source:* `create_event` and `add_event_invitees` call
+      `notify_event_invitation`. *tutorial:* neither call exists in phase B, and
+      there is no dead placeholder hook; phase C adds the calls at the real
+      sites and `add_invitees` will thread out the newly-added user ids then (it
+      returns None for now). Restore in phase C, not before.
+- [ ] `is_invitee` derived; `is_event_invitee` removed. *source:* a separate
+      `is_event_invitee` helper does targeted GetItems for the detail access
+      gate. *tutorial:* `get_enriched_invitees` already reads the invitee list
+      for the Guests view and reports `my_rsvp_status`, and `is_invitee` falls
+      out of it (None means not invited), so the standalone helper was orphaned
+      and deleted. Keep it derived.
+
+Frontend (visual/workflow convergence, behavior held):
+
+- [ ] RSVP is an inline chip row, not a modal. *source:* a four-state RSVP
+      button that auto-opens a Going/Maybe/Can't Go modal ~500ms after load for
+      pending invitees. *tutorial:* an always-visible `RsvpControl` chip row
+      (the life-event-selector chip look) under a "Your RSVP" header, no modal
+      and no timer. Both set the same RSVP.
+- [ ] One invite modal, and no "emailed" claim. *source:* separate add-invitee
+      and invite-by-email modals, with a toast "Invitation emailed to X".
+      *tutorial:* one `InviteGuestModal` on the shared `ModalCard`/`AddToWishlist`
+      surface, carrying the Discover user search and an email field; the email
+      toast reads "Invited X" because NO mail is sent to an email invitee (the
+      study's negative result), so the source's copy would lie. Keep the truthful
+      copy.
+- [ ] Guest list is a stacked section, not a view toggle. *source:* a
+      wishes/guests segmented toggle swaps the body between a `WishlistCardGrid`
+      and the guest list, whose rows carry overlapping-avatar host chrome.
+      *tutorial:* Guests and Wishlists are both plain stacked sections
+      (`SectionHeader` + rows); `EventGuestList` is Avatar + name + RSVP rows
+      with a host-only remove. Non-hosts still see only "going" guests (behavior
+      held).
+- [ ] My Stuff invited surfacing. *source:* hosting and invited merged in one
+      list, each `EventRailCard` carrying a Hosting/Invited pill. *tutorial:* a
+      separate "Invited" section shown only when non-empty (no empty prompt to
+      plan someone else's event), `EventCard` tiles whose subtitle appends my
+      RSVP ("Sep 1, 2026 · Going"). The `RSVP_LABEL` map is shared between the
+      guest list and the tile so the wording can't drift.
+- [ ] `useFetch` gained a `refetch`. *note:* `useFetch` now returns `refetch`
+      (its existing `run`), so EventDetailScreen can re-pull the detail after an
+      on-screen RSVP, invite, or remove whose server-computed result
+      (`my_rsvp_status`, `is_invitee`, enriched invitees) can't be reconstructed
+      client-side. Additive; existing callers are untouched.
