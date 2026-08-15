@@ -260,3 +260,39 @@ the finished design (behavior held at parity):
       row read. *tutorial:* flips the row and drops the unread count
       optimistically, then fires the request (the next focus reload reconciles a
       failure). A workflow refinement, not a convergence target.
+
+## Notifications email (step 12)
+
+Step 12 adds the email leg: the same consumer that writes a notification row
+now also mails the recipient a copy via Mailgun. It ships one new preference
+(`email_notifications`, default on) and, deliberately, more than the source
+did. These are backend/secrets divergences plus one frontend ADD, so the polish
+pass must NOT "restore" the source's simpler-but-worse shape.
+
+- [ ] Email preference has a real control. *source:* `email_notifications` is
+      honored by the Lambda but has NO UI anywhere: the only way to flip it is a
+      raw `PUT /settings` call, so a real user can never turn email copies off.
+      *tutorial:* the notification settings screen gains an **Email** section
+      with an "Email copies" switch bound to that flag (NOT inverted: ON = copies
+      on, unlike the mute rows). This is a deliberate ADD (the tutorial exposes a
+      preference the source hid); keep the toggle, do not converge it away.
+- [ ] Mailgun API key lives in SSM, not a plaintext Lambda env var. *source:*
+      injects `MAILGUN_API_KEY` straight into the Lambda's `environment.variables`
+      (plaintext at rest), inconsistent with the same repo's App Runner secrets,
+      which go through SSM SecureStrings. *tutorial:* the key is an SSM
+      SecureString the handler fetches and decrypts once at cold start; only the
+      non-secret domain and from-address ride as plain env. Keep the SSM path.
+- [ ] Settings GET and PUT agree on `email_notifications`. *source:* the GET
+      defaults object omits `email_notifications` while the PUT allow-list
+      includes it, an asymmetry that lets a brand-new user's GET and their first
+      PUT disagree on the field's presence. *tutorial:* both the GET defaults
+      (via the model) and the PUT allow-list carry it. Keep them symmetric.
+- [ ] One settings read per notification, not two. *source:* the consumer's
+      mute check and its email-opt-in check each `get_item` the same settings row
+      (two reads of one record per notification). *tutorial:* the row is read
+      once and passed to both checks. Keep the single read.
+- [ ] Email body has no per-type copy (parity note). *source:* one generic
+      template for every type, the type shown only as a "Type: ..." label.
+      *tutorial:* the same single template (no per-type subjects or bodies were
+      invented). Not a divergence; recorded so a later step does not mistake the
+      generic body for a gap to fill unless the finished design asks for it.

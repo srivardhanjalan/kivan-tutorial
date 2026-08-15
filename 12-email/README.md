@@ -1,34 +1,33 @@
-# Step 11: Notifications
+# Step 12: Email notifications
 
-Social gave the app a network, but it was a silent one: you could follow someone
-or love their wishlist and they'd never know. This step gives the network a
-**voice**. A follow, a new wishlist, a new wish, or a love now **tells the person
-it happened** with an in-app notification. There's a **feed** on the fourth tab
-(newest first, unread rows called out, tap to open what it points at), a **live
-unread badge** on that tab, and a **settings screen** where you mute the types
-you don't want.
+Step 11 gave the network a voice, but only inside the app: a follow, a new
+wishlist, a new wish, or a love wrote an in-app row you'd see next time you
+opened the fourth tab. This step lets that voice **reach your inbox**. The same
+Lambda that writes the notification row now also **mails the recipient a copy**
+through Mailgun, so a notification lands whether or not the app is open.
 
-The notification write path is **asynchronous on purpose**. A follow doesn't wait
-on a notification: the route publishes a small event to an **SQS queue** and
-returns immediately, and a **Lambda consumer** is the one that fans the event
-out to followers and writes the rows. The user action and the notification it
-triggers are decoupled, so a slow or failing consumer never slows a tap, and the
-producers are best-effort (a publish failure is logged, never surfaced).
+It is the **same consumer**, not a new one. Right after the notification row is
+written, the handler attempts one email as a **best-effort** afterthought: an
+email failure is caught and logged, and the notification it accompanies is never
+failed by it. A recipient can turn email copies off with a new **Email copies**
+switch on the notification settings screen (`email_notifications`, defaulting on),
+and the Lambda honors that flag before it sends.
 
-What ships here is deliberately **in-app only**. There is **no email** (that's
-step 12), **no events** (`event_created` / `event_invitation` arrive in step 13),
-and no push. The four types are `follow`, `wishlist_created`, `wish_added`, and
-`wishlist_loved`, and nothing else.
+What ships here is **email only**. There are still **no events**
+(`event_created` / `event_invitation` arrive in step 13) and no push. The four
+types are `follow`, `wishlist_created`, `wish_added`, and `wishlist_loved`, and
+every one of them now also mails, with one generic template (the type rides as a
+label, there is no per-type copy).
 
 **The exact delta this step adds:**
 [PR #PLACEHOLDER · Files changed](https://github.com/srivardhanjalan/kivan-tutorial/pull/PLACEHOLDER/files)
 
 ## Run it locally
 
-Same two terminals as step 10. The two new DynamoDB tables (notifications and
-notification-settings) are read through your local AWS credentials, so a full
-local run wants the stack applied first (below). Everything else boots exactly as
-before.
+Same two terminals as step 11. Nothing about email changes the local story: the
+Lambda (and therefore every email) runs only on the deployed stack, so locally
+the new **Email copies** switch reads and writes the settings table like any
+other preference, and no mail is sent.
 
 ```bash
 cd backend
@@ -42,20 +41,15 @@ npx expo install            # SDK-matched versions, never hand-pinned
 npx expo start -c --localhost
 ```
 
-One honest caveat about local: the **read** side works locally (the feed, the
-badge, and the settings screen all read and write the tables directly), but the
-**write** side does not. A notification row is written by the Lambda consuming
-SQS, and neither the queue nor the Lambda runs locally (`NOTIFICATIONS_QUEUE_URL`
-is empty off AWS, so the producers no-op rather than fail). So locally the feed
-renders whatever is already in the table (empty on a fresh database); to watch a
-follow actually produce a notification, deploy and try it end to end there.
-
 ## Running the backend tests
 
-Unchanged from step 10: the same pytest suite under `backend/tests/` runs the
-social routes against moto's in-memory DynamoDB. This step adds no new tests:
-the notification **read** routes and the async produce→consume pipeline are
-exercised end to end on the deployed stack, not in the moto suite.
+The moto suite grows by six over step 11's 26, to **32 green**. Three cover the
+settings route now that it carries `email_notifications` (the GET default, a
+PUT round-trip, and a partial PUT that leaves other fields alone). Three exercise
+the Lambda's email leg with `requests.post` monkeypatched, so no mail leaves the
+process: an opted-out user gets no send, an opted-in user with an email on a
+configured stack gets exactly one POST to the right Mailgun URL/auth/recipient,
+and an unconfigured stack skips the send.
 
 ```bash
 cd backend
@@ -63,158 +57,139 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt -r requiremen
 .venv/bin/python -m pytest
 ```
 
-The suite works on Python 3.11 to 3.13 (pydantic-core has no 3.14 wheel yet), and
-is 26 tests green.
+The suite works on Python 3.11 to 3.13 (pydantic-core has no 3.14 wheel yet).
 
 ## Deploy it
 
-This step **adds infrastructure**: two DynamoDB tables (`notifications`, with a
-`UserNotificationsIndex` GSI and a 90-day TTL; `notification-settings`, no GSI),
-an **SQS queue** with a dead-letter queue behind it, the **notification-processor
-Lambda** wired to the queue, and the IAM for all of it. The App Runner instance
-now also carries `NOTIFICATIONS_QUEUE_URL` so the producers can publish.
+This step adds **no new infrastructure resources of its own** beyond one SSM
+SecureString for the Mailgun key: the queue, the tables, and the Lambda are all
+step 11's. What changes is the Lambda's package and its config.
 
-The Lambda is **zip-deployed**, and `infra/lambda.tf` reads that zip as a file at
-plan time. **You must build the zip before `terraform apply`** or the plan fails
-on a missing artifact:
+**1. The Mailgun secret (vault first).** The API key is a secret, so it follows
+the repo's established idiom: an SSM **SecureString**, never a plaintext Lambda
+env var. Put the real values in your gitignored `infra/terraform.tfvars` (and in
+the secrets vault first):
+
+```hcl
+mailgun_api_key    = "key-..."             # empty = email sending disabled
+mailgun_domain     = "mg.example.com"      # a Mailgun sandbox domain works too
+mailgun_from_email = "notifications@mg.example.com"
+```
+
+Leave `mailgun_api_key` empty and the whole leg ships **off**: the handler reads
+a blank key as "not configured" and skips every send (it still writes the rows).
+The domain and from-address are not secret and ride as plain Lambda env vars; the
+key does not, because a Lambda env var is plaintext at rest, so the handler
+fetches and decrypts it from SSM by parameter name at cold start.
+
+**2. Build the zip, then apply.** The Lambda is still zip-deployed and
+`infra/lambda.tf` reads that zip at plan time, so **build before apply**:
 
 ```bash
 cd lambda
 ./build.sh                     # REQUIRED first: packages notification_processor.zip
 cd ../infra
-terraform apply                # + 2 tables, SQS + DLQ, the Lambda, and IAM
-./scripts/deploy.sh            # rebuild :latest with the producers + read routes
+terraform apply                # + the mailgun SSM param, updated Lambda env + IAM
+./scripts/deploy.sh            # rebuild :latest (unchanged backend contract)
 ```
 
-`build.sh` is just a `zip` of `handler.py` (the handler imports only the standard
-library and boto3, and boto3 ships with the Lambda runtime, so there's nothing to
-vendor). `lambda.tf`'s `source_code_hash` is guarded by `fileexists`, so a plan
-before the first build won't crash, but the apply that creates the function
-needs the zip present. Rebuild the zip and re-apply whenever `handler.py` changes;
-the hash change triggers the redeploy.
+`build.sh` now does more than `zip`. The handler gained one dependency
+(`requests`, for the Mailgun HTTP call), and it is pure python, so `build.sh`
+`pip install`s it into a build dir and zips it **alongside** `handler.py` (boto3
+still ships with the runtime and is never vendored). The zip grows from a few KB
+to roughly a megabyte as a result. Rebuild and re-apply whenever `handler.py` or
+`requirements.txt` changes; the `source_code_hash` change triggers the redeploy.
 
-Deploying fresh? Follow step 03's staged bootstrap (registry, push, apply), then
-build the zip and apply as above. There is nothing to seed for notifications: the
-tables start empty and fill as you use the app.
+**Try it end to end (on the deployed stack):** with a real `mailgun_*` set and a
+recipient whose account email is a deliverable address (on a Mailgun sandbox
+domain, an **authorized recipient**), have one user follow another. Within about
+30 seconds the recipient gets both the in-app badge and an email copy. Open
+**Settings → Notification settings → Email → Email copies**, turn it off, and the
+next action produces the in-app row but no email. Watch the Lambda's CloudWatch
+logs to see the decision: `Email sent successfully to ...`, `Email notifications
+disabled for user ...`, `No email found for user ...`, or `Mailgun not
+configured, skipping email send`.
 
-**Try it end to end (on the deployed stack):** sign in as two users on two
-devices (or two simulators). From user A, follow user B, create a wishlist, add a
-wish to it, and love one of B's wishlists. Within about 30 seconds (or the moment
-they open the tab), B's **Notifications** tab shows a red badge. Open it: the
-events are there newest first, unread rows read bolder with a dot. Tap the follow
-to land on A's profile; tap a wishlist notification to open that wishlist. Hit the
-**mark-all** action to clear the pill. Long-press a row and confirm to delete it.
-Open **Settings → Notification settings**, switch **Wishlist loved** off, and A's
-next love produces no row for B.
-
-## What's here
+## What's here (the step 12 delta)
 
 ```
-backend/                        step 10's API plus:
-  app/routes/notifications.py     the READ/manage side: the feed (GET /me, paged,
-                                  counts over the full set), the unread count,
-                                  mark-read / mark-all, delete, and settings get/put
-  app/models/notifications.py     NotificationWithActor (+ its actor/resource
-                                  projection), the settings model with the four
-                                  singular mute flags, the response shapes
-  app/utils/notifications.py      the producers: notify_follow / _wishlist_created
-                                  / _wish_added / _wishlist_loved, each resolving
-                                  the recipients and building the event(s)
-  app/utils/notification_queue.py the SQS publisher (single + batched sends)
-  app/routes/followers.py         + fires notify_follow on a new follow
-  app/routes/loves.py             + fires notify_wishlist_loved on a love
-  app/routes/wishes.py            + fires notify_wish_added on a new wish
-  app/routes/wishlists.py         + fires notify_wishlist_created on a new wishlist
-  app/{config,database,main}.py   the queue URL, the two table handles, the router
-infra/
-  sqs.tf                          the notifications queue + its dead-letter queue
-                                  (maxReceiveCount 3, visibility >= the Lambda timeout)
-  lambda.tf                       the notification-processor function (zip-deployed,
-                                  SQS event source, partial-batch-failure reporting)
-                                  and its execution role
-  dynamodb.tf                     + notifications (UserNotificationsIndex + 90-day
-                                  TTL) and notification-settings
-  iam.tf                          + SQS publish for App Runner, table access for both
-  apprunner.tf / outputs.tf       inject NOTIFICATIONS_QUEUE_URL; export the queue
 lambda/
-  notification_processor/handler.py the ONLY writer of the notifications table:
-                                  reads an SQS batch, honors each user's mutes,
-                                  writes a row per recipient with a ttl
-  build.sh                        packages handler.py into the deploy zip
-frontend/                       step 10's app plus:
-  src/screens/NotificationsScreen.tsx      the feed: focus-reload, infinite scroll,
-                                  unread state, per-type icon, tap-to-open, delete
-  src/screens/NotificationSettingsScreen.tsx  the four mute switches (inverted:
-                                  ON = receiving), optimistic with rollback
-  src/services/api.ts                      + the notification contracts (six routes)
-  src/constants/Colors.ts                  + the per-type accent tokens
-  src/components/TabNavigation.tsx         mounts the feed + the live unread badge
-  src/components/layouts/FloatingHeaderLayout.tsx  + scroll={false} for the FlatList
-  src/components/Navigation.tsx            + the NotificationSettings route
-  src/screens/SettingsScreen.tsx           + the Notification settings entry
+  notification_processor/handler.py  + the email leg: send_email_via_mailgun
+                                  (Mailgun REST, basic auth, 200 = sent),
+                                  get_user_email, send_notification_email, and a
+                                  cold-start SSM fetch of the API key. The mute
+                                  and email-opt-in checks now share ONE settings
+                                  read per notification
+  notification_processor/requirements.txt  requests (the one vendored dep)
+  build.sh                        + pip-install requests into the zip
+infra/
+  ssm.tf                          + the mailgun-api-key SecureString (empty = off)
+  variables.tf                    + mailgun_api_key (sensitive) / _domain / _from_email
+  terraform.tfvars.example        + the three mailgun_* placeholders
+  lambda.tf                       + MAILGUN_API_KEY_PARAM / _DOMAIN / _FROM_EMAIL env
+                                  and an ssm:GetParameter grant on that one param
+backend/
+  app/models/notifications.py     + email_notifications on the settings models
+  app/routes/notifications.py     + email_notifications in the GET defaults and the
+                                  PUT allow-list (symmetric, unlike the source)
+frontend/
+  src/screens/NotificationSettingsScreen.tsx  + an Email section with an "Email
+                                  copies" switch (NOT inverted: ON = copies on);
+                                  the row + switch are now a shared ToggleRow
+  src/services/api.ts             + email_notifications on the settings contracts
+backend/tests/
+  test_notification_settings.py   the settings route with email_notifications
+  test_notification_email.py      the Lambda email leg, requests.post mocked
 ```
 
 ## The ideas this step plants
 
-- **The action and its notification are decoupled by a queue.** A follow route's
-  job is to record the follow and return. Telling people is a separate concern it
-  hands to SQS: it publishes a tiny event and moves on, and the Lambda downstream
-  does the fan-out and the writes. The producer is best-effort (a failed publish
-  is logged, never raised), so the notification path can never fail the user's
-  action.
-- **One writer, many readers.** The Lambda consumer is the *only* thing that
-  writes the notifications table. The API only reads it and flips read-flags. That
-  single-writer rule is why the write side can be reasoned about as one place, and
-  why a mute is honored exactly once, at write time, by the consumer.
-- **Counts ride with the page.** `GET /notifications/me` returns the requested
-  page AND the total and unread counts over the *whole* set, so the unread pill
-  and the badge render without a second round trip. The feed pages in with
-  `next_offset` / `has_more`.
-- **A notification points somewhere, and the tap has to land.** Each type resolves
-  to a screen: a follow to the actor's profile, a wishlist or a love to that
-  wishlist, a new wish to the wishlist it landed in (the wish resource carries its
-  `wishlist_id` so the tap has a route, not a dead end).
+- **Email is best-effort, and best-effort means it can't fail the thing it
+  decorates.** The send sits after the row write, inside its own try/except, and
+  every failure path (opted out, no email, not configured, a non-200, a transport
+  error) returns quietly. A mailer that can't reach Mailgun must never take the
+  notification down with it.
+- **A secret belongs in SSM, not a Lambda env var.** Lambda env vars are
+  plaintext at rest, so the API key can't ride there the way the non-secret domain
+  and from-address do. The handler fetches it from a SecureString once per cold
+  start and caches it for the container's life, the same SSM idiom the App Runner
+  backend already uses for its Clerk and Firecrawl keys.
+- **Empty config is a first-class state, not a crash.** A blank key is the whole
+  feature's off switch: no parameter, an empty value, or an SSM read error all
+  resolve to "not configured", and the send path logs and skips. You can ship the
+  step with email dark and light it up later by filling in one tfvar.
+- **One read, many decisions.** A notification needs two facts from the user's
+  settings row: which types they muted and whether they want email. The handler
+  reads that row **once** and passes it to both checks, rather than fetching the
+  same record twice per notification.
 
 ## Gotchas
 
-- **The zip has to exist before `terraform apply`.** `lambda.tf` reads
-  `../lambda/notification_processor.zip` as a file; the apply that creates the
-  function needs it present. Run `lambda/build.sh` first, every fresh deploy, and
-  again after any `handler.py` change (the hash change redeploys).
-- **Literal routes before the `/{id}` catch-all.** `/notifications/unread-count`
-  and `/notifications/settings` are declared before `/notifications/{notification_id}`,
-  or FastAPI reads "unread-count" as a notification id and 404s.
-- **The feed's timestamps are already UTC-aware.** The backend stamps `created_at`
-  with a `+00:00` offset, so the feed parses it with `new Date` directly, with no
-  `Z` to append because the string isn't naive. (The source app's backend sent
-  naive timestamps and had to patch a `Z` on; ours doesn't, so that code would be
-  dead here.)
-- **A FlatList can't live inside the scroll layout.** `FloatingHeaderLayout` owns
-  a ScrollView by default, and nesting a virtualized list in it breaks scrolling.
-  The feed passes `scroll={false}` so its FlatList owns scrolling, and then owns
-  its own header clearance and content-edge padding.
-- **An authorless row is dropped, but still counted.** If a notification's actor
-  was deleted after it fired, the feed skips that row (an authorless entry is
-  noise) while still counting it in `total` and `unread_count`. So a page can
-  render fewer rows than the page size without meaning the feed ended.
+- **Build vendors a dependency now.** `build.sh` is no longer a bare `zip` of
+  `handler.py`; it `pip install`s `requests` into the package first. If you deploy
+  a stale hand-zipped `handler.py` with no `requests` beside it, the Lambda
+  cold-starts straight into `ImportError`. Always run `build.sh`.
+- **Empty `mailgun_api_key` disables sending, silently and on purpose.** With no
+  key the handler logs `Mailgun not configured, skipping email send` and moves on.
+  That is the intended default, not a bug; a stack with email off is a valid ship.
+- **The users key is `id`, not `user_id`.** The recipient's email is read from the
+  users table keyed on `id`, while the settings table is keyed on `user_id`. Mixing
+  them up is a silent `None` (and the `No email found` skip path), not an error.
+- **Sandbox domains only mail authorized recipients.** A Mailgun sandbox domain
+  refuses any recipient you haven't authorized in Mailgun, so an end-to-end test
+  user's email has to be on that allow-list or the send comes back non-200. There
+  is no sandbox-specific code here; it is purely which domain string you supply.
 
 ## Done when
 
-- [ ] On the deployed stack, a follow / new wishlist / new wish / love from one
-      user produces a notification for the right recipient(s); the fourth tab's
-      badge appears within ~30s or the moment the tab is opened.
-- [ ] Open **Notifications**: rows are newest first, unread ones read bolder with
-      a dot, and the header shows an unread pill and a mark-all action.
-- [ ] Tap a notification: it marks read (the pill and badge drop by one) and opens
-      its target: a follow to the profile, a wishlist / love / wish to the
-      wishlist.
-- [ ] **Mark all read** clears the pill; a long-press on a row, confirmed, deletes
-      it.
-- [ ] **Settings → Notification settings**: four switches, ON = receiving. Turn one
-      off and that type stops producing rows for you.
-- [ ] `curl $API/notifications/me` with a valid token returns the page plus `total`
-      and `unread_count`; `curl $API/notifications/unread-count` returns the badge
-      number; `curl -X PUT $API/notifications/read-all` clears the unread set.
+- [ ] On a stack with real `mailgun_*` set, an action from one user produces both
+      the in-app badge and an email copy for the recipient within ~30s.
+- [ ] **Settings → Notification settings → Email → Email copies** turned off stops
+      the email (the in-app row still appears); turned back on resumes it.
+- [ ] With `mailgun_api_key` empty, notifications still write and the Lambda logs
+      `Mailgun not configured, skipping email send` instead of sending.
+- [ ] `pytest` is 32 green, including the settings round-trip and the three
+      `requests.post`-mocked Lambda email tests.
 
-Next: `12-email`, a second consumer on the same events so a notification also
-lands in the recipient's inbox.
+Next: `13-events`, which adds the event notification types (`event_created`,
+`event_invitation`) on top of the four social ones.
