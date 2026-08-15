@@ -21,6 +21,8 @@ provider "aws" {
 # lives here so no one resource file owns a value another depends on.
 data "aws_caller_identity" "current" {}
 
+data "aws_region" "current" {}
+
 # Local values for common configuration
 locals {
   project_name = "kivan"

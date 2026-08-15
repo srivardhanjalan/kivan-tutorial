@@ -30,10 +30,12 @@ resource "aws_ssm_parameter" "firecrawl_api_key" {
 # same SecureString pattern. Unlike the App Runner keys above, its consumer is
 # the notification-processor Lambda, which fetches and decrypts it by parameter
 # name at cold start (a Lambda env var is plaintext at rest, so the key can't
-# ride there (see lambda.tf and handler.py). An empty value = email sending
-# disabled: the handler treats a blank key as "not configured" and skips the
-# send, so the whole leg is off until a real key is supplied.
+# ride there (see lambda.tf and handler.py). With no key supplied the parameter
+# is not created at all: SSM rejects an empty SecureString value, so absence is
+# how "email sending disabled" is spelled here, and the handler treats a
+# missing parameter as "not configured" and skips the send.
 resource "aws_ssm_parameter" "mailgun_api_key" {
+  count = var.mailgun_api_key == "" ? 0 : 1
   name  = "/${local.project_name}/${local.environment}/mailgun-api-key"
   type  = "SecureString"
   value = var.mailgun_api_key

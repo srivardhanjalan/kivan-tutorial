@@ -85,9 +85,13 @@ resource "aws_iam_role_policy" "notification_processor_ssm" {
     Version = "2012-10-17"
     Statement = [
       {
+        # The ARN is built from the parameter NAME, not the resource, because
+        # the parameter only exists when a key is supplied; granting the name
+        # is valid either way, and the handler treats ParameterNotFound as
+        # "not configured".
         Effect   = "Allow"
         Action   = ["ssm:GetParameter"]
-        Resource = aws_ssm_parameter.mailgun_api_key.arn
+        Resource = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/${local.project_name}/${local.environment}/mailgun-api-key"
       }
     ]
   })
@@ -138,7 +142,7 @@ resource "aws_lambda_function" "notification_processor" {
       # Mailgun (step 12). The API key is NOT here: a Lambda env var is
       # plaintext at rest, so the handler fetches it from SSM by this parameter
       # NAME. The domain and from-address are not secret and ride as plain env.
-      MAILGUN_API_KEY_PARAM = aws_ssm_parameter.mailgun_api_key.name
+      MAILGUN_API_KEY_PARAM = "/${local.project_name}/${local.environment}/mailgun-api-key"
       MAILGUN_DOMAIN        = var.mailgun_domain
       MAILGUN_FROM_EMAIL    = var.mailgun_from_email
     }
