@@ -56,6 +56,8 @@ app.include_router(products.router)
 # The real-store directory the in-app browser opens, and the Firecrawl proxy
 # that scrapes a browsed product page into a wish
 app.include_router(brands.router)
+# The admin write side of the directory (step 15), gated by require_admin
+app.include_router(brands.admin_router)
 app.include_router(scraping.router)
 # Social (step 10): the follow graph and loves. followers and the loved-list
 # hang off /users (their {user_id} paths are deeper than users.router's

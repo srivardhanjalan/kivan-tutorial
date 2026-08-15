@@ -48,15 +48,17 @@ EVENTS_TABLE = f"kivan-{ENVIRONMENT}-events"
 EVENT_HOSTS_TABLE = f"kivan-{ENVIRONMENT}-event-hosts"
 EVENT_INVITEES_TABLE = f"kivan-{ENVIRONMENT}-event-invitees"
 EVENT_WISHLISTS_TABLE = f"kivan-{ENVIRONMENT}-event-wishlists"
+BRANDS_TABLE = f"kivan-{ENVIRONMENT}-brands"
 
 
 def _create_tables(client) -> None:
     """Create exactly the tables the tested routes touch, each a faithful copy
-    of its infra/dynamodb.tf definition. Reference tables (life-events,
-    storefronts, brands, products) and the notifications table are omitted: no
-    code path under test reads them, and a table without a caller is bloat here
-    just as it would be in the app. (The notification fan-out the create routes
-    call is best-effort and swallows the missing-table error.)"""
+    of its infra/dynamodb.tf definition. The catalog reference tables are created
+    as their admin-CRUD tests land (step 15 gave them writers): brands here,
+    plus life-events, storefronts and products as those routes arrive. The
+    notifications table stays omitted — no code path under test reads it, and the
+    notification fan-out the create routes call swallows the missing-table
+    error; a table without a caller is bloat here just as it would be in the app."""
     # Users: hash id; NameSearchIndex (typeahead prefix search) and
     # PopularUsersIndex (Discover rail) both hash on the constant entity_type.
     # NameSearchIndex is SPARSE: name_lowercase is a String key, so DynamoDB
@@ -291,6 +293,15 @@ def _create_tables(client) -> None:
             {"AttributeName": "wishlist_id", "KeyType": "RANGE"},
         ],
     )
+    # Brands (step 15 admin): the real-store directory, reference data hashed on
+    # id with no GSI (GET /brands is a Scan) — the admin write routes read and
+    # write it by id.
+    client.create_table(
+        TableName=BRANDS_TABLE,
+        BillingMode="PAY_PER_REQUEST",
+        AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
+        KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
+    )
 
 
 @pytest.fixture
@@ -410,4 +421,29 @@ def put_wishlist(
                 "added_by": created_by,
             }
         )
+    return item
+
+
+def put_brand(
+    aws,
+    brand_id: str,
+    *,
+    name: str = "A brand",
+    website_url: str = "https://example.com",
+    category: str = "General",
+    country: str = "US",
+    display_order: int = 0,
+):
+    """Seed a brand row the way the seed script leaves it: a complete record the
+    Brand response model can validate. logo_url is omitted (the read-side default
+    is None), the pre-upload shape an admin-created brand also has."""
+    item = {
+        "id": brand_id,
+        "name": name,
+        "website_url": website_url,
+        "category": category,
+        "country": country,
+        "display_order": display_order,
+    }
+    aws.Table(BRANDS_TABLE).put_item(Item=item)
     return item

@@ -110,6 +110,46 @@ def batch_get_items(table, keys: list[dict]) -> list[dict]:
     return items
 
 
+def delete_item_or_404(table, key: dict, not_found_detail: str) -> None:
+    """Delete an item, 404-ing if it wasn't there — the one spelling of
+    delete-or-404 the admin catalog routes share.
+
+    delete_item is a silent no-op on a missing key (it returns 200 whether or
+    not a row existed), so a DELETE of a already-gone id would look like success.
+    The attribute_exists condition turns that into the same 404 a GET would give,
+    so the caller reports honestly. Any reference guard the caller runs first
+    (a life-event still in use, a storefront with products) has already fired by
+    the time this runs — this only enforces existence."""
+    try:
+        table.delete_item(Key=key, ConditionExpression="attribute_exists(id)")
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=not_found_detail
+            )
+        raise
+
+
+def put_item_or_409(table, item: dict, conflict_detail: str) -> dict:
+    """Write a brand-new item, 409-ing if its id is already taken — the one
+    spelling of create-without-clobber the admin catalog routes share.
+
+    put_item is an upsert: writing an id that already exists silently overwrites
+    the whole row. Reference-data ids are hand-picked slugs (a seeded brand,
+    life-event, storefront, or product), so an admin create that collided with a
+    seeded id would erase it. The attribute_not_exists condition makes that a
+    409 instead, and returns the item on success so the caller can echo it."""
+    try:
+        table.put_item(Item=item, ConditionExpression="attribute_not_exists(id)")
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail=conflict_detail
+            )
+        raise
+    return item
+
+
 def update_item_fields(table, key: dict, changes: dict, not_found_detail: str) -> dict:
     """SET exactly `changes` on an existing item and return the whole new item.
 
