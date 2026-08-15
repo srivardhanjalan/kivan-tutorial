@@ -1,4 +1,4 @@
-# Step 12: Email notifications
+# Step 13: Events
 
 Step 11 gave the network a voice, but only inside the app: a follow, a new
 wishlist, a new wish, or a love wrote an in-app row you'd see next time you

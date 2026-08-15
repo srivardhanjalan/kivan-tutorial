@@ -296,3 +296,77 @@ pass must NOT "restore" the source's simpler-but-worse shape.
       *tutorial:* the same single template (no per-type subjects or bodies were
       invented). Not a divergence; recorded so a later step does not mistake the
       generic body for a gap to fill unless the finished design asks for it.
+
+## Events (step 13, phase A)
+
+Step 13 lands the events feature. Phase A ships the data model, core CRUD, and
+wishlist linking; the invitee/RSVP surfaces and the notification legs (with
+their own divergences) follow in later phases. As with notifications, some of
+what phase A records is deliberate BACKEND divergence the polish pass must NOT
+"restore".
+
+Backend (deliberate, do-not-restore):
+
+- [ ] Two source GSIs omitted for want of a reader. *source:* the events table
+      carries a `CreatedByIndex` and the event-wishlists join carries a
+      `WishlistIdIndex`. *tutorial:* neither is created: "events I created" is a
+      subset of "events I host" (the creator is auto-inserted as a host), served
+      by `event_hosts.UserIdIndex`, and the join is only ever read by `event_id`.
+      A GSI is a second write; keep them omitted until a query needs them.
+- [ ] Field-scoped, guarded event update. *source:* PUT reads the item, mutates
+      it in memory, and `put_item`s the whole thing back (a full-item rewrite
+      that can revert a field a concurrent host just changed). *tutorial:* an
+      `update_item` sets only the fields the body carries, guarded by
+      `attribute_exists(id)`, and re-asserts the sparse `public_marker`
+      (SET on public, REMOVE on private) so the discovery index never drifts.
+      Keep the field-scoped write.
+- [ ] Retry-safe delete cascade order. *source:* deletes the event row FIRST,
+      then its child rows (an interrupted cascade orphans hosts/invitees/links
+      with no event to find them by). *tutorial:* deletes the cover object and
+      the child rows first, the event row LAST, so an interrupted cascade leaves
+      only states a retry can finish (the wishlist-cascade discipline). Keep the
+      order.
+- [ ] Public feed pagination is an in-Python slice (parity note / simpler
+      idiom). *source & tutorial:* both Query the sparse `PublicEventsIndex` for
+      every page, then slice `[offset:offset+limit]` in Python: honest and one
+      partition while the public feed is small. Recorded so polish does not
+      mistake it for a bug; the convergence is a real cursor when the feed
+      outgrows a screen's worth of pages.
+- [ ] `event_type` is an unvalidated free string (parity note). *source &
+      tutorial:* the event's life-event id is stored verbatim and never checked
+      against the life-events table, exactly the laxness a wishlist's
+      `life_event_id` carries. Not a defect to "fix"; an unknown id just renders
+      the neutral wash client-side.
+
+Frontend (visual/workflow convergence, behavior held):
+
+- [ ] One event form for create and edit. *source:* a `CreateEventScreen`
+      (with a REQUIRED single-select wishlist grid and a co-host
+      `UserPickerSection`) and a separate `EventSettingsScreen` (edit plus
+      delete). *tutorial:* one `EventFormScreen` for both (the wishlist-form
+      idiom), an OPTIONAL wishlist link via a `SelectableList` on create, and no
+      co-host picker (co-hosts arrive with the invitee surfaces). Delete lives on
+      the detail screen, and the CTA is an inline `PrimaryButton` that goes back
+      on save, exactly the wishlist-form divergences above (pinned `EditorLayout`
+      CTA, `replace`-into-detail, delete-in-settings). Both reachable; placement
+      and merge only.
+- [ ] Date entry is a plain text field. *source:* a `DatePickerField` (a real
+      datetime picker). *tutorial:* a `FormInput` with a `YYYY-MM-DD` placeholder
+      this step; the app carries no date-picker dependency yet, and
+      `formatEventDate` reads the stored value defensively. Polish brings a
+      picker.
+- [ ] Privacy control. *source:* a `PrivacySelector`. *tutorial:* a labeled RN
+      `Switch` ("Public event"), the notification-settings toggle idiom.
+- [ ] Event detail. *source:* a cover BAND with location/type/date badges, an
+      RSVP button and modal, a guests view, overlapping host avatars, invite
+      modals, a share action, and a `WishlistCardGrid` + masonry `WishCard`
+      view. *tutorial:* an `ArtTile` pastel/image hero, plain type/date/location
+      and "Hosted by" text rows, the linked wishlists as a read-only
+      `WishlistGrid`, and host-only edit/delete in the header. RSVP, guests,
+      invites, and share arrive in later phases.
+- [ ] Event card and My Stuff surfacing. *source:* an `EventRailCard`, a
+      full-width duotone-gradient banner with a date chip and a Hosting/Invited
+      pill, listed vertically. *tutorial:* an `EventCard` (`ArtTileCard`) washed
+      in the event type's pastel with the date as its subtitle, in the My Stuff
+      `TileGrid` behind a "New Event" add tile; hosting only this step (invited
+      surfaces with RSVP).
