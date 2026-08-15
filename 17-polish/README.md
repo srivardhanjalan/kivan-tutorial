@@ -193,3 +193,32 @@ scope, not this one.
       verification and OAuth), and the onboarding tutorial already hold
       functional parity; only styling and onboarding-slide copy need a polish
       pass here.
+
+## Notifications (step 11)
+
+The notifications feature lands in step 11 (in-app only; email is step 12,
+events are step 13). Its screens ship in the step's frontend phase, so their
+visual/workflow convergence items are added here THEN, not now. What this entry
+records today is the set of deliberate BACKEND divergences from the source: the
+tutorial fixes three source defects on purpose, so the polish pass (which
+converges the tutorial toward the finished design) must NOT "restore" them.
+
+- [ ] Mute-field naming. *source:* the settings model stores `mute_follows`
+      (plural) while the consumer derives `mute_{type}` = `mute_follow`
+      (singular), so a follow can never actually be muted. *tutorial:* the four
+      flags are named `mute_follow`/`mute_wishlist_created`/`mute_wish_added`/
+      `mute_wishlist_loved` so the derivation matches exactly. Keep the singular
+      names; do not converge to the source's plural.
+- [ ] Notification TTL is written, not just declared. *source:* the table
+      enables a 90-day TTL on a `ttl` attribute no code ever sets, so nothing
+      expires (a lying config). *tutorial:* the consumer writes `ttl` (epoch
+      seconds, 90 days out) on every row, so the reaper actually runs. Keep the
+      writer.
+- [ ] Wish notifications deep-link into their list. *source:* a `wish_added`
+      notification's enriched resource carries `{id, type, name}` only, a
+      dead-end tap (no route to the screen that shows the wish). *tutorial:* the
+      wish resource also carries `wishlist_id`, so the tap opens the wish inside
+      its parent list. Keep `wishlist_id` on the wish resource.
+- [ ] Visual/workflow convergence (feed screen, unread badge, settings screen,
+      notification-row styling) is added to this section by the step's frontend
+      phase, once those screens exist.
