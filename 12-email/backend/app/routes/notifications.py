@@ -40,15 +40,22 @@ _RESOURCE_TABLES = {
     "user": users_table,
 }
 
-# The four mute flags a user can toggle, in one place so the GET default and the
-# PUT update expression can't drift apart. Each name matches the Lambda
-# consumer's f"mute_{notification_type}" derivation exactly.
+# The four mute flags a user can toggle. Each name matches the Lambda consumer's
+# f"mute_{notification_type}" derivation exactly.
 _MUTE_FIELDS = (
     "mute_follow",
     "mute_wishlist_created",
     "mute_wish_added",
     "mute_wishlist_loved",
 )
+
+# Every writable settings field: the four mutes plus the email-copies toggle.
+# The PUT update expression is built from this tuple, and GET returns all of
+# them via the NotificationSettings model defaults, so the two stay symmetric.
+# (The source app was asymmetric here: its GET defaults omitted
+# email_notifications while its PUT accepted it; the tutorial includes it in
+# both.)
+_SETTINGS_FIELDS = (*_MUTE_FIELDS, "email_notifications")
 
 
 def _enrich_actors(actor_ids: list[str]) -> dict:
@@ -185,8 +192,9 @@ def get_unread_count(user_id: str = Depends(get_current_user_id)):
 
 @router.get("/settings", response_model=NotificationSettings)
 def get_notification_settings(user_id: str = Depends(get_current_user_id)):
-    """The caller's mute preferences, defaulting to nothing muted for a user who
-    never opened the screen (no row yet)."""
+    """The caller's notification preferences (mutes + email copies), defaulting
+    to nothing muted and email on for a user who never opened the screen (no row
+    yet). The NotificationSettings model fills any field an older row lacks."""
     response = notification_settings_table.get_item(Key={"user_id": user_id})
     if "Item" in response:
         return NotificationSettings(**response["Item"])
@@ -198,14 +206,15 @@ def update_notification_settings(
     update: NotificationSettingsUpdate,
     user_id: str = Depends(get_current_user_id),
 ):
-    """Toggle any subset of the mute flags. Builds the SET clause from only the
-    flags the body carried (an omitted flag is left as-is), always stamping
-    updated_at. update_item is an upsert, so a user's first save creates the row
-    with just the flags they touched; the model fills the rest with False."""
+    """Toggle any subset of the settings fields (mutes + email copies). Builds
+    the SET clause from only the fields the body carried (an omitted field is
+    left as-is), always stamping updated_at. update_item is an upsert, so a
+    user's first save creates the row with just the fields they touched; the
+    model fills the rest with its defaults."""
     now = utc_now_iso()
     update_parts = ["updated_at = :updated_at"]
     values: dict = {":updated_at": now}
-    for field in _MUTE_FIELDS:
+    for field in _SETTINGS_FIELDS:
         value = getattr(update, field)
         if value is not None:
             update_parts.append(f"{field} = :{field}")

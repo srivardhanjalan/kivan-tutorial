@@ -5,9 +5,10 @@ writes the notification rows. It is the ONLY writer of the notifications table.
 Doing the writes here (not on the request path) keeps a follow or a love fast
 and lets a fan-out to many followers happen off the user's request.
 
-Deployed as a plain zip of THIS FILE ONLY (see ../build.sh): boto3 ships with
-the Lambda Python runtime, and this consumer has no other dependency, so there
-is nothing to vendor.
+Step 12 adds the email leg: after a row is written, the consumer also mails the
+recipient a copy via Mailgun. That is why the deploy zip is no longer just this
+file: `requests` is vendored alongside it (see ../build.sh). boto3 still ships
+with the Lambda Python runtime; only the pure-python `requests` is vendored.
 """
 import json
 import logging
@@ -16,6 +17,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import boto3
+import requests
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -35,23 +37,141 @@ users_table = dynamodb.Table(os.environ["USERS_TABLE"])
 # which enables TTL on the `ttl` attribute this handler sets.
 NOTIFICATION_TTL_DAYS = 90
 
+# Mailgun delivery config. The domain and from-address are not secret, so they
+# ride in plain Lambda env vars. The API KEY is secret and is NOT: Lambda env
+# vars are plaintext at rest, so the key is fetched from an SSM SecureString at
+# cold start instead (see below), matching the SSM idiom the App Runner backend
+# already uses for its Clerk/Firecrawl keys.
+MAILGUN_DOMAIN = os.environ.get("MAILGUN_DOMAIN", "")
+MAILGUN_FROM_EMAIL = os.environ.get("MAILGUN_FROM_EMAIL", "")
 
-def is_notification_muted(user_id: str, notification_type: str) -> bool:
-    """Whether this user has muted this notification type. Reads their settings
-    row and checks the f"mute_{notification_type}" flag: "follow" -> mute_follow,
-    "wishlist_created" -> mute_wishlist_created, and so on. The settings model
-    names its flags to match this derivation EXACTLY (singular mute_follow), so
-    a muted type is genuinely suppressed. No settings row means nothing muted."""
+
+def _load_mailgun_api_key() -> str:
+    """Fetch the Mailgun API key from SSM Parameter Store ONCE per cold start.
+
+    Runs at import so the decrypted key is cached for the whole container's life
+    rather than re-fetched per invocation. The parameter is a SecureString read
+    with WithDecryption=True (the Lambda role's ssm:GetParameter grant, iam.tf).
+    An unset MAILGUN_API_KEY_PARAM, an empty parameter, or any read error all
+    return "", the not-configured state the send path treats as "skip email",
+    never a crash: a mailer that can't reach its key must not take the queue
+    consumer down with it."""
+    param_name = os.environ.get("MAILGUN_API_KEY_PARAM", "")
+    if not param_name:
+        return ""
+    try:
+        ssm = boto3.client(
+            "ssm", region_name=os.environ.get("AWS_REGION_NAME", "us-east-1")
+        )
+        response = ssm.get_parameter(Name=param_name, WithDecryption=True)
+        return response["Parameter"]["Value"]
+    except Exception as e:
+        logger.error(f"Could not load Mailgun API key from SSM: {e}")
+        return ""
+
+
+# Resolved at cold start and cached for the container's lifetime.
+MAILGUN_API_KEY = _load_mailgun_api_key()
+
+
+def send_email_via_mailgun(to_email: str, subject: str, text_content: str) -> bool:
+    """POST one message to Mailgun's REST API. Returns True only on a 200. Never
+    raises: a missing config (any of key/domain/from unset) is the skip path,
+    and a non-200 or a transport error is logged and swallowed: email is
+    best-effort and must never fail the notification it accompanies."""
+    if not MAILGUN_API_KEY or not MAILGUN_DOMAIN or not MAILGUN_FROM_EMAIL:
+        logger.warning("Mailgun not configured, skipping email send")
+        return False
+
+    try:
+        response = requests.post(
+            f"https://api.mailgun.net/v3/{MAILGUN_DOMAIN}/messages",
+            auth=("api", MAILGUN_API_KEY),
+            data={
+                "from": f"Kivan <{MAILGUN_FROM_EMAIL}>",
+                "to": to_email,
+                "subject": subject,
+                "text": text_content,
+            },
+            timeout=10,
+        )
+        if response.status_code == 200:
+            logger.info(f"Email sent successfully to {to_email}")
+            return True
+        logger.error(f"Failed to send email: {response.status_code} {response.text}")
+        return False
+    except Exception as e:
+        logger.error(f"Failed to send email: {e}")
+        return False
+
+
+def get_user_email(user_id: str) -> str | None:
+    """The recipient's email from the users table, or None when there's no row,
+    no email attribute, or a read error. Read here (not reused from the
+    recipient-exists guard) so it only runs when we're actually about to mail:
+    a muted or opted-out notification never touches the users table twice. Note
+    the users key attribute is `id`, not `user_id`."""
+    try:
+        response = users_table.get_item(Key={"id": user_id})
+        item = response.get("Item")
+        return item.get("email") if item else None
+    except Exception as e:
+        logger.error(f"Error getting user email for {user_id}: {e}")
+        return None
+
+
+def get_notification_settings(user_id: str) -> dict:
+    """Read a user's settings row ONCE, reused for every per-user decision this
+    notification needs (which types they muted, whether they want email copies).
+    Returns the item dict, or {} when there's no row or the read fails, so "no
+    settings" and "unreadable settings" both mean nothing muted and email on
+    (fail-open: a missed mute or an extra email beats a dropped notification)."""
     try:
         response = notification_settings_table.get_item(Key={"user_id": user_id})
-        if "Item" not in response:
-            return False
-        return response["Item"].get(f"mute_{notification_type}", False)
+        return response.get("Item", {})
     except Exception as e:
-        # On a read error, default to NOT muted: a missed mute (one unwanted
-        # notification) is friendlier than a missed notification.
-        logger.error(f"Error reading mute settings for {user_id}: {e}")
+        logger.error(f"Error reading notification settings for {user_id}: {e}")
+        return {}
+
+
+def is_notification_muted(settings: dict, notification_type: str) -> bool:
+    """Whether this user muted this type, read off their already-fetched settings
+    row. Checks the f"mute_{notification_type}" flag: "follow" -> mute_follow,
+    "wishlist_created" -> mute_wishlist_created, and so on. The settings model
+    names its flags to match this derivation EXACTLY (singular mute_follow), so
+    a muted type is genuinely suppressed. Empty settings ({}) mute nothing."""
+    return settings.get(f"mute_{notification_type}", False)
+
+
+def send_notification_email(
+    user_id: str, settings: dict, notification_type: str, message: str
+) -> bool:
+    """Mail the recipient a copy of a notification we just wrote. Three gates,
+    each with its own log line (the observable contract an E2E asserts on):
+    email copies opted out, no email on file, or Mailgun not configured. The
+    body is one generic template for every type (the type is shown as a label);
+    there is no per-type copy."""
+    if not settings.get("email_notifications", True):
+        logger.info(f"Email notifications disabled for user {user_id}")
         return False
+
+    user_email = get_user_email(user_id)
+    if not user_email:
+        logger.warning(f"No email found for user {user_id}")
+        return False
+
+    type_label = notification_type.replace("_", " ").title()
+    subject = "You have a new notification on Kivan"
+    text_content = (
+        "Hi there,\n\n"
+        "You have a new notification on Kivan:\n\n"
+        f"{message}\n\n"
+        f"Type: {type_label}\n\n"
+        "Open the Kivan app to view your notification.\n\n"
+        "Best regards,\n"
+        "The Kivan Team\n"
+    )
+    return send_email_via_mailgun(user_email, subject, text_content)
 
 
 def recipient_exists(user_id: str) -> bool:
@@ -80,9 +200,10 @@ def create_notification(
 ) -> bool:
     """Write one notification row for one recipient, applying the rules that
     only make sense per-recipient: skip a muted type, skip notifying yourself,
-    skip a recipient whose account is gone. Returns True only when a row was
-    actually written."""
-    if is_notification_muted(user_id, notification_type):
+    skip a recipient whose account is gone. On a successful write, also mail the
+    recipient a copy (best-effort). Returns True only when a row was written."""
+    settings = get_notification_settings(user_id)
+    if is_notification_muted(settings, notification_type):
         logger.info(f"{notification_type} muted for {user_id}; skipping")
         return False
     if user_id == actor_id:
@@ -113,6 +234,15 @@ def create_notification(
 
         notifications_table.put_item(Item=notification)
         logger.info(f"Created notification {notification['id']} for {user_id}")
+
+        # Email is a best-effort copy of a notification already persisted: a
+        # Mailgun failure must never fail creation, so it's caught and only
+        # logged. We reuse the settings row read above for the opt-in check.
+        try:
+            send_notification_email(user_id, settings, notification_type, message)
+        except Exception as e:
+            logger.error(f"Failed to send email notification: {e}")
+
         return True
     except Exception as e:
         logger.error(f"Error creating notification for {user_id}: {e}")
