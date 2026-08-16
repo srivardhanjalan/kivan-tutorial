@@ -1,10 +1,14 @@
 import React from 'react';
+import { View, useWindowDimensions, StyleSheet } from 'react-native';
 import { useAppNavigation } from '../hooks/useAppNavigation';
 import useFetch from '../hooks/useFetch';
 import DirectoryLayout from '../components/DirectoryLayout';
-import CatalogRow from '../components/CatalogRow';
+import BrandLogoCard from '../components/BrandLogoCard';
 import { fetchBrands } from '../services/api';
 import type { Brand } from '../services/api';
+import { Spacing } from '../constants/ScreenStyles';
+
+const WALL_COLUMNS = 3;
 
 /** Group the flat, backend-ordered list into categories, then list the
     category names alphabetically. Each category keeps the backend's
@@ -30,23 +34,28 @@ export default function BrandsScreen() {
   const navigation = useAppNavigation();
   const { data: brands, loading } = useFetch(fetchBrands);
 
+  // Exact square tiles: the wall's cell width is the content area minus the
+  // inter-tile gaps, divided across the columns (measured, not percentage).
+  const { width } = useWindowDimensions();
+  const cellWidth =
+    (width - Spacing.contentHorizontal * 2 - Spacing.sm * (WALL_COLUMNS - 1)) / WALL_COLUMNS;
+
   const sections = groupByCategory(brands ?? []).map(([category, categoryBrands]) => ({
     key: category,
     title: category,
     count: categoryBrands.length,
-    children: categoryBrands.map((brand) => (
-      <CatalogRow
-        key={brand.id}
-        icon="globe-outline"
-        logoUrl={brand.logo_url}
-        title={brand.name}
-        accessibilityLabel={`${brand.name}, ${brand.country}`}
-        description={brand.description}
-        meta={[{ icon: 'location-outline', text: brand.country }]}
-        showChevron
-        onPress={() => navigation.navigate('InAppBrowser', { brand })}
-      />
-    )),
+    children: (
+      <View style={styles.wall}>
+        {categoryBrands.map((brand) => (
+          <BrandLogoCard
+            key={brand.id}
+            brand={brand}
+            width={cellWidth}
+            onPress={() => navigation.navigate('InAppBrowser', { brand })}
+          />
+        ))}
+      </View>
+    ),
   }));
 
   return (
@@ -64,3 +73,11 @@ export default function BrandsScreen() {
     />
   );
 }
+
+const styles = StyleSheet.create({
+  wall: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+});

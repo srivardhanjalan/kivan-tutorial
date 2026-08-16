@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
+import { useWindowDimensions } from 'react-native';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import HeaderIconButton from '../components/HeaderIconButton';
 import SectionHeader from '../components/SectionHeader';
 import EmptyStateView from '../components/EmptyStateView';
-import TileGrid from '../components/TileGrid';
+import MasonryGrid from '../components/MasonryGrid';
 import ProductCard from '../components/ProductCard';
 import CategoryFilterModal from '../components/CategoryFilterModal';
 import useFetch from '../hooks/useFetch';
@@ -27,6 +28,11 @@ export default function StorefrontDetailScreen() {
   );
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showFilter, setShowFilter] = useState(false);
+
+  // Products lay out by their true image aspect ratios in a masonry, more
+  // columns on a wider device — the same responsive rule the wishes grid uses.
+  const { width } = useWindowDimensions();
+  const productColumns = width >= 768 ? 4 : width >= 600 ? 3 : 2;
 
   // The store's distinct categories, in the products' own display order —
   // derived from the fetched products themselves, so the filter needs no
@@ -66,15 +72,17 @@ export default function StorefrontDetailScreen() {
           subtitle="This store has nothing to browse right now. Check back later."
         />
       ) : (
-        <TileGrid>
-          {filteredProducts.map((product) => (
+        <MasonryGrid
+          data={filteredProducts}
+          numColumns={productColumns}
+          keyExtractor={(product) => product.id}
+          renderItem={(product) => (
             <ProductCard
-              key={product.id}
               product={product}
               onPress={() => navigation.navigate('ProductDetail', { product })}
             />
-          ))}
-        </TileGrid>
+          )}
+        />
       )}
 
       <CategoryFilterModal

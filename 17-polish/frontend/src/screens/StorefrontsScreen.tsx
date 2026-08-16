@@ -3,9 +3,9 @@ import { useAppNavigation } from '../hooks/useAppNavigation';
 import useFetch from '../hooks/useFetch';
 import DirectoryLayout from '../components/DirectoryLayout';
 import CatalogRow from '../components/CatalogRow';
-import StorefrontCatalogRow from '../components/StorefrontCatalogRow';
+import TileGrid from '../components/TileGrid';
+import StorefrontCard from '../components/StorefrontCard';
 import { fetchStorefronts } from '../services/api';
-import type { Storefront } from '../services/api';
 
 /**
  * The Wish Store tab: the curated catalog of stores, plus the bridge to the
@@ -36,13 +36,17 @@ export default function StorefrontsScreen() {
       key: 'stores',
       title: 'Stores',
       count: storefronts?.length ?? 0,
-      children: storefronts?.map((storefront: Storefront) => (
-        <StorefrontCatalogRow
-          key={storefront.id}
-          storefront={storefront}
-          onPress={() => navigation.navigate('StorefrontDetail', { storefront })}
-        />
-      )),
+      children: (
+        <TileGrid>
+          {storefronts?.map((storefront) => (
+            <StorefrontCard
+              key={storefront.id}
+              storefront={storefront}
+              onPress={() => navigation.navigate('StorefrontDetail', { storefront })}
+            />
+          ))}
+        </TileGrid>
+      ),
     },
   ];
 
