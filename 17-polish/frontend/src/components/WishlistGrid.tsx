@@ -1,6 +1,6 @@
 import React from 'react';
 import TileGrid from './TileGrid';
-import WishlistCard from './WishlistCard';
+import WishlistRailCard from './WishlistRailCard';
 import useLifeEvents from '../hooks/useLifeEvents';
 import type { Wishlist } from '../services/api';
 
@@ -14,10 +14,10 @@ interface WishlistGridProps {
 
 /**
  * The wishlist tile grid shared by My Stuff and a profile's Wishlists/Loved
- * sections: resolves each card's life-event emoji and lays the cards out. The
- * card map lived in both screens until the profile made it a third caller:
- * one grid now, so the tile layout can't drift between "your stuff" and
- * "theirs".
+ * sections: resolves each card's life-event emoji and lays the tonal
+ * WishlistRailCards out. The card map lived in both screens until the profile
+ * made it a third caller: one grid now, so the tile layout can't drift between
+ * "your stuff" and "theirs".
  */
 const WishlistGrid: React.FC<WishlistGridProps> = ({
   wishlists,
@@ -29,7 +29,7 @@ const WishlistGrid: React.FC<WishlistGridProps> = ({
     <TileGrid>
       {leading}
       {wishlists.map((wishlist) => (
-        <WishlistCard
+        <WishlistRailCard
           key={wishlist.id}
           wishlist={wishlist}
           lifeEvent={lifeEventFor(wishlist.life_event_id)}
