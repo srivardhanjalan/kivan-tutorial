@@ -6,8 +6,7 @@ import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import DetailHeaderActions from '../components/DetailHeaderActions';
 import SectionHeader from '../components/SectionHeader';
 import EmptyStateView from '../components/EmptyStateView';
-import MasonryGrid from '../components/MasonryGrid';
-import WishCard from '../components/WishCard';
+import WishMasonry from '../components/WishMasonry';
 import AddTileCard from '../components/AddTileCard';
 import CoverPhoto from '../components/CoverPhoto';
 import ConfirmModal from '../components/ConfirmModal';
@@ -17,9 +16,7 @@ import ManageOwnersModal from '../components/ManageOwnersModal';
 import ShareWishlistModal from '../components/ShareWishlistModal';
 import DetailAction from '../components/DetailAction';
 import useFetch from '../hooks/useFetch';
-import useMasonryColumns from '../hooks/useMasonryColumns';
 import useLifeEvents from '../hooks/useLifeEvents';
-import useWishOrigin from '../hooks/useWishOrigin';
 import useConfirmedDelete from '../hooks/useConfirmedDelete';
 import useAsyncAction from '../hooks/useAsyncAction';
 import {
@@ -58,7 +55,6 @@ export default function WishlistDetailScreen() {
     { refetchOnFocus: true }
   );
   const { lifeEventFor } = useLifeEvents();
-  const { originFor } = useWishOrigin();
   const { requestDelete, confirmProps } = useConfirmedDelete(
     () => deleteWishlist(wishlistId),
     'Could not delete this wishlist'
@@ -76,8 +72,6 @@ export default function WishlistDetailScreen() {
   // so a co-owner briefly reads as a viewer until it arrives.
   const isOwner = !!owners && !!user && owners.some((o) => o.id === user.id);
   const addWish = () => navigation.navigate('WishForm', { wishlistId });
-
-  const wishColumns = useMasonryColumns();
 
   const confirmRemoveOwner = () => {
     if (!removeTarget) return;
@@ -160,28 +154,14 @@ export default function WishlistDetailScreen() {
               onAction={isOwner ? addWish : undefined}
             />
           ) : (
-            <MasonryGrid
-              data={[
-                ...(isOwner ? [{ kind: 'add' as const }] : []),
-                ...(wishes ?? []).map((wish) => ({ kind: 'wish' as const, wish })),
-              ]}
-              numColumns={wishColumns}
-              keyExtractor={(item) => (item.kind === 'add' ? 'add' : item.wish.id)}
-              renderItem={(item) =>
-                item.kind === 'add' ? (
-                  <AddTileCard label="New Wish" onPress={addWish} />
-                ) : (
-                  <WishCard
-                    wish={item.wish}
-                    originLogo={originFor(item.wish)?.logoUrl}
-                    onPress={
-                      isOwner
-                        ? () => navigation.navigate('WishDetail', { wishId: item.wish.id })
-                        : undefined
-                    }
-                  />
-                )
+            <WishMasonry
+              wishes={wishes ?? []}
+              onPressWish={
+                isOwner
+                  ? (wishId) => navigation.navigate('WishDetail', { wishId })
+                  : undefined
               }
+              leading={isOwner ? <AddTileCard label="New Wish" onPress={addWish} /> : undefined}
             />
           )}
         </>
