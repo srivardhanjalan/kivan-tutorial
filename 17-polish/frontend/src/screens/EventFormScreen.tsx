@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import AppSwitch from '../components/AppSwitch';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FieldLabel from '../components/FieldLabel';
 import FormScreenScaffold from '../components/layouts/FormScreenScaffold';
 import FormInput from '../components/FormInput';
 import DescriptionField from '../components/DescriptionField';
 import LifeEventField from '../components/LifeEventField';
+import DatePickerField from '../components/DatePickerField';
+import PrivacySelector from '../components/PrivacySelector';
 import ImageUploadField from '../components/ImageUploadField';
 import SelectableList from '../components/SelectableList';
 import SelectableRow from '../components/SelectableRow';
@@ -21,8 +22,6 @@ import {
   fetchMyWishlists,
 } from '../services/api';
 import type { EventCreate } from '../services/api';
-import Colors from '../constants/Colors';
-import Typography from '../constants/Typography';
 import { Spacing } from '../constants/ScreenStyles';
 
 /**
@@ -47,9 +46,11 @@ export default function EventFormScreen() {
   );
   const [isPublic, setIsPublic] = useState(event?.is_public ?? true);
   const [location, setLocation] = useState(event?.location ?? '');
-  // A plain text field this step: the app carries no date-picker component yet,
-  // so a date is entered as an ISO day (formatEventDate reads it defensively).
-  const [eventDate, setEventDate] = useState(event?.event_date ?? '');
+  // A real Date driven by the native picker; seeded from the stored ISO on edit
+  // and serialized back to ISO on save (formatEventDate round-trips it).
+  const [eventDate, setEventDate] = useState<Date | undefined>(
+    event?.event_date ? new Date(event.event_date) : undefined
+  );
   const [wishlistId, setWishlistId] = useState<string | undefined>(undefined);
   const photo = usePendingImageUpload(
     'event_photo',
@@ -70,7 +71,7 @@ export default function EventFormScreen() {
         is_public: isPublic,
         ...(description.trim() ? { description: description.trim() } : {}),
         ...(eventType ? { event_type: eventType } : {}),
-        ...(eventDate.trim() ? { event_date: eventDate.trim() } : {}),
+        ...(eventDate ? { event_date: eventDate.toISOString() } : {}),
         ...(location.trim() ? { location: location.trim() } : {}),
         ...(photo.changedUrl ? { image_url: photo.changedUrl } : {}),
       };
@@ -101,9 +102,13 @@ export default function EventFormScreen() {
 
       <ImageUploadField label="Event cover" upload={photo} />
 
-      <View style={styles.privacyRow}>
-        <Text style={styles.privacyLabel}>Public event</Text>
-        <AppSwitch value={isPublic} onValueChange={setIsPublic} />
+      <View style={styles.privacy}>
+        <PrivacySelector
+          value={isPublic ? 'public' : 'private'}
+          onChange={(v) => setIsPublic(v === 'public')}
+          entityNoun="event"
+          privateAudience="you and your guests"
+        />
       </View>
 
       <FormInput
@@ -113,14 +118,7 @@ export default function EventFormScreen() {
         maxLength={500}
       />
 
-      <FieldLabel>Event date</FieldLabel>
-      <FormInput
-        value={eventDate}
-        placeholder="YYYY-MM-DD"
-        onChangeText={setEventDate}
-        autoCapitalize="none"
-        maxLength={64}
-      />
+      <DatePickerField label="Event date" value={eventDate} onChange={setEventDate} />
 
       {/* Linking a wishlist you own is a create-only step this step; editing
           the linked wishlists comes with the invitee/guest surfaces. */}
@@ -146,13 +144,7 @@ export default function EventFormScreen() {
 }
 
 const styles = StyleSheet.create({
-  privacyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  privacy: {
     marginBottom: Spacing.lg,
-  },
-  privacyLabel: {
-    ...Typography.body,
   },
 });

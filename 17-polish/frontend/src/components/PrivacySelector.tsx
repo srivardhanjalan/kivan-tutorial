@@ -11,17 +11,28 @@ import type { PrivacyType } from '../services/api';
 interface PrivacySelectorProps {
   value: PrivacyType;
   onChange: (value: PrivacyType) => void;
+  /** The thing being made public/private; fills the copy. Defaults to wishlist. */
+  entityNoun?: string;
+  /** Who a private entity stays visible to, e.g. "you and your guests" for an
+      event. Defaults to a wishlist's owners and co-owners. */
+  privateAudience?: string;
 }
 
 /**
- * The wishlist privacy control: one switch between the only two visibilities a
- * wishlist has. Public shows it to anyone (a profile grid, Discover, a share
- * link); private keeps it to its owners and co-owners. The icon and copy track
- * the current value so the state reads at a glance. (There is no third "shared"
- * tier: co-ownership, not this toggle, is how a private wishlist reaches more
- * than one person.)
+ * The privacy control shared by the wishlist and event forms: one switch between
+ * the only two visibilities either has. Public shows it to anyone (a profile
+ * grid, Discover, a share link); private keeps it to a smaller audience. The
+ * icon and copy track the current value so the state reads at a glance, and the
+ * noun/audience are parameterized so an event reads as an event, not a wishlist.
+ * (There is no third "shared" tier: co-ownership/hosting, not this toggle, is how
+ * a private entity reaches more than one person.)
  */
-const PrivacySelector: React.FC<PrivacySelectorProps> = ({ value, onChange }) => {
+const PrivacySelector: React.FC<PrivacySelectorProps> = ({
+  value,
+  onChange,
+  entityNoun = 'wishlist',
+  privateAudience = 'you and any co-owners',
+}) => {
   const isPublic = value === 'public';
   return (
     <View style={styles.row}>
@@ -34,8 +45,8 @@ const PrivacySelector: React.FC<PrivacySelectorProps> = ({ value, onChange }) =>
         <Text style={styles.title}>{isPublic ? 'Public' : 'Private'}</Text>
         <Text style={styles.description}>
           {isPublic
-            ? 'Anyone can find and view this wishlist.'
-            : 'Only you and any co-owners can view this wishlist.'}
+            ? `Anyone can find and view this ${entityNoun}.`
+            : `Only ${privateAudience} can view this ${entityNoun}.`}
         </Text>
       </View>
       <AppSwitch
