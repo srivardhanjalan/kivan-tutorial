@@ -1,18 +1,20 @@
 import React from 'react';
+import { useWindowDimensions } from 'react-native';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import useFetch from '../hooks/useFetch';
 import AdminCatalogScreen from '../components/layouts/AdminCatalogScreen';
-import CatalogRow from '../components/CatalogRow';
+import MasonryGrid from '../components/MasonryGrid';
+import ProductCard from '../components/ProductCard';
 import { fetchStorefrontProducts } from '../services/api';
 import type { Product } from '../services/api';
-import { formatCost } from '../utils/formatCost';
 
 /**
- * One store's products, admin side: each row opens the product's edit form, the
- * header + adds one under this store. The store is passed in (not refetched);
- * the list refetches on focus so a create, edit, or delete shows on return. A
- * product's photo is seed-owned, so a row created here shows the glyph until a
- * later step ships an uploader.
+ * One store's products, admin side: the same masonry of image-forward product
+ * tiles the store detail shows, each tile opening the product's edit form and
+ * the header + adding one under this store. The store is passed in (not
+ * refetched); the list refetches on focus so a create, edit, or delete shows on
+ * return. A product created here shows the placeholder glyph until its photo is
+ * uploaded on the edit form.
  */
 export default function AdminStorefrontProductsScreen() {
   const navigation = useAppNavigation();
@@ -21,6 +23,11 @@ export default function AdminStorefrontProductsScreen() {
     () => fetchStorefrontProducts(storefront.id),
     { refetchOnFocus: true }
   );
+
+  // Products lay out by their true image aspect ratios in a masonry, more
+  // columns on a wider device — the same responsive rule the store detail uses.
+  const { width } = useWindowDimensions();
+  const productColumns = width >= 768 ? 4 : width >= 600 ? 3 : 2;
 
   return (
     <AdminCatalogScreen
@@ -35,19 +42,17 @@ export default function AdminStorefrontProductsScreen() {
         subtitle: 'Add a product to this store.',
       }}
     >
-      {products?.map((product: Product) => (
-        <CatalogRow
-          key={product.id}
-          icon="cube-outline"
-          logoUrl={product.image_url}
-          title={product.name}
-          accessibilityLabel={product.name}
-          description={product.description}
-          meta={[{ icon: 'cash-outline', text: formatCost(product.price) }]}
-          showChevron
-          onPress={() => navigation.navigate('AdminProductForm', { storefront, product })}
-        />
-      ))}
+      <MasonryGrid
+        data={products ?? []}
+        numColumns={productColumns}
+        keyExtractor={(product: Product) => product.id}
+        renderItem={(product: Product) => (
+          <ProductCard
+            product={product}
+            onPress={() => navigation.navigate('AdminProductForm', { storefront, product })}
+          />
+        )}
+      />
     </AdminCatalogScreen>
   );
 }
