@@ -38,7 +38,7 @@ from app.utils.s3_helpers import (
     plan_photo_update,
 )
 from app.utils.timestamps import utc_now_iso
-from app.utils.wishlist_access import get_owned_wishlist
+from app.utils.wishlist_access import can_view_wishlist, check_wishlist_access
 
 logger = logging.getLogger(__name__)
 
@@ -74,10 +74,18 @@ def get_user_email(user_id: str) -> Optional[str]:
     return response["Item"].get("email") if "Item" in response else None
 
 
-def get_event_wishlists(event_id: str) -> list[dict]:
-    """The wishlists linked to an event, in link order. One Query for the link
-    rows, one BatchGetItem for the wishlists themselves (the N+1 fix); a link
-    whose wishlist was since deleted is simply skipped."""
+def get_event_wishlists(event_id: str, viewer_id: str) -> list[dict]:
+    """The wishlists linked to an event that this VIEWER may see, in link order.
+    One Query for the link rows, one BatchGetItem for the wishlists themselves
+    (the N+1 fix); a link whose wishlist was since deleted is simply skipped.
+
+    Privacy is re-checked per viewer HERE, on the read: the source
+    (events.py:64-80) returns the full contents of every linked wishlist to any
+    event viewer, gating only the LINKER's ownership at link time, so a private
+    wishlist linked to a public event leaks to everyone who opens the event.
+    That's a divergence we fix knowingly: linking is not a viewer-side grant, so
+    each linked wishlist runs the same view rule the rest of the app uses, and a
+    private one shows only to its owners and co-owners."""
     links = query_all_pages(
         event_wishlists_table,
         KeyConditionExpression=Key("event_id").eq(event_id),
@@ -89,7 +97,11 @@ def get_event_wishlists(event_id: str) -> list[dict]:
         item["id"]: item
         for item in batch_get_items(wishlists_table, [{"id": wid} for wid in wishlist_ids])
     }
-    return [wishlists_map[wid] for wid in wishlist_ids if wid in wishlists_map]
+    return [
+        wishlists_map[wid]
+        for wid in wishlist_ids
+        if wid in wishlists_map and can_view_wishlist(wishlists_map[wid], viewer_id)
+    ]
 
 
 def get_event_hosts(event_id: str) -> list[dict]:
@@ -392,7 +404,7 @@ def get_event(event_id: str, user_id: str = Depends(get_current_user_id)):
         "event": event,
         "hosts": get_event_hosts(event_id),
         "invitees": invitees,
-        "wishlists": get_event_wishlists(event_id),
+        "wishlists": get_event_wishlists(event_id, user_id),
         "is_host": is_host,
         "is_invitee": is_invitee,
         "my_rsvp_status": my_rsvp_status,
@@ -646,12 +658,17 @@ def link_wishlist_to_event(
     user_id: str = Depends(get_current_user_id),
 ):
     """Link a wishlist to an event. Host-only, and the caller must OWN the
-    wishlist (get_owned_wishlist 404s a missing one and 403s one you don't own):
-    a host attaches their own collections, never someone else's. 400 if it's
-    already linked."""
+    wishlist (check_wishlist_access with require_edit 404s a missing one and
+    403s one you neither own nor co-own): a host attaches a collection they can
+    edit, never someone else's. 400 if it's already linked.
+
+    This ownership check gates the LINKER, not later viewers: linking a private
+    wishlist doesn't make it public. The per-viewer re-check happens on the read
+    side (see get_event_wishlists), so a private wishlist stays hidden from event
+    viewers who don't own it."""
     get_event_or_404(event_id)
     require_host(event_id, user_id, "link wishlists to this event")
-    get_owned_wishlist(link.wishlist_id, user_id)
+    check_wishlist_access(link.wishlist_id, user_id, require_edit=True)
     existing = event_wishlists_table.get_item(
         Key={"event_id": event_id, "wishlist_id": link.wishlist_id}
     )

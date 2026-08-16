@@ -44,6 +44,11 @@ class Settings(BaseSettings):
         return f"kivan-{self.environment}-wishlists"
 
     @property
+    def wishlist_owners_table(self) -> str:
+        # Dashed name matches infra/dynamodb.tf (aws_dynamodb_table.wishlist_owners)
+        return f"kivan-{self.environment}-wishlist-owners"
+
+    @property
     def wishes_table(self) -> str:
         return f"kivan-{self.environment}-wishes"
 

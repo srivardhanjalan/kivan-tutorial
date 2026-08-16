@@ -4,6 +4,13 @@
  * in app.json until a screen or deep link reads them here.
  */
 const AppConfig = {
+  /** The deep-link URL scheme. It duplicates app.json's `scheme` on purpose:
+      the native manifest is not a JS import, so this is the copy the bundle
+      reads, and the two are matched by hand (change one, change the other).
+      Step 14 is the first code to read it: the share modals build
+      `{scheme}://wishlist/` links and Navigation's parser matches the same
+      prefix, so the one string that names how the app opens lives here once. */
+  scheme: 'kivan',
   branding: {
     /** The brand mark — the loader spins it, the auth screens crown their
         forms with it. Point it at your own asset to rebrand both at once. */

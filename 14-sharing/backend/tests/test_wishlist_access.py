@@ -1,14 +1,15 @@
-"""Wishlist access split (step 10): reading is public, writing stays
-single-owner. A non-owner can GET any wishlist (a friend's collection off their
-profile, one they are about to love) but cannot PUT it; a missing wishlist is a
-404 on both.
+"""Wishlist access split (step 10): reading a PUBLIC wishlist is open, writing
+stays owner-only. A non-owner can GET a public wishlist (a friend's collection
+off their profile, one they are about to love) but cannot PUT it; a missing
+wishlist is a 404 on both. Private-wishlist visibility is exercised in
+test_privacy.py; these cover the default-public read/write split.
 """
 from conftest import put_wishlist
 
 
 def test_non_owner_can_read_wishlist(client, aws):
-    """(g) GET by a non-owner returns 200: every wishlist is publicly viewable
-    this step."""
+    """(g) GET by a non-owner returns 200: a public wishlist (the create-time
+    default) is viewable by anyone."""
     put_wishlist(aws, "wl", created_by="owner", name="Owner's list")
 
     resp = client("stranger").get("/wishlists/wl")

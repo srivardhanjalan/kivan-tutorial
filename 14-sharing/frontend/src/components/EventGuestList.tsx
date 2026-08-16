@@ -1,10 +1,8 @@
 import React from 'react';
-import { TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import PersonRow from './PersonRow';
+import RemovePersonButton from './RemovePersonButton';
 import { inviteeDisplayName } from '../utils/userName';
 import Colors from '../constants/Colors';
-import Opacity from '../constants/Opacity';
 import { RSVP_LABEL } from '../constants/rsvpLabels';
 import type { EventInvitee, RsvpStatus } from '../services/api';
 
@@ -43,15 +41,10 @@ const EventGuestList: React.FC<EventGuestListProps> = ({ guests, onRemove }) => 
         subtitleColor={RSVP_COLOR[invitee.rsvp_status]}
         trailing={
           onRemove && (
-            <TouchableOpacity
+            <RemovePersonButton
+              label={inviteeDisplayName(invitee)}
               onPress={() => onRemove(invitee)}
-              activeOpacity={Opacity.pressed}
-              accessibilityRole="button"
-              accessibilityLabel={`Remove ${inviteeDisplayName(invitee)}`}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="close" size={22} color={Colors.textMuted} />
-            </TouchableOpacity>
+            />
           )
         }
       />

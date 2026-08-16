@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
+import HeaderIconButton from '../components/HeaderIconButton';
+import ShareUserProfileModal from '../components/ShareUserProfileModal';
 import SectionHeader from '../components/SectionHeader';
 import EmptyStateView from '../components/EmptyStateView';
 import WishlistGrid from '../components/WishlistGrid';
@@ -127,6 +129,7 @@ export default function UserProfileScreen() {
   const { data: user, loading } = useFetch(() => fetchUser(userId), { refetchOnFocus: true });
   const { data: wishlists } = useFetch(() => fetchUserWishlists(userId), { refetchOnFocus: true });
   const { data: loved } = useFetch(() => fetchUserLovedWishlists(userId), { refetchOnFocus: true });
+  const [showShare, setShowShare] = useState(false);
 
   const openWishlist = (id: string) => navigation.navigate('WishlistDetail', { wishlistId: id });
   // push, not navigate: the graph is a drill-down (a profile's followers, one of
@@ -135,10 +138,30 @@ export default function UserProfileScreen() {
     navigation.push('FollowList', { userId, mode });
 
   return (
-    <FloatingHeaderLayout title={user ? userDisplayName(user) : ''} loading={loading} showBack>
+    <FloatingHeaderLayout
+      title={user ? userDisplayName(user) : ''}
+      loading={loading}
+      showBack
+      headerRight={
+        user ? (
+          <HeaderIconButton
+            icon="share-outline"
+            accessibilityLabel="Share profile"
+            onPress={() => setShowShare(true)}
+          />
+        ) : undefined
+      }
+    >
       {user && (
         <>
           <ProfileHeader user={user} openFollows={openFollows} />
+
+          <ShareUserProfileModal
+            visible={showShare}
+            userId={userId}
+            userName={userDisplayName(user)}
+            onClose={() => setShowShare(false)}
+          />
 
           <WishlistSection
             title="Wishlists"

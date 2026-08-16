@@ -493,3 +493,206 @@ Frontend (visual/workflow convergence, behavior held):
       now asserts `f"mute_{type}"` is a real settings field AND a writable mute
       for all six types with no orphans either way, locking the model, the route,
       and the type list together. Additive.
+
+## Sharing (step 14, phase A)
+
+Step 14 lands sharing. Phase A ships co-ownership and the gate generalization:
+the `wishlist-owners` join table, the one `check_wishlist_access` gate, owner
+CRUD, and `owner_ids`-at-create. Privacy enforcement (`privacy_type`) is phase
+B, and the deep-links / Share-modal frontend is phase C. As with the earlier
+features, some of what phase A records is deliberate BACKEND divergence the
+polish pass must NOT "restore".
+
+Backend (deliberate, do-not-restore):
+
+- [ ] One gate, one name. *source:* the owner check is spelled two ways: the
+      wishlists routes call `is_wishlist_owner` inline (hand-writing the 404 and
+      403 twice), while the wishes routes route through
+      `check_wishlist_access(require_edit=True)`, an equivalent outcome with
+      duplicated logic. *tutorial:* a single `check_wishlist_access(wishlist_id,
+      user_id, require_edit)` that BOTH the wishlists and wishes routes funnel
+      through (reads pass `require_edit=False`, mutations `True`), with
+      `is_wishlist_owner` as its one membership test. One concept, one name; keep
+      the unified gate.
+- [ ] No denormalized `owner_count`. *source:* the wishlist row carries an
+      `owner_count:int` set at create and moved by `adjust_count` on every
+      add/remove (a second write, and a value that can drift from the join
+      table). *tutorial:* no count; the owners are a Query on the
+      `wishlist-owners` table and the last-owner guard reads that query's length,
+      exactly as `event_hosts` does (events shipped no `host_count`). Keep the
+      table as the single source of truth; do not add the denormalized count.
+- [ ] Event-host-style owner removal, not a conditional delete. *source:*
+      `DELETE /owners/{id}` runs a conditional `delete_item`
+      (`attribute_exists`) and 404s if the target isn't an owner. *tutorial:* the
+      same shape `event_hosts` ships: the last-owner guard, then a plain
+      idempotent `delete_item` (removing a non-owner is a harmless no-op).
+      Keep the membership-table idiom the tutorial already established in step 13.
+- [ ] complete/uncomplete asymmetry (parity note). *source & tutorial:*
+      `POST /wishes/{id}/complete` uses the VIEW gate (any signed-in viewer may
+      mark a wish taken: gift-claiming is the point of sharing a list) while
+      `uncomplete` uses the EDIT gate (owner-or-co-owner only). Kept exactly, with
+      an honest comment where the two gates differ. Recorded so polish does not
+      "symmetrize" the two.
+- [ ] No co-owner notification type. *source & tutorial:* adding a co-owner (like
+      adding an event host) fires NO notification; the six-type system is
+      untouched. Recorded so polish does not invent a `wishlist_shared` /
+      `co_owner_added` type the finished design never had.
+- [ ] Account-deletion sweep left as-is under co-ownership. *source & tutorial:*
+      the deletion sweep runs by `CreatedByIndex`, so it tears down the wishlists
+      the leaving user CREATED (now including their owner edges) and leaves a
+      wishlist the user only CO-owns alone (its stale owner edge points at a
+      flagged account that can never authenticate). No ownership-transfer flow
+      this step; the honest comment says so. Recorded so polish does not read the
+      residual co-owner edge as a bug to "fix" here.
+
+## Sharing (step 14, phase B)
+
+Phase B lands privacy enforcement: the `privacy_type` field plus its default,
+and the read gate wired at every surface (the popular feed, the profile grid,
+the loved shelf, the single-wishlist and wishes reads, an event's linked
+wishlists, the follower fan-out, and gift-claiming). The deep-links / Share-modal
+frontend is phase C. As with the earlier phases, some of what phase B records is
+deliberate BACKEND divergence the polish pass must NOT "restore".
+
+Backend (deliberate, do-not-restore):
+
+- [ ] `privacy_type` is a two-value enum, not a three-value free string.
+      *source:* `privacy_type` is a free-form `str` documented as
+      `"public"`/`"private"`/`"shared"`, but no code path ever honors "shared":
+      every check is `== "public"`, so "shared" collapses to private, a value
+      with no behavior and a comment that lies. *tutorial:* a two-value
+      `Literal["public", "private"]` (aliased `PrivacyType`), so an out-of-set
+      value is a 422 at the model boundary and there is no defined-but-ignored
+      third tier. Keep the two-value enum; do not "restore" the "shared" spelling
+      the finished design never enforced.
+- [ ] Event-linked private wishlists are re-checked per viewer (leak fix).
+      *source:* `get_event_wishlist_responses` (`events.py:64-80`) returns the
+      full contents of every linked wishlist to any event viewer, gating only the
+      LINKER's ownership at link time, so a private wishlist linked to a public
+      event leaks to everyone who opens it. *tutorial:* `get_event_wishlists`
+      takes the viewer id and filters each linked wishlist through the shared
+      view rule (`can_view_wishlist`), so a private list shows only to its owners
+      and co-owners; linking is not a viewer-side grant. Keep the per-viewer
+      re-check; do not drop back to the link-time-only check.
+- [ ] Fan-out privacy guard lives INSIDE the producers, not at the call sites.
+      *source:* `notify_followers_wishlist_created` / `notify_followers_wish_added`
+      are unconditional internally, and each CALL SITE guards on
+      `privacy_type == "public"` separately, so any future caller that forgets
+      the guard leaks a private wishlist's activity to every follower.
+      *tutorial:* the `privacy_type == "public"` gate moves INTO the producers
+      (`_wishlist_fans_out`), so a private wishlist (or a wish on one) fans out to
+      no one no matter who calls, and the create routes carry no privacy guard to
+      forget. Keep the guard in the producer; do not re-add call-site guards.
+- [ ] Read-surface filters share one view rule (simpler idiom). *source:* the
+      profile grid, loved shelf, and popular feed each spell the
+      public-or-co-owner test inline. *tutorial:* the single
+      `wishlist_is_public` / `can_view_wishlist` pair in `wishlist_access.py` is
+      the one place the view rule lives, reused by the gate and every list
+      filter, so the single-fetch gate and the list filters cannot drift apart.
+      Keep the shared predicate.
+
+## Sharing (step 14, phase C)
+
+Phase C lands the frontend of sharing: the `kivan://` deep-link scheme, the
+manual link parser wired into cold-start and warm navigation, the four Share
+modals with their header entry points, the wishlist privacy toggle, and the
+co-owner management UI. It also settles one carry-over adjudication from phase B
+(the loved-shelf filter). As with the earlier phases, some of what phase C
+records is deliberate divergence the polish pass must NOT "restore".
+
+Behavior (deliberate, do-not-restore):
+
+- [ ] Your own loved shelf is privacy-filtered by the ONE view rule (carry-over
+      adjudication, settled). *source:* `get_user_loved_wishlists`
+      (`backend/app/routes/users.py:~528`) passes a wishlist when
+      `privacy_type == "public"` **or** `current_user_id == user_id` **or**
+      `is_wishlist_owner(...)`, so viewing your OWN loved list is an
+      unconditional bypass: a wishlist you loved that later went private and that
+      you do NOT co-own still shows on your own shelf. *tutorial:* the loved
+      shelf (`loves.py get_loved_wishlists`) runs the same
+      `can_view_wishlist(wishlist, viewer)` rule every other list surface uses
+      (`public or is_wishlist_owner`), with no `viewer == owner-of-the-shelf`
+      bypass, so a private wishlist you loved but don't co-own drops off your own
+      shelf too. This was adjudicated for phase C: the source really does show
+      your own loved list unfiltered; the tutorial keeps ONE view rule across the
+      profile grid, the loved shelf, and the single-wishlist gate rather than
+      special-casing the shelf. Keep the uniform rule; do not re-add the
+      self-viewer privacy bypass.
+- [ ] Event deep links resolve to the screen, with no auto-invite side effect.
+      *source:* opening a `kivan://event/<id>` link auto-adds the viewer as an
+      invitee via `apiClient.addEventInvitee(eventId, {user_id})` before
+      navigating (`Navigation.tsx:227-236`, `:350-357`; signed-out defers with
+      `autoAddAsGuest`), so a share recipient can RSVP immediately. *tutorial:*
+      `parseDeepLink` resolves the link to `EventDetail` and navigates, with no
+      membership side effect; a recipient views the event and a host invites them
+      to unlock RSVP, exactly as reaching the event any other way does. Keep the
+      link as pure navigation; do not fold a write into it.
+
+Frontend (visual/workflow convergence, behavior held):
+
+- [ ] Co-owner management is inline on the detail screen, not a settings editor.
+      *source:* co-owners are managed in a dedicated `WishlistSettingsScreen`
+      (reached via an owner-only gear on the detail), listing owners with a
+      last-owner-guarded remove and a `UserPickerSection` to add, buffered and
+      applied on **Save Changes**. *tutorial:* the app has no wishlist-settings
+      screen, so an owner-only "Co-owners" section sits inline on
+      `WishlistDetailScreen` (a `WishlistOwnerList` with a last-owner-guarded
+      remove, plus a `ManageOwnersModal` that mirrors the event
+      `InviteGuestModal`), applying each add/remove immediately, the same
+      direct-apply the event guest surface uses. Both reachable; placement and
+      apply-timing only.
+- [ ] Ownership keys off the owners join table, not `created_by`. *note:* the
+      detail screen's owner check moves from `wishlist.created_by === user.id`
+      (single-creator) to membership in the fetched owners list, so a co-owner
+      sees the edit/delete/manage actions the backend already grants them. One
+      extra `GET /wishlists/{id}/owners` per view; the finished design carries
+      the owners inline on the wishlist read instead. Behavior-correct either
+      way; polish may fold owners into the wishlist payload.
+- [ ] Creation-time co-owner seeding is not exposed in the form. *source:*
+      `CreateWishlistScreen` carries a co-owner `UserPickerSection` that sends
+      `owner_ids` at create (`CreateWishlistScreen.tsx:149-161`, `:95-96`).
+      *tutorial:* `WishlistFormScreen` (the merged create/edit form) exposes no
+      co-owner picker; co-owners are added from the detail after creation. The
+      backend still accepts `owner_ids` at create (phase A), but the tutorial
+      frontend defers the whole seeding path: no picker UI, and `WishlistCreate`
+      carries no `owner_ids` field (a request body should not declare a field no
+      caller sends), so convergence re-adds the picker and the field together.
+- [ ] Privacy control lives in the one wishlist form. *source:* a shared
+      `PrivacySelector` (public/private `Switch` with a contextual icon, title,
+      and description) in both `CreateWishlistScreen` and
+      `WishlistSettingsScreen`. *tutorial:* the same `PrivacySelector` idiom (the
+      event `Switch` idiom already recorded in step 13), placed once in the
+      merged `WishlistFormScreen`, writing `privacy_type` on create and edit.
+      Two values only, matching the backend's two-value enum.
+- [ ] Share modal reuses the `ModalCard` surface. *source:* each entity's Share
+      modal delegates to a `ShareLinkModal` engine built on `CommonModalStyles`
+      (a bespoke header, a tappable link box, and two side-by-side outline
+      Copy/Share buttons). *tutorial:* the same three entity wrappers
+      (`ShareWishlistModal` / `ShareUserProfileModal` / `ShareEventModal`)
+      delegate to a `ShareLinkModal` engine built on the shared `ModalCard`
+      (title + message + a tappable link box + stacked `PrimaryButton`s: Share,
+      Copy link, Done). Identical behavior (clipboard copy via `expo-clipboard`,
+      OS share sheet via `Share.share`, the bare `kivan://` link); modal chrome
+      only. The `share-outline` `HeaderIconButton` entry point matches the source
+      on all three detail screens (shown to everyone, not just owners).
+- [ ] Deep-link parse is one pure function, not inline-duplicated. *source:* the
+      cold-start (`getInitialURL`) and warm (`addEventListener`) handlers each
+      re-spell the three hostname/regex branches inline
+      (`Navigation.tsx:136-236`, `:253-374`). *tutorial:* both handlers call a
+      single pure `parseDeepLink(url)` (`utils/deepLinks.ts`) that returns a
+      typed target or null, so the branch logic lives once. Both disable React
+      Navigation's declarative routing (`getStateFromPath: () => undefined`) and
+      defer a signed-out link until after sign-in. Same behavior; one parser.
+- [ ] Deep-link parser covered by E2E, not a unit test. *note:* the frontend
+      carries no jest setup and none was added this step; `parseDeepLink` is a
+      pure URL-string-in, target-out function proven by the step's E2E deep-link
+      check (`xcrun simctl openurl booted kivan://wishlist/<id>` and the warm/cold
+      variants), not a jest unit test. Polish may add a jest harness later; the
+      parser is already shaped for it.
+- [ ] Absent surfaces held absent (parity note). *source & tutorial:* there are
+      NO wish, storefront, or product deep links; NO wish/storefront Share
+      modals; NO iOS universal links or Kivan https content domain; and NO
+      web/App-Store fallback for a recipient without the app (a `kivan://` link
+      simply has no non-app handler). Recorded so polish does not invent any of
+      them; the finished design ships exactly the three link kinds and three
+      Share modals above.

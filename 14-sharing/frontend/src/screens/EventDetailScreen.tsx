@@ -7,7 +7,8 @@ import { Text, StyleSheet } from 'react-native';
 import { useUser } from '@clerk/clerk-expo';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
-import EditDeleteHeaderButtons from '../components/EditDeleteHeaderButtons';
+import DetailHeaderActions from '../components/DetailHeaderActions';
+import ShareEventModal from '../components/ShareEventModal';
 import SectionHeader from '../components/SectionHeader';
 import EmptyStateView from '../components/EmptyStateView';
 // jscpd:ignore-end
@@ -62,6 +63,7 @@ export default function EventDetailScreen() {
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<EventInvitee | null>(null);
+  const [showShare, setShowShare] = useState(false);
 
   const event = detail?.event;
   const lifeEvent = event?.event_type ? lifeEventFor(event.event_type) : undefined;
@@ -105,11 +107,19 @@ export default function EventDetailScreen() {
       loading={loading}
       showBack
       headerRight={
-        detail && detail.is_host ? (
-          <EditDeleteHeaderButtons
-            subject="event"
-            onEdit={() => navigation.navigate('EventForm', { event })}
-            onDelete={requestDelete}
+        detail && event ? (
+          <DetailHeaderActions
+            shareLabel="Share event"
+            onShare={() => setShowShare(true)}
+            manage={
+              detail.is_host
+                ? {
+                    subject: 'event',
+                    onEdit: () => navigation.navigate('EventForm', { event }),
+                    onDelete: requestDelete,
+                  }
+                : undefined
+            }
           />
         ) : undefined
       }
@@ -209,6 +219,15 @@ export default function EventDetailScreen() {
         message="This removes the event and unlinks its wishlists. This cannot be undone."
         confirmTitle="Delete Event"
       />
+
+      {event && (
+        <ShareEventModal
+          visible={showShare}
+          eventId={eventId}
+          eventName={event.name}
+          onClose={() => setShowShare(false)}
+        />
+      )}
     </FloatingHeaderLayout>
   );
 }

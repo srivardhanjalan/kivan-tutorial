@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import ModalCard from './ModalCard';
 import FormInput from './FormInput';
-import UserRow from './UserRow';
-import PrimaryButton from './PrimaryButton';
+import UserSearchPicker from './UserSearchPicker';
 import ConfirmCancelButtons from './ConfirmCancelButtons';
 import { useToast } from './ToastProvider';
 import useAsyncAction from '../hooks/useAsyncAction';
@@ -92,35 +91,18 @@ export default function InviteGuestModal({
     }, 'Could not send that invite');
   };
 
-  const searching = query.trim().length > 0;
-
   return (
     <ModalCard
       visible={visible}
       title="Invite guests"
       message="Add people by name, or invite anyone by email."
     >
-      <FormInput
-        value={query}
-        onChangeText={setQuery}
-        placeholder="Search people by name"
-        autoCapitalize="none"
-        autoCorrect={false}
-        clearButtonMode="while-editing"
+      <UserSearchPicker
+        query={query}
+        onChangeQuery={setQuery}
+        results={results}
+        onPick={inviteUser}
       />
-      {searching &&
-        (results.length === 0 ? (
-          <Text style={styles.hint}>No one to add.</Text>
-        ) : (
-          results.map((user) => (
-            <UserRow
-              key={user.id}
-              user={user}
-              subtitle={user.email}
-              onPress={() => inviteUser(user)}
-            />
-          ))
-        ))}
 
       <Text style={styles.divider}>or invite by email</Text>
       <FormInput
@@ -144,10 +126,6 @@ export default function InviteGuestModal({
 }
 
 const styles = StyleSheet.create({
-  hint: {
-    ...Typography.bodySecondary,
-    paddingVertical: Spacing.sm,
-  },
   divider: {
     ...Typography.bodySecondary,
     marginTop: Spacing.lg,

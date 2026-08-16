@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import type { NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '@clerk/clerk-expo';
+import * as Linking from 'expo-linking';
 import TabNavigation from './TabNavigation';
 import OnboardingTutorial from './OnboardingTutorial';
 import LoadingView from './LoadingView';
@@ -27,6 +29,8 @@ import {
   completeOnboarding,
 } from '../services/api';
 import type { Wishlist, Wish, Storefront, Product, Brand, Event } from '../services/api';
+import { parseDeepLink, DEEP_LINK_PREFIX } from '../utils/deepLinks';
+import type { DeepLinkTarget } from '../utils/deepLinks';
 
 /** The signed-in stack: the tab shell, plus every screen pushed over it */
 export type RootStackParamList = {
@@ -60,6 +64,20 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+// Deep links are routed by hand (see the effects below), not by React
+// Navigation's path->screen mapping: the target screen depends on auth state, so
+// getStateFromPath returns undefined to keep the automatic router out of it
+// while still registering the kivan:// prefix.
+const linking = {
+  prefixes: [DEEP_LINK_PREFIX],
+  getStateFromPath: () => undefined,
+};
+
+// After sign-in the NavigationContainer mounts and wires its ref on the same
+// render a pending link is replayed; this brief wait lets the ref settle before
+// we navigate (a cold-start link opened straight from a share).
+const NAV_REPLAY_DELAY_MS = 500;
+
 /**
  * The auth gate: signed out shows the sign-in/sign-up pair (a simple local
  * swap), signed in shows a stack — the tab shell at its root, Settings the
@@ -70,6 +88,11 @@ export default function Navigation() {
   const { isLoaded, isSignedIn, getToken } = useAuth();
   const [authScreen, setAuthScreen] = useState<'signIn' | 'signUp'>('signIn');
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
+  // A deep link waiting for the container to be ready and the user signed in.
+  // Signed-out links (the common case for a share opened by a new user) park
+  // here through the whole sign-in flow, then replay.
+  const [pendingLink, setPendingLink] = useState<DeepLinkTarget | null>(null);
 
   // Wired during render, not in an effect: children fire authenticated
   // requests from their own mount effects, which run before a parent's.
@@ -95,6 +118,65 @@ export default function Navigation() {
     };
   }, [isSignedIn]);
 
+  // Route one resolved link to its screen. Narrowed per screen so each navigate
+  // gets the exact params its route expects.
+  const navigateToTarget = (target: DeepLinkTarget) => {
+    const nav = navigationRef.current;
+    if (!nav) return;
+    switch (target.screen) {
+      case 'WishlistDetail':
+        nav.navigate('WishlistDetail', target.params);
+        break;
+      case 'UserProfile':
+        nav.navigate('UserProfile', target.params);
+        break;
+      case 'EventDetail':
+        nav.navigate('EventDetail', target.params);
+        break;
+    }
+  };
+
+  // Cold start: the URL the app was launched from (a share tapped while Kivan
+  // was closed). Parked as a pending link and replayed once signed in.
+  useEffect(() => {
+    if (!isLoaded) return;
+    let active = true;
+    Linking.getInitialURL().then((url) => {
+      if (!active || !url || url.includes('expo-development-client')) return;
+      const target = parseDeepLink(url);
+      if (target) setPendingLink(target);
+    });
+    return () => {
+      active = false;
+    };
+  }, [isLoaded]);
+
+  // Warm: a link tapped while Kivan is already running. Same parking spot, so a
+  // signed-out warm link waits for sign-in just like a cold one.
+  useEffect(() => {
+    if (!isLoaded) return;
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      if (url.includes('expo-development-client')) return;
+      const target = parseDeepLink(url);
+      if (target) setPendingLink(target);
+    });
+    return () => subscription.remove();
+  }, [isLoaded]);
+
+  // Replay a parked link once the user is signed in and the container is up. One
+  // path for both cold and warm links, so auth gating lives in exactly one place.
+  useEffect(() => {
+    if (!isSignedIn || !pendingLink) return;
+    const target = pendingLink;
+    const timer = setTimeout(() => {
+      navigateToTarget(target);
+      setPendingLink(null);
+    }, NAV_REPLAY_DELAY_MS);
+    return () => clearTimeout(timer);
+    // navigateToTarget reads a ref, so it needn't be a dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignedIn, pendingLink]);
+
   const handleOnboardingDismiss = () => {
     setShowOnboarding(false);
     completeOnboarding().catch((e: Error) =>
@@ -116,7 +198,7 @@ export default function Navigation() {
 
   return (
     <>
-      <NavigationContainer>
+      <NavigationContainer ref={navigationRef} linking={linking}>
         <Stack.Navigator id={undefined} screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Tabs" component={TabNavigation} />
           <Stack.Screen name="Settings" component={SettingsScreen} />

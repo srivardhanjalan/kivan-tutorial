@@ -11,7 +11,7 @@ from app.models.wishlists import Wishlist
 from app.utils.dynamo import adjust_count, batch_get_items, query_all_pages
 from app.utils.notifications import notify_wishlist_loved
 from app.utils.user_access import get_public_user
-from app.utils.wishlist_access import get_wishlist_or_404
+from app.utils.wishlist_access import can_view_wishlist, get_wishlist_or_404
 
 logger = logging.getLogger(__name__)
 
@@ -84,11 +84,13 @@ def get_love_status(wishlist_id: str, user_id: str = Depends(get_current_user_id
 
 
 @loved_router.get("/{user_id}/loved-wishlists", response_model=list[Wishlist])
-def get_loved_wishlists(user_id: str, _viewer: str = Depends(get_current_user_id)):
-    """The wishlists a user has loved. A Query on the base loves table (user_id
-    partitions it), then one BatchGetItem to the wishlists. A loved wishlist
-    later deleted simply drops out: the love edge outlived it, and this join
-    skips the missing record rather than 404-ing the whole list."""
+def get_loved_wishlists(user_id: str, viewer_id: str = Depends(get_current_user_id)):
+    """The wishlists a user has loved, privacy filtered the same way the profile
+    grid is: a public loved list shows to anyone, a private one only to a viewer
+    who owns or co-owns it. A Query on the base loves table (user_id partitions
+    it), then one BatchGetItem to the wishlists. A loved wishlist later deleted
+    simply drops out: the love edge outlived it, and this join skips the missing
+    record rather than 404-ing the whole list."""
     get_public_user(user_id)
     edges = query_all_pages(
         wishlist_loves_table,
@@ -101,4 +103,8 @@ def get_loved_wishlists(user_id: str, _viewer: str = Depends(get_current_user_id
         item["id"]: item
         for item in batch_get_items(wishlists_table, [{"id": wid} for wid in wishlist_ids])
     }
-    return [Wishlist(**by_id[wid]) for wid in wishlist_ids if wid in by_id]
+    return [
+        Wishlist(**by_id[wid])
+        for wid in wishlist_ids
+        if wid in by_id and can_view_wishlist(by_id[wid], viewer_id)
+    ]

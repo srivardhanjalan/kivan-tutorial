@@ -9,6 +9,7 @@ dynamodb = boto3.resource("dynamodb", region_name=settings.aws_region)
 
 users_table = dynamodb.Table(settings.users_table)
 wishlists_table = dynamodb.Table(settings.wishlists_table)
+wishlist_owners_table = dynamodb.Table(settings.wishlist_owners_table)
 wishes_table = dynamodb.Table(settings.wishes_table)
 life_events_table = dynamodb.Table(settings.life_events_table)
 storefronts_table = dynamodb.Table(settings.storefronts_table)

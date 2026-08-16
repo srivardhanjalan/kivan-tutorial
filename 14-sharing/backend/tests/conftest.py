@@ -39,6 +39,8 @@ from moto import mock_aws  # noqa: E402
 ENVIRONMENT = os.environ["ENVIRONMENT"]
 USERS_TABLE = f"kivan-{ENVIRONMENT}-users"
 WISHLISTS_TABLE = f"kivan-{ENVIRONMENT}-wishlists"
+WISHLIST_OWNERS_TABLE = f"kivan-{ENVIRONMENT}-wishlist-owners"
+WISHES_TABLE = f"kivan-{ENVIRONMENT}-wishes"
 FOLLOWERS_TABLE = f"kivan-{ENVIRONMENT}-followers"
 WISHLIST_LOVES_TABLE = f"kivan-{ENVIRONMENT}-wishlist-loves"
 NOTIFICATION_SETTINGS_TABLE = f"kivan-{ENVIRONMENT}-notification-settings"
@@ -51,9 +53,10 @@ EVENT_WISHLISTS_TABLE = f"kivan-{ENVIRONMENT}-event-wishlists"
 def _create_tables(client) -> None:
     """Create exactly the tables the tested routes touch, each a faithful copy
     of its infra/dynamodb.tf definition. Reference tables (life-events,
-    storefronts, brands, products) and the wishes/notifications tables are
-    omitted: no code path under test reads them, and a table without a caller is
-    bloat here just as it would be in the app."""
+    storefronts, brands, products) and the notifications table are omitted: no
+    code path under test reads them, and a table without a caller is bloat here
+    just as it would be in the app. (The notification fan-out the create routes
+    call is best-effort and swallows the missing-table error.)"""
     # Users: hash id; NameSearchIndex (typeahead prefix search) and
     # PopularUsersIndex (Discover rail) both hash on the constant entity_type.
     # NameSearchIndex is SPARSE: name_lowercase is a String key, so DynamoDB
@@ -113,6 +116,49 @@ def _create_tables(client) -> None:
                     {"AttributeName": "entity_type", "KeyType": "HASH"},
                     {"AttributeName": "love_count", "KeyType": "RANGE"},
                 ],
+                "Projection": {"ProjectionType": "ALL"},
+            },
+        ],
+    )
+    # Wishlist owners (step 14): one row per owner edge, keyed
+    # (wishlist_id, user_id); UserIdIndex flips it to "wishlists I co-own". Same
+    # shape as event_hosts.
+    client.create_table(
+        TableName=WISHLIST_OWNERS_TABLE,
+        BillingMode="PAY_PER_REQUEST",
+        AttributeDefinitions=[
+            {"AttributeName": "wishlist_id", "AttributeType": "S"},
+            {"AttributeName": "user_id", "AttributeType": "S"},
+        ],
+        KeySchema=[
+            {"AttributeName": "wishlist_id", "KeyType": "HASH"},
+            {"AttributeName": "user_id", "KeyType": "RANGE"},
+        ],
+        GlobalSecondaryIndexes=[
+            {
+                "IndexName": "UserIdIndex",
+                "KeySchema": [
+                    {"AttributeName": "user_id", "KeyType": "HASH"},
+                    {"AttributeName": "wishlist_id", "KeyType": "RANGE"},
+                ],
+                "Projection": {"ProjectionType": "ALL"},
+            },
+        ],
+    )
+    # Wishes: hash id; WishlistIdIndex serves the wishlist-scoped listing, the
+    # co-owner wish CRUD, and the cascade-delete without a Scan.
+    client.create_table(
+        TableName=WISHES_TABLE,
+        BillingMode="PAY_PER_REQUEST",
+        AttributeDefinitions=[
+            {"AttributeName": "id", "AttributeType": "S"},
+            {"AttributeName": "wishlist_id", "AttributeType": "S"},
+        ],
+        KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
+        GlobalSecondaryIndexes=[
+            {
+                "IndexName": "WishlistIdIndex",
+                "KeySchema": [{"AttributeName": "wishlist_id", "KeyType": "HASH"}],
                 "Projection": {"ProjectionType": "ALL"},
             },
         ],
@@ -328,7 +374,16 @@ def put_wishlist(
     created_by: str,
     name: str = "A wishlist",
     love_count: int = 0,
+    co_owners: list[str] | None = None,
+    privacy_type: str = "public",
 ):
+    """Seed a wishlist AND its owner edges: the creator plus any co_owners. The
+    route auto-inserts the creator as the first owner, so a wishlist seeded
+    without its owner row would 403 its own creator on every write; this keeps
+    the fixture faithful to how create_wishlist actually leaves the tables.
+
+    privacy_type defaults public (create's default); pass "private" to seed a
+    wishlist only its owners and co-owners may view."""
     item = {
         "id": wishlist_id,
         "name": name,
@@ -336,7 +391,18 @@ def put_wishlist(
         "created_by": created_by,
         "entity_type": "WISHLIST",
         "love_count": love_count,
+        "privacy_type": privacy_type,
         "created_at": "2026-01-01T00:00:00+00:00",
     }
     aws.Table(WISHLISTS_TABLE).put_item(Item=item)
+    owners_table = aws.Table(WISHLIST_OWNERS_TABLE)
+    for uid in [created_by, *(co_owners or [])]:
+        owners_table.put_item(
+            Item={
+                "wishlist_id": wishlist_id,
+                "user_id": uid,
+                "added_at": "2026-01-01T00:00:00+00:00",
+                "added_by": created_by,
+            }
+        )
     return item

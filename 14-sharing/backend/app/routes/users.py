@@ -27,7 +27,7 @@ from app.utils.timestamps import utc_now_iso
 from app.utils.user_access import get_public_user
 from app.utils.user_provisioning import forget_user
 from app.utils.user_search import name_lowercase
-from app.utils.wishlist_access import delete_wishlist_and_contents
+from app.utils.wishlist_access import can_view_wishlist, delete_wishlist_and_contents
 
 logger = logging.getLogger(__name__)
 
@@ -258,15 +258,18 @@ def delete_current_user(
     delete_photo_by_url(user_data.get("image_url"))
     delete_photo_by_url(user_data.get("cover_photo"))
 
-    # Tutorial-scoped: in this single-owner world a wishlist and its wishes
-    # belong to exactly one account and nothing else references them, so a
-    # deleted account's collections are swept outright — items and their
-    # photos. (The user record itself is only flagged, not removed, because
-    # later steps' data references it.) Step 14's co-ownership revisits what
-    # deletion must preserve when a wishlist can outlive one of its owners.
-    # Best-effort like the photo deletes above, and for the same reason: the
-    # Clerk account is already gone, so nothing may stop the flag write below
-    # from landing — a failed sweep leaves unreachable rows (no retry can
+    # Tutorial-scoped: the sweep is by CreatedByIndex, so it tears down the
+    # wishlists this account CREATED: items, photos, and their owner edges
+    # (delete_wishlist_and_contents removes all three). Co-ownership (step 14)
+    # is deliberately NOT reconciled here: a wishlist the leaving user created
+    # but co-owns with others is still destroyed for those co-owners (no
+    # ownership-transfer flow this step), and a wishlist the user only co-owns
+    # is left alone; its stale owner edge points at a flagged account that can
+    # never authenticate again, so it is residue, not access. (The user record
+    # itself is only flagged, not removed, because later steps' data references
+    # it.) Best-effort like the photo deletes above, and for the same reason:
+    # the Clerk account is already gone, so nothing may stop the flag write
+    # below from landing; a failed sweep leaves unreachable rows (no retry can
     # ever run: no login, no new token), which is residue, not access.
     try:
         owned_wishlists = query_all_pages(
@@ -391,15 +394,19 @@ def get_user(user_id: str, viewer_id: str = Depends(get_current_user_id)):
 
 
 @router.get("/{user_id}/wishlists", response_model=list[Wishlist])
-def get_user_wishlists(user_id: str, _viewer: str = Depends(get_current_user_id)):
-    """A user's wishlists, newest first: the public read behind their profile.
-    Every wishlist is viewable this step (privacy is step 14); the same
-    CreatedByIndex Query as GET /wishlists/me, just for another user."""
+def get_user_wishlists(user_id: str, viewer_id: str = Depends(get_current_user_id)):
+    """A user's wishlists behind their profile grid, newest first, privacy
+    filtered: a public wishlist shows to anyone, a private one only to its owners
+    and co-owners. Viewing your own profile you see them all (you own every list
+    this Query returns); viewing another's you see their public lists plus any
+    private one you co-own. Same CreatedByIndex Query as GET /wishlists/me, then
+    the shared view rule per item."""
     get_public_user(user_id)
     items = query_all_pages(
         wishlists_table,
         IndexName="CreatedByIndex",
         KeyConditionExpression=Key("created_by").eq(user_id),
     )
-    items.sort(key=lambda w: w["created_at"], reverse=True)
-    return items
+    visible = [w for w in items if can_view_wishlist(w, viewer_id)]
+    visible.sort(key=lambda w: w["created_at"], reverse=True)
+    return visible
