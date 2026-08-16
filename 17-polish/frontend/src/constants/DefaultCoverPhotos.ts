@@ -56,7 +56,7 @@ export function presetFromCoverPhoto(coverPhoto: string | null | undefined): Cov
  * gradient derived from their id, so a coverless profile/wishlist still reads
  * as a designed band, not a flat grey, and always the same one.
  */
-export function coverPresetForOwner(ownerId: string): CoverPreset {
+function coverPresetForOwner(ownerId: string): CoverPreset {
   const hash = [...ownerId].reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
   return COVER_PRESETS[hash % COVER_PRESETS.length];
 }

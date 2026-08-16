@@ -7,7 +7,7 @@ import Typography from '../constants/Typography';
 import Opacity from '../constants/Opacity';
 import { Spacing } from '../constants/ScreenStyles';
 
-export interface SettingItem {
+interface SettingItem {
   id: string;
   label: string;
   /** A muted second line under the label. */
