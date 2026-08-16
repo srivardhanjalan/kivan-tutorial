@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useWindowDimensions } from 'react-native';
+import useMasonryColumns from '../hooks/useMasonryColumns';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import HeaderIconButton from '../components/HeaderIconButton';
@@ -31,8 +31,7 @@ export default function StorefrontDetailScreen() {
 
   // Products lay out by their true image aspect ratios in a masonry, more
   // columns on a wider device — the same responsive rule the wishes grid uses.
-  const { width } = useWindowDimensions();
-  const productColumns = width >= 768 ? 4 : width >= 600 ? 3 : 2;
+  const productColumns = useMasonryColumns();
 
   // The store's distinct categories, in the products' own display order —
   // derived from the fetched products themselves, so the filter needs no

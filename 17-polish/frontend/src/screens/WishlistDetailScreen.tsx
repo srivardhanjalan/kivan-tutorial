@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useUser } from '@clerk/clerk-expo';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
@@ -17,6 +17,7 @@ import ManageOwnersModal from '../components/ManageOwnersModal';
 import ShareWishlistModal from '../components/ShareWishlistModal';
 import DetailAction from '../components/DetailAction';
 import useFetch from '../hooks/useFetch';
+import useMasonryColumns from '../hooks/useMasonryColumns';
 import useLifeEvents from '../hooks/useLifeEvents';
 import useWishOrigin from '../hooks/useWishOrigin';
 import useConfirmedDelete from '../hooks/useConfirmedDelete';
@@ -76,10 +77,7 @@ export default function WishlistDetailScreen() {
   const isOwner = !!owners && !!user && owners.some((o) => o.id === user.id);
   const addWish = () => navigation.navigate('WishForm', { wishlistId });
 
-  // Wider screens fit more masonry columns; the grid picks the count off the
-  // window width, so a tablet shows more wishes per row than a phone.
-  const { width } = useWindowDimensions();
-  const wishColumns = width >= 768 ? 4 : width >= 600 ? 3 : 2;
+  const wishColumns = useMasonryColumns();
 
   const confirmRemoveOwner = () => {
     if (!removeTarget) return;

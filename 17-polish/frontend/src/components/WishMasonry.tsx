@@ -1,7 +1,7 @@
 import React from 'react';
-import { useWindowDimensions } from 'react-native';
 import MasonryGrid from './MasonryGrid';
 import WishCard from './WishCard';
+import useMasonryColumns from '../hooks/useMasonryColumns';
 import useWishOrigin from '../hooks/useWishOrigin';
 import type { Wish } from '../services/api';
 
@@ -19,8 +19,7 @@ interface WishMasonryProps {
  * makes each tile open the wish; a profile's feed is display-only.
  */
 export default function WishMasonry({ wishes, onPressWish }: WishMasonryProps) {
-  const { width } = useWindowDimensions();
-  const numColumns = width >= 768 ? 4 : width >= 600 ? 3 : 2;
+  const numColumns = useMasonryColumns();
   const { originFor } = useWishOrigin();
 
   return (

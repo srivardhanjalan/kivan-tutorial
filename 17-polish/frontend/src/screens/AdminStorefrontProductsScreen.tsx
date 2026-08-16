@@ -1,5 +1,5 @@
 import React from 'react';
-import { useWindowDimensions } from 'react-native';
+import useMasonryColumns from '../hooks/useMasonryColumns';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import useFetch from '../hooks/useFetch';
 import AdminCatalogScreen from '../components/layouts/AdminCatalogScreen';
@@ -26,8 +26,7 @@ export default function AdminStorefrontProductsScreen() {
 
   // Products lay out by their true image aspect ratios in a masonry, more
   // columns on a wider device — the same responsive rule the store detail uses.
-  const { width } = useWindowDimensions();
-  const productColumns = width >= 768 ? 4 : width >= 600 ? 3 : 2;
+  const productColumns = useMasonryColumns();
 
   return (
     <AdminCatalogScreen
