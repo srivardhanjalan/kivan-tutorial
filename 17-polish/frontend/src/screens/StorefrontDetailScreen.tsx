@@ -1,12 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import useMasonryColumns from '../hooks/useMasonryColumns';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import HeaderIconButton from '../components/HeaderIconButton';
 import SectionHeader from '../components/SectionHeader';
 import EmptyStateView from '../components/EmptyStateView';
-import MasonryGrid from '../components/MasonryGrid';
-import ProductCard from '../components/ProductCard';
+import ProductMasonry from '../components/ProductMasonry';
 import CategoryFilterModal from '../components/CategoryFilterModal';
 import useFetch from '../hooks/useFetch';
 import { fetchStorefrontProducts } from '../services/api';
@@ -28,10 +26,6 @@ export default function StorefrontDetailScreen() {
   );
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showFilter, setShowFilter] = useState(false);
-
-  // Products lay out by their true image aspect ratios in a masonry, more
-  // columns on a wider device — the same responsive rule the wishes grid uses.
-  const productColumns = useMasonryColumns();
 
   // The store's distinct categories, in the products' own display order —
   // derived from the fetched products themselves, so the filter needs no
@@ -71,16 +65,9 @@ export default function StorefrontDetailScreen() {
           subtitle="This store has nothing to browse right now. Check back later."
         />
       ) : (
-        <MasonryGrid
-          data={filteredProducts}
-          numColumns={productColumns}
-          keyExtractor={(product) => product.id}
-          renderItem={(product) => (
-            <ProductCard
-              product={product}
-              onPress={() => navigation.navigate('ProductDetail', { product })}
-            />
-          )}
+        <ProductMasonry
+          products={filteredProducts}
+          onPressProduct={(product) => navigation.navigate('ProductDetail', { product })}
         />
       )}
 

@@ -1,12 +1,9 @@
 import React from 'react';
-import useMasonryColumns from '../hooks/useMasonryColumns';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import useFetch from '../hooks/useFetch';
 import AdminCatalogScreen from '../components/layouts/AdminCatalogScreen';
-import MasonryGrid from '../components/MasonryGrid';
-import ProductCard from '../components/ProductCard';
+import ProductMasonry from '../components/ProductMasonry';
 import { fetchStorefrontProducts } from '../services/api';
-import type { Product } from '../services/api';
 
 /**
  * One store's products, admin side: the same masonry of image-forward product
@@ -24,10 +21,6 @@ export default function AdminStorefrontProductsScreen() {
     { refetchOnFocus: true }
   );
 
-  // Products lay out by their true image aspect ratios in a masonry, more
-  // columns on a wider device — the same responsive rule the store detail uses.
-  const productColumns = useMasonryColumns();
-
   return (
     <AdminCatalogScreen
       title={storefront.name}
@@ -41,16 +34,9 @@ export default function AdminStorefrontProductsScreen() {
         subtitle: 'Add a product to this store.',
       }}
     >
-      <MasonryGrid
-        data={products ?? []}
-        numColumns={productColumns}
-        keyExtractor={(product: Product) => product.id}
-        renderItem={(product: Product) => (
-          <ProductCard
-            product={product}
-            onPress={() => navigation.navigate('AdminProductForm', { storefront, product })}
-          />
-        )}
+      <ProductMasonry
+        products={products ?? []}
+        onPressProduct={(product) => navigation.navigate('AdminProductForm', { storefront, product })}
       />
     </AdminCatalogScreen>
   );
