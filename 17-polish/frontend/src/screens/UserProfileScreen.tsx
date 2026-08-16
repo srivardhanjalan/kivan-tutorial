@@ -1,31 +1,33 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import HeaderIconButton from '../components/HeaderIconButton';
 import ShareUserProfileModal from '../components/ShareUserProfileModal';
+import CoverProfileHeader from '../components/CoverProfileHeader';
+import CoverActionButton from '../components/CoverActionButton';
 import SectionHeader from '../components/SectionHeader';
 import EmptyStateView from '../components/EmptyStateView';
+import WishlistCardRail, { ALL_WISHES } from '../components/WishlistCardRail';
 import WishlistGrid from '../components/WishlistGrid';
-import Avatar from '../components/Avatar';
-import FollowButton from '../components/FollowButton';
+import MasonryGrid from '../components/MasonryGrid';
+import WishCard from '../components/WishCard';
 import useFetch from '../hooks/useFetch';
 import useOptimisticToggle from '../hooks/useOptimisticToggle';
+import useWishOrigin from '../hooks/useWishOrigin';
 import {
   fetchUser,
   fetchUserWishlists,
   fetchUserLovedWishlists,
+  fetchWishes,
   followUser,
   unfollowUser,
 } from '../services/api';
+import type { UserWithCounts, Wishlist, Wish } from '../services/api';
 import { userDisplayName } from '../utils/userName';
 import Typography from '../constants/Typography';
 import Opacity from '../constants/Opacity';
 import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
-import type { UserWithCounts, Wishlist } from '../services/api';
-
-/** The avatar diameter on a profile header: this screen's own metric */
-const PROFILE_AVATAR_SIZE = 88;
 
 /** One tappable count in the header (Followers / Following). */
 function Stat({ count, label, onPress }: { count: number; label: string; onPress: () => void }) {
@@ -44,23 +46,42 @@ function Stat({ count, label, onPress }: { count: number; label: string; onPress
 }
 
 /**
- * The profile header: avatar, the follower/following counts, and (for other
- * users) a follow button. The visible follower tally and the button share ONE
- * optimistic toggle, so a tap moves the count with the label exactly the way a
- * love moves its own tally. Mounts only once `user` is loaded, so the toggle
- * seeds from a known follow state and follower count.
+ * The profile body, mounted once the user is loaded. The follow control is a
+ * heart floated on the cover with a follower-count badge; that same optimistic
+ * toggle also feeds the tappable Followers count below, so the heart and the
+ * stat move together (and the stat counts stay the drill-down into a user's
+ * follow lists). The wishes lay out wish-forward: a rail of the user's
+ * wishlists led by an All Items aggregate filters a masonry of their wishes,
+ * assembled per-wishlist from the view-gated wishes reads. Their loved
+ * wishlists follow in their own shelf.
  */
-function ProfileHeader({
+function ProfileBody({
   user,
+  wishlists,
+  loved,
+  openWishlist,
   openFollows,
 }: {
   user: UserWithCounts;
+  wishlists: Wishlist[] | null;
+  loved: Wishlist[] | null;
+  openWishlist: (id: string) => void;
   openFollows: (mode: 'followers' | 'following') => void;
 }) {
+  const { originFor } = useWishOrigin();
+  const [selectedId, setSelectedId] = useState<string>(ALL_WISHES);
+  // The user's wishes, keyed by wishlist: the profile has no single all-wishes
+  // read, so it fans the view-gated per-wishlist reads and stitches them (a
+  // private list the viewer can't see returns nothing, so it drops out).
+  const [wishesByList, setWishesByList] = useState<Record<string, Wish[]>>({});
+
+  const { width } = useWindowDimensions();
+  const numColumns = width >= 768 ? 4 : width >= 600 ? 3 : 2;
+
   const {
     on: following,
     count: followerCount,
-    loading,
+    loading: followLoading,
     toggle,
   } = useOptimisticToggle({
     initialOn: user.is_following ?? false,
@@ -70,57 +91,102 @@ function ProfileHeader({
     errorMessage: 'Could not update follow',
   });
 
+  useEffect(() => {
+    if (!wishlists) return;
+    let cancelled = false;
+    Promise.all(
+      wishlists.map((wl) =>
+        fetchWishes(wl.id)
+          .then((ws) => [wl.id, ws] as const)
+          .catch(() => [wl.id, [] as Wish[]] as const)
+      )
+    ).then((entries) => {
+      if (!cancelled) setWishesByList(Object.fromEntries(entries));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [wishlists]);
+
+  const allWishes = (wishlists ?? []).flatMap((wl) => wishesByList[wl.id] ?? []);
+  const displayedWishes = selectedId === ALL_WISHES ? allWishes : wishesByList[selectedId] ?? [];
+
   return (
-    <View style={styles.header}>
-      <Avatar imageUrl={user.image_url} name={userDisplayName(user)} size={PROFILE_AVATAR_SIZE} />
+    <>
+      <CoverProfileHeader
+        ownerId={user.id}
+        coverPhoto={user.cover_photo}
+        avatarUrl={user.image_url}
+        name={userDisplayName(user)}
+        bleed
+        // is_following is null only on your own profile (no self-follow)
+        overlay={
+          user.is_following !== null ? (
+            <CoverActionButton
+              icon="heart-outline"
+              activeIcon="heart"
+              active={following}
+              count={followerCount}
+              loading={followLoading}
+              onPress={toggle}
+              accessibilityLabel={following ? 'Following' : 'Follow'}
+            />
+          ) : undefined
+        }
+      />
+
       <View style={styles.stats}>
         <Stat count={followerCount} label="Followers" onPress={() => openFollows('followers')} />
         <Stat count={user.following_count} label="Following" onPress={() => openFollows('following')} />
       </View>
-      {/* is_following is null only on your own profile (no self-follow) */}
-      {user.is_following !== null && (
-        <FollowButton following={following} loading={loading} onPress={toggle} />
-      )}
-    </View>
-  );
-}
 
-/** A titled group of wishlists with its empty fallback: the profile's own
-    Wishlists and Loved sections are the same scaffold, differing only in their
-    copy, so it lives here once. Null while loading: header shows 0, no grid. */
-function WishlistSection({
-  title,
-  wishlists,
-  onPress,
-  emptyIcon,
-  emptyTitle,
-  emptySubtitle,
-}: {
-  title: string;
-  wishlists: Wishlist[] | null;
-  onPress: (id: string) => void;
-  emptyIcon: React.ComponentProps<typeof EmptyStateView>['icon'];
-  emptyTitle: string;
-  emptySubtitle: string;
-}) {
-  return (
-    <>
-      <SectionHeader title={title} meta={wishlists?.length ?? 0} />
-      {wishlists && wishlists.length === 0 ? (
-        <EmptyStateView icon={emptyIcon} title={emptyTitle} subtitle={emptySubtitle} />
+      {wishlists && wishlists.length > 0 && (
+        <WishlistCardRail
+          wishlists={wishlists}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          aggregateLabel="All Items"
+          aggregateOwnerId={user.id}
+        />
+      )}
+
+      <SectionHeader title="Wishes" meta={displayedWishes.length} />
+      {displayedWishes.length === 0 ? (
+        <EmptyStateView
+          icon="gift-outline"
+          title="No wishes yet"
+          subtitle="When they add wishes, they show up here."
+        />
       ) : (
-        wishlists && <WishlistGrid wishlists={wishlists} onPressWishlist={onPress} />
+        <MasonryGrid
+          data={displayedWishes}
+          numColumns={numColumns}
+          keyExtractor={(wish) => wish.id}
+          // Another user's wishes are display-only, the same as on their
+          // wishlist detail (there is no read-only wish detail to open into).
+          renderItem={(wish) => <WishCard wish={wish} originLogo={originFor(wish)?.logoUrl} />}
+        />
+      )}
+
+      <SectionHeader title="Loved" meta={loved?.length ?? 0} />
+      {loved && loved.length === 0 ? (
+        <EmptyStateView
+          icon="heart-outline"
+          title="Nothing loved yet"
+          subtitle="Wishlists they love will collect here."
+        />
+      ) : (
+        loved && <WishlistGrid wishlists={loved} onPressWishlist={openWishlist} />
       )}
     </>
   );
 }
 
 /**
- * A public profile: avatar and name, the follower/following counts (each taps
- * through to that list), a follow button for other users, and the two things
- * that make up their taste: the wishlists they own and the ones they've
- * loved. Everything refetches on focus, so returning to the screen reflects
- * follows and loves made elsewhere.
+ * A public profile: a cover-band header with the follow heart, the
+ * follower/following counts (each taps through to that list), the user's
+ * wishes laid out wish-forward, and the wishlists they've loved. Everything
+ * refetches on focus, so returning reflects follows and loves made elsewhere.
  */
 export default function UserProfileScreen() {
   const navigation = useAppNavigation();
@@ -154,30 +220,19 @@ export default function UserProfileScreen() {
     >
       {user && (
         <>
-          <ProfileHeader user={user} openFollows={openFollows} />
+          <ProfileBody
+            user={user}
+            wishlists={wishlists}
+            loved={loved}
+            openWishlist={openWishlist}
+            openFollows={openFollows}
+          />
 
           <ShareUserProfileModal
             visible={showShare}
             userId={userId}
             userName={userDisplayName(user)}
             onClose={() => setShowShare(false)}
-          />
-
-          <WishlistSection
-            title="Wishlists"
-            wishlists={wishlists}
-            onPress={openWishlist}
-            emptyIcon="gift-outline"
-            emptyTitle="No wishlists yet"
-            emptySubtitle="When they add a wishlist, it shows up here."
-          />
-          <WishlistSection
-            title="Loved"
-            wishlists={loved}
-            onPress={openWishlist}
-            emptyIcon="heart-outline"
-            emptyTitle="Nothing loved yet"
-            emptySubtitle="Wishlists they love will collect here."
           />
         </>
       )}
@@ -186,14 +241,11 @@ export default function UserProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    alignItems: 'center',
-    gap: Spacing.lg,
-    paddingVertical: Spacing.lg,
-  },
   stats: {
     flexDirection: 'row',
+    justifyContent: 'center',
     gap: Spacing.xxxl,
+    paddingVertical: Spacing.md,
   },
   statCount: {
     ...Typography.sectionTitle,
