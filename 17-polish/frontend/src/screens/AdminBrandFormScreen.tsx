@@ -46,9 +46,7 @@ export default function AdminBrandFormScreen() {
           website_url: values.websiteUrl.trim(),
           category: values.category.trim(),
           country: values.country.trim(),
-          // changedUrl is set only when a new logo was uploaded; an unchanged
-          // logo is left out so the backend edit never touches it.
-          ...(logo.changedUrl ? { logo_url: logo.changedUrl } : {}),
+          ...logo.bodyPatch('logo_url'),
           display_order: Number(values.displayOrder) || 0,
         };
         if (editing) {

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useWindowDimensions } from 'react-native';
 import { useUser } from '@clerk/clerk-expo';
 import { useAppNavigation } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
@@ -9,10 +8,8 @@ import SectionHeader from '../components/SectionHeader';
 import BirthdayPrompt from '../components/BirthdayPrompt';
 import EmptyStateView from '../components/EmptyStateView';
 import WishlistCardRail, { ALL_WISHES } from '../components/WishlistCardRail';
-import MasonryGrid from '../components/MasonryGrid';
-import WishCard from '../components/WishCard';
+import WishMasonry from '../components/WishMasonry';
 import useFetch from '../hooks/useFetch';
-import useWishOrigin from '../hooks/useWishOrigin';
 import { fetchCurrentUser, updateProfile, fetchMyWishlists, fetchMyWishes } from '../services/api';
 import { clerkFullName, clerkPrimaryEmail } from '../utils/clerkName';
 
@@ -29,16 +26,12 @@ export default function HomeScreen() {
   const { data: backendUser } = useFetch(fetchCurrentUser, { refetchOnFocus: true });
   const { data: wishlists } = useFetch(fetchMyWishlists, { refetchOnFocus: true });
   const { data: wishes } = useFetch(fetchMyWishes, { refetchOnFocus: true });
-  const { originFor } = useWishOrigin();
 
   // Hides the prompt instantly on dismiss; the persisted flag covers next launch
   const [promptDismissed, setPromptDismissed] = useState(false);
   // The rail's selection filters the feed: the aggregate shows every wish, a
   // wishlist shows only its own.
   const [selectedId, setSelectedId] = useState<string>(ALL_WISHES);
-
-  const { width } = useWindowDimensions();
-  const numColumns = width >= 768 ? 4 : width >= 600 ? 3 : 2;
 
   const showBirthdayPrompt =
     !!backendUser &&
@@ -104,17 +97,9 @@ export default function HomeScreen() {
           }
         />
       ) : (
-        <MasonryGrid
-          data={displayedWishes}
-          numColumns={numColumns}
-          keyExtractor={(wish) => wish.id}
-          renderItem={(wish) => (
-            <WishCard
-              wish={wish}
-              originLogo={originFor(wish)?.logoUrl}
-              onPress={() => navigation.navigate('WishDetail', { wishId: wish.id })}
-            />
-          )}
+        <WishMasonry
+          wishes={displayedWishes}
+          onPressWish={(wishId) => navigation.navigate('WishDetail', { wishId })}
         />
       )}
     </FloatingHeaderLayout>

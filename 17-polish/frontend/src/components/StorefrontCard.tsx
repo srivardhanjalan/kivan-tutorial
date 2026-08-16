@@ -3,8 +3,6 @@ import { View, Image, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ImagePlaceholderGlyph from './ImagePlaceholderGlyph';
 import Colors from '../constants/Colors';
-import BorderRadius from '../constants/BorderRadius';
-import Shadows from '../constants/Shadows';
 import Typography from '../constants/Typography';
 import Opacity from '../constants/Opacity';
 import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
@@ -27,12 +25,12 @@ const StorefrontCard: React.FC<StorefrontCardProps> = ({ storefront, onPress }) 
     activeOpacity={Opacity.pressed}
     accessibilityRole="button"
     accessibilityLabel={storefront.name}
-    style={styles.card}
+    style={CommonScreenStyles.imageCard}
   >
     {storefront.logo_url ? (
       <Image source={{ uri: storefront.logo_url }} style={styles.logo} resizeMode="cover" />
     ) : (
-      <View style={[styles.logo, styles.placeholder]}>
+      <View style={[styles.logo, CommonScreenStyles.imageCardPlaceholder]}>
         <ImagePlaceholderGlyph size={Spacing.tileGlyphSize} />
       </View>
     )}
@@ -54,19 +52,9 @@ const StorefrontCard: React.FC<StorefrontCardProps> = ({ storefront, onPress }) 
 );
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: BorderRadius.xxl,
-    overflow: 'hidden',
-    backgroundColor: Colors.surface,
-    ...Shadows.card,
-  },
   logo: {
     width: '100%',
     aspectRatio: 1.4,
-  },
-  placeholder: {
-    ...CommonScreenStyles.center,
-    backgroundColor: Colors.subtleFill,
   },
   info: {
     padding: Spacing.md,

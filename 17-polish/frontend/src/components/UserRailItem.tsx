@@ -39,7 +39,7 @@ interface UserRailProps {
  * Each avatar opens that person's profile (where the follow lives).
  */
 const UserRail: React.FC<UserRailProps> = ({ users, onPressUser }) => (
-  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
+  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={CommonScreenStyles.horizontalRail}>
     {users.map((user) => (
       <UserRailItem key={user.id} user={user} onPress={() => onPressUser(user.id)} />
     ))}
@@ -47,10 +47,6 @@ const UserRail: React.FC<UserRailProps> = ({ users, onPressUser }) => (
 );
 
 const styles = StyleSheet.create({
-  rail: {
-    gap: Spacing.md,
-    paddingVertical: Spacing.sm,
-  },
   item: {
     width: ITEM_WIDTH,
   },

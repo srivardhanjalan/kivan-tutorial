@@ -47,9 +47,7 @@ export default function AdminProductFormScreen() {
           // which surfaces honestly; an empty field parses to 0.
           price: Number(values.price) || 0,
           category: values.category.trim(),
-          // changedUrl is set only when a new photo was uploaded; an unchanged
-          // photo is left out so the backend edit never touches it.
-          ...(photo.changedUrl ? { image_url: photo.changedUrl } : {}),
+          ...photo.bodyPatch('image_url'),
           link_url: values.linkUrl.trim(),
           display_order: Number(values.displayOrder) || 0,
         };

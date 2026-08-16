@@ -73,7 +73,7 @@ export default function EventFormScreen() {
         ...(eventType ? { event_type: eventType } : {}),
         ...(eventDate ? { event_date: eventDate.toISOString() } : {}),
         ...(location.trim() ? { location: location.trim() } : {}),
-        ...(photo.changedUrl ? { image_url: photo.changedUrl } : {}),
+        ...photo.bodyPatch('image_url'),
       };
       if (event) {
         await updateEvent(event.id, payload);

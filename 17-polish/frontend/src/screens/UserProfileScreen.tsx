@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import HeaderIconButton from '../components/HeaderIconButton';
@@ -10,11 +10,9 @@ import SectionHeader from '../components/SectionHeader';
 import EmptyStateView from '../components/EmptyStateView';
 import WishlistCardRail, { ALL_WISHES } from '../components/WishlistCardRail';
 import WishlistGrid from '../components/WishlistGrid';
-import MasonryGrid from '../components/MasonryGrid';
-import WishCard from '../components/WishCard';
+import WishMasonry from '../components/WishMasonry';
 import useFetch from '../hooks/useFetch';
 import useOptimisticToggle from '../hooks/useOptimisticToggle';
-import useWishOrigin from '../hooks/useWishOrigin';
 import {
   fetchUser,
   fetchUserWishlists,
@@ -68,7 +66,6 @@ function ProfileBody({
   openWishlist: (id: string) => void;
   openFollows: (mode: 'followers' | 'following') => void;
 }) {
-  const { originFor } = useWishOrigin();
   const [selectedId, setSelectedId] = useState<string>(ALL_WISHES);
   // The user's wishes, keyed by wishlist: the profile has no single all-wishes
   // read, so it fans the view-gated per-wishlist reads and stitches them (a
@@ -77,9 +74,6 @@ function ProfileBody({
   // Gates the empty state so a "No wishes yet" flash can't show before the
   // per-wishlist reads resolve.
   const [wishesLoaded, setWishesLoaded] = useState(false);
-
-  const { width } = useWindowDimensions();
-  const numColumns = width >= 768 ? 4 : width >= 600 ? 3 : 2;
 
   const {
     on: following,
@@ -164,14 +158,9 @@ function ProfileBody({
           subtitle="When they add wishes, they show up here."
         />
       ) : (
-        <MasonryGrid
-          data={displayedWishes}
-          numColumns={numColumns}
-          keyExtractor={(wish) => wish.id}
-          // Another user's wishes are display-only, the same as on their
-          // wishlist detail (there is no read-only wish detail to open into).
-          renderItem={(wish) => <WishCard wish={wish} originLogo={originFor(wish)?.logoUrl} />}
-        />
+        // Another user's wishes are display-only (no onPressWish): there is no
+        // read-only wish detail to open into.
+        <WishMasonry wishes={displayedWishes} />
       )}
 
       <SectionHeader title="Loved" meta={loved?.length ?? 0} />

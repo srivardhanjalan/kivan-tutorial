@@ -56,7 +56,7 @@ export default function WishlistFormScreen() {
         name: name.trim(),
         privacy_type: privacy,
         ...(lifeEventId ? { life_event_id: lifeEventId } : {}),
-        ...(photo.changedUrl ? { image_url: photo.changedUrl } : {}),
+        ...photo.bodyPatch('image_url'),
       };
       if (wishlist) {
         await updateWishlist(wishlist.id, payload);

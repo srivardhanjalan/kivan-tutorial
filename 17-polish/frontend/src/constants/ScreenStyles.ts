@@ -2,6 +2,7 @@ import { StyleSheet } from 'react-native';
 import Colors from './Colors';
 import BorderRadius from './BorderRadius';
 import Opacity from './Opacity';
+import Shadows from './Shadows';
 
 /**
  * Spacing + chrome metrics. The chrome numbers are a single source of truth
@@ -110,5 +111,27 @@ export const CommonScreenStyles = StyleSheet.create({
       love, and tile cards all share. */
   dimmed: {
     opacity: Opacity.disabled,
+  },
+  /** The image-forward card surface the wish/product tiles and the store card
+      share: a fully-rounded surface that clips its photo to the round, raised
+      off the screen. Callers add only their own layout. */
+  imageCard: {
+    borderRadius: BorderRadius.xxl,
+    overflow: 'hidden',
+    backgroundColor: Colors.surface,
+    ...Shadows.card,
+  },
+  /** The neutral fill an image card shows in place of a missing photo,
+      centering the placeholder glyph. Pairs with imageCard. */
+  imageCardPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.subtleFill,
+  },
+  /** The content padding a horizontal rail's ScrollView carries: the people
+      rail and the wishlist-card rail share it, so the app's rails line up. */
+  horizontalRail: {
+    gap: Spacing.md,
+    paddingVertical: Spacing.sm,
   },
 });

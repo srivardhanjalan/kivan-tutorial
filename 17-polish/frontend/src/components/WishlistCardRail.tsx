@@ -83,7 +83,7 @@ const WishlistCardRail: React.FC<WishlistCardRailProps> = ({
   aggregateOwnerId,
   onAdd,
 }) => (
-  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
+  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={CommonScreenStyles.horizontalRail}>
     <RailCard
       label={aggregateLabel}
       ownerId={aggregateOwnerId}
@@ -119,10 +119,6 @@ const WishlistCardRail: React.FC<WishlistCardRailProps> = ({
 );
 
 const styles = StyleSheet.create({
-  rail: {
-    gap: Spacing.md,
-    paddingVertical: Spacing.sm,
-  },
   card: {
     width: CARD_WIDTH,
   },

@@ -44,9 +44,7 @@ export default function AdminStorefrontFormScreen() {
         const body = {
           name: values.name.trim(),
           description: values.description,
-          // changedUrl is set only when a new logo was uploaded; an unchanged
-          // logo is left out so the backend edit never touches it.
-          ...(logo.changedUrl ? { logo_url: logo.changedUrl } : {}),
+          ...logo.bodyPatch('logo_url'),
           display_order: Number(values.displayOrder) || 0,
         };
         if (editing) {

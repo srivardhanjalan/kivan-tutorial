@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { View, Image, StyleSheet } from 'react-native';
 import ImagePlaceholderGlyph from './ImagePlaceholderGlyph';
-import Colors from '../constants/Colors';
-import BorderRadius from '../constants/BorderRadius';
-import Shadows from '../constants/Shadows';
 import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 
 /** The tile's height follows its photo; until the image loads (and for one with
@@ -29,7 +26,7 @@ const ImageForwardCard: React.FC<ImageForwardCardProps> = ({ imageUrl, dimmed, c
   const [aspectRatio, setAspectRatio] = useState(DEFAULT_ASPECT);
 
   return (
-    <View style={[styles.card, dimmed && CommonScreenStyles.dimmed]}>
+    <View style={[CommonScreenStyles.imageCard, dimmed && CommonScreenStyles.dimmed]}>
       {imageUrl ? (
         <Image
           source={{ uri: imageUrl }}
@@ -40,7 +37,7 @@ const ImageForwardCard: React.FC<ImageForwardCardProps> = ({ imageUrl, dimmed, c
           }}
         />
       ) : (
-        <View style={[styles.image, styles.placeholder, { aspectRatio: DEFAULT_ASPECT }]}>
+        <View style={[styles.image, CommonScreenStyles.imageCardPlaceholder, { aspectRatio: DEFAULT_ASPECT }]}>
           <ImagePlaceholderGlyph size={Spacing.tileGlyphSize} />
         </View>
       )}
@@ -50,18 +47,8 @@ const ImageForwardCard: React.FC<ImageForwardCardProps> = ({ imageUrl, dimmed, c
 };
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: BorderRadius.xxl,
-    overflow: 'hidden',
-    backgroundColor: Colors.surface,
-    ...Shadows.card,
-  },
   image: {
     width: '100%',
-  },
-  placeholder: {
-    ...CommonScreenStyles.center,
-    backgroundColor: Colors.subtleFill,
   },
 });
 
