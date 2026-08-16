@@ -13,19 +13,15 @@ interface ArtTileProps {
   /** The image-less fallback — the tile itself renders it only when there is
       no image, so that rule lives here, not at every call site */
   placeholder?: React.ReactNode;
-  /** True overlays that ride on top of photo and placeholder alike (the wish
-      check badge, the origin logo badge) */
-  children?: React.ReactNode;
 }
 
 /**
- * The one place the app turns a stored image URL into a clipped art block —
- * the tile family (wishlist, wish, product, and add-new tiles) and (via
- * `height`) the detail hero banners all share this exact shape, radius, and clip. When
- * `imageUrl` is set it renders full-bleed and the placeholder stays hidden;
- * children always render on top.
+ * The one place the app turns a stored image URL into a clipped art block — the
+ * tile family (the wishlist and add-new tiles) and (via `height`) the detail
+ * hero banner both share this exact shape, radius, and clip. When `imageUrl` is
+ * set it renders full-bleed; otherwise the placeholder shows.
  */
-const ArtTile: React.FC<ArtTileProps> = ({ color, imageUrl, height, placeholder, children }) => (
+const ArtTile: React.FC<ArtTileProps> = ({ color, imageUrl, height, placeholder }) => (
   <View
     style={[
       CommonScreenStyles.center,
@@ -39,7 +35,6 @@ const ArtTile: React.FC<ArtTileProps> = ({ color, imageUrl, height, placeholder,
     ) : (
       placeholder
     )}
-    {children}
   </View>
 );
 

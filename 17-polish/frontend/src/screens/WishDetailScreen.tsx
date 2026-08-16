@@ -5,7 +5,6 @@ import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import EditDeleteHeaderButtons from '../components/EditDeleteHeaderButtons';
 import DetailAction from '../components/DetailAction';
-import DetailStatusRow from '../components/DetailStatusRow';
 import ConfirmModal from '../components/ConfirmModal';
 import PhotoDetailHero from '../components/PhotoDetailHero';
 import DetailTitleBlock from '../components/DetailTitleBlock';
@@ -93,7 +92,10 @@ export default function WishDetailScreen() {
           <PhotoDetailHero imageUrl={wish.image_url} />
 
           {wish.completed && (
-            <DetailStatusRow label="Fulfilled" />
+            <View style={styles.statusRow}>
+              <Ionicons name="checkmark-circle" size={22} color={Colors.success} />
+              <Text style={styles.statusLabel}>Fulfilled</Text>
+            </View>
           )}
 
           {origin && (
@@ -152,6 +154,19 @@ export default function WishDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  // The fulfilled success line — a green check and a strong label above the
+  // actions. Only this screen has a status line, so it lives here, not in a
+  // shared component with a single caller.
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginTop: Spacing.lg,
+  },
+  statusLabel: {
+    ...Typography.bodySecondaryStrong,
+    color: Colors.success,
+  },
   originRow: {
     flexDirection: 'row',
     alignItems: 'center',
