@@ -9,8 +9,10 @@ import { Spacing } from '../constants/ScreenStyles';
  * The admin dashboard's home: one row per domain the operator manages. Reached
  * only from the role-gated Settings entry, so the screen itself carries no
  * further gate (the backend gates every write regardless). Each row leads to
- * that domain's list; the whole surface is the tutorial's plain row idiom, with
- * image-forward layouts deferred to step 17.
+ * that domain's list. The operator's dashboard stays a plain glyph-led row menu
+ * (a settings-style list); the step's image-forward polish lands on the
+ * user-facing catalog it manages — the brand wall and storefront cards — not on
+ * this menu.
  */
 export default function AdminHomeScreen() {
   const navigation = useAppNavigation();

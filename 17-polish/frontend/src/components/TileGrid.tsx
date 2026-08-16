@@ -4,11 +4,11 @@ import { Spacing } from '../constants/ScreenStyles';
 
 /**
  * A two-column grid of equal-width cells, shared by the app's tile grids (the
- * wishlists and wishes grids and a store's products grid). Each child becomes one cell; cells
- * wrap to new rows with a consistent gutter. Width is measured off the window
- * (minus the layout's content edges and one gutter) so cells are exact, not
- * percentage-approximate. Two columns only: the app has no wider-screen
- * consumer to justify responsive breakpoints.
+ * wishlist grid, and the curated/admin storefront-card grids). Each child
+ * becomes one cell; cells wrap to new rows with a consistent gutter. Width is
+ * measured off the window (minus the layout's content edges and one gutter) so
+ * cells are exact, not percentage-approximate. Two columns only: the app has no
+ * wider-screen consumer to justify responsive breakpoints.
  */
 const TileGrid: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { width } = useWindowDimensions();

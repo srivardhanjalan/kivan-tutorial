@@ -4,7 +4,6 @@ import AdminEntityForm, { AdminField, field } from '../components/layouts/AdminE
 import PrimaryButton from '../components/PrimaryButton';
 import { usePendingImageUpload } from '../hooks/usePendingImageUpload';
 import { createStorefront, updateStorefront, deleteStorefront } from '../services/api';
-import { pluralize } from '../utils/pluralize';
 
 /**
  * One form for creating and editing a storefront. On create the id is a client
@@ -58,7 +57,7 @@ export default function AdminStorefrontFormScreen() {
       deleteMessage="It is removed from the catalog. This cannot be undone."
       editActions={
         <PrimaryButton
-          title={`Manage products (${pluralize(storefront!.product_count, 'product')})`}
+          title={`Manage products (${storefront!.product_count} product${storefront!.product_count === 1 ? '' : 's'})`}
           variant="secondary"
           onPress={() => navigation.navigate('AdminStorefrontProducts', { storefront: storefront! })}
         />
