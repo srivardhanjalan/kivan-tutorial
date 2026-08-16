@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import AppSwitch from '../components/AppSwitch';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import NOTIFICATION_TYPE_ICON from '../constants/notificationTypeIcons';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import SectionHeader from '../components/SectionHeader';
+import SettingItemList from '../components/SettingItemList';
 import { useToast } from '../components/ToastProvider';
 import useFetch from '../hooks/useFetch';
 import {
@@ -20,8 +20,6 @@ import Colors from '../constants/Colors';
 import Typography from '../constants/Typography';
 import { Spacing } from '../constants/ScreenStyles';
 
-type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
-
 /** A boolean settings field a row toggles: any optional key of the update body
     (the four mute flags plus `email_notifications`). */
 type ToggleKey = keyof NotificationSettingsUpdate;
@@ -29,8 +27,7 @@ type ToggleKey = keyof NotificationSettingsUpdate;
 /** The six toggleable notification types, in feed order. Each row is keyed
     by the TYPE; its mute field is derived as `mute_\${type}`, the same
     derivation the Lambda consumer runs, so the relationship the API layer
-    documents is enforced here rather than restated. Icons come from the
-    shared per-type record. */
+    documents is enforced here rather than restated. */
 const ROWS: {
   type: NotificationType;
   label: string;
@@ -46,46 +43,15 @@ const ROWS: {
 
 const muteKeyFor = (type: NotificationType): ToggleKey => `mute_${type}` as ToggleKey;
 
-/** One settings row: an icon, a label and description, and a switch. `value` is
-    already resolved for display (the caller inverts it for a mute row), so this
-    component holds only the look, not the mute-vs-email semantics. */
-function ToggleRow({
-  icon,
-  label,
-  description,
-  value,
-  onToggle,
-  disabled,
-}: {
-  icon: IoniconName;
-  label: string;
-  description: string;
-  value: boolean;
-  onToggle: () => void;
-  disabled: boolean;
-}) {
-  return (
-    <View style={styles.row}>
-      <View style={styles.iconWrap}>
-        <Ionicons name={icon} size={20} color={Colors.grey} />
-      </View>
-      <View style={styles.rowText}>
-        <Text style={styles.label}>{label}</Text>
-        <Text style={styles.description}>{description}</Text>
-      </View>
-      <AppSwitch value={value} onValueChange={onToggle} disabled={disabled} />
-    </View>
-  );
-}
-
 /**
  * The notification preferences screen, reached from Settings. The Notifications
  * section is one row per type with a switch that is INVERTED on purpose: the
  * backend stores a `mute_*` flag, but the row reads as "receive this", so ON
  * means receiving (mute = false) and OFF means muted (mute = true). The Email
  * section adds one switch for `email_notifications`, which is NOT inverted: ON
- * means email copies are on. A toggle saves optimistically and rolls back on
- * failure, the same dance the follow and love buttons run.
+ * means email copies are on. Rows are grouped into raised SettingItemList cards,
+ * the same idiom as the main Settings screen. A toggle saves optimistically and
+ * rolls back on failure, the same dance the follow and love buttons run.
  */
 export default function NotificationSettingsScreen() {
   const toast = useToast();
@@ -113,22 +79,40 @@ export default function NotificationSettingsScreen() {
       .finally(() => setSaving(false));
   };
 
+  const notificationItems = ROWS.map((row) => ({
+    id: row.type,
+    label: row.label,
+    description: row.description,
+    rightContent: (
+      <AppSwitch
+        // ON = receiving (not muted): the stored flag is inverted for display
+        value={settings ? !settings[muteKeyFor(row.type)] : true}
+        onValueChange={() => handleToggle(muteKeyFor(row.type))}
+        disabled={saving || !settings}
+      />
+    ),
+  }));
+
+  const emailItems = [
+    {
+      id: 'email_notifications',
+      label: 'Email copies',
+      description: 'Get an email when you receive a notification',
+      rightContent: (
+        <AppSwitch
+          // NOT inverted: ON = email copies on (email_notifications = true)
+          value={settings ? settings.email_notifications : true}
+          onValueChange={() => handleToggle('email_notifications')}
+          disabled={saving || !settings}
+        />
+      ),
+    },
+  ];
+
   return (
     <FloatingHeaderLayout title="Notification Settings" showBack loading={loading}>
       <SectionHeader title="Notifications" />
-
-      {ROWS.map((row) => (
-        <ToggleRow
-          key={row.type}
-          icon={NOTIFICATION_TYPE_ICON[row.type]}
-          label={row.label}
-          description={row.description}
-          // ON = receiving (not muted): the stored flag is inverted for display
-          value={settings ? !settings[muteKeyFor(row.type)] : true}
-          onToggle={() => handleToggle(muteKeyFor(row.type))}
-          disabled={saving || !settings}
-        />
-      ))}
+      <SettingItemList items={notificationItems} />
 
       <View style={styles.info}>
         <Ionicons name="information-circle-outline" size={18} color={Colors.textSecondary} />
@@ -136,48 +120,18 @@ export default function NotificationSettingsScreen() {
       </View>
 
       <SectionHeader title="Email" />
-
-      <ToggleRow
-        icon="mail-outline"
-        label="Email copies"
-        description="Get an email when you receive a notification"
-        // NOT inverted: ON = email copies on (email_notifications = true)
-        value={settings ? settings.email_notifications : true}
-        onToggle={() => handleToggle('email_notifications')}
-        disabled={saving || !settings}
-      />
+      <SettingItemList items={emailItems} />
     </FloatingHeaderLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    paddingVertical: Spacing.lg,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.hairline,
-  },
-  iconWrap: {
-    width: 36,
-    alignItems: 'center',
-  },
-  rowText: {
-    flex: 1,
-  },
-  label: {
-    ...Typography.bodySecondaryStrong,
-  },
-  description: {
-    ...Typography.bodySecondary,
-    marginTop: Spacing.hairlineGap,
-  },
   info: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    marginTop: Spacing.xxl,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.lg,
   },
   infoText: {
     ...Typography.bodySecondary,
