@@ -256,6 +256,10 @@ export interface WishlistCreate {
   life_event_id?: string;
   /** Visibility (step 14); omitted on create the backend defaults it public. */
   privacy_type?: PrivacyType;
+  /** Co-owners to seed at create (step 14 phase A); the form's picker sends the
+      chosen user ids, and none makes it a personal wishlist. Create-only — the
+      PUT form never sends it (owners are managed from the detail screen). */
+  owner_ids?: string[];
 }
 
 /** POST /wishes/ body — wishlist_id and name required, the rest optional.
