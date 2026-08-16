@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import EditDeleteHeaderButtons from '../components/EditDeleteHeaderButtons';
@@ -8,6 +9,7 @@ import DetailStatusRow from '../components/DetailStatusRow';
 import ConfirmModal from '../components/ConfirmModal';
 import PhotoDetailHero from '../components/PhotoDetailHero';
 import DetailTitleBlock from '../components/DetailTitleBlock';
+import GlassPill from '../components/GlassPill';
 import useFetch from '../hooks/useFetch';
 import useAsyncAction from '../hooks/useAsyncAction';
 import useConfirmedDelete from '../hooks/useConfirmedDelete';
@@ -15,9 +17,17 @@ import useOpenExternalLink from '../hooks/useOpenExternalLink';
 import useWishOrigin from '../hooks/useWishOrigin';
 import { fetchWish, completeWish, uncompleteWish, deleteWish } from '../services/api';
 import type { Wish } from '../services/api';
+import { formatCost } from '../utils/formatCost';
+import Colors from '../constants/Colors';
 import BorderRadius from '../constants/BorderRadius';
 import Typography from '../constants/Typography';
-import { Spacing } from '../constants/ScreenStyles';
+import Opacity from '../constants/Opacity';
+import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
+
+/** The store's bare domain for the link button's label
+    (https://www.example.com/p/42 → example.com). */
+const storeDomain = (url: string): string =>
+  url.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
 
 /**
  * One wish: its image (or a placeholder), name, cost and description, a jump
@@ -95,11 +105,32 @@ export default function WishDetailScreen() {
             </View>
           )}
 
-          <DetailTitleBlock title={wish.name} cost={wish.cost} currency={wish.cost_currency} description={wish.description} />
+          <DetailTitleBlock title={wish.name} description={wish.description} />
 
-          {wish.link_url ? (
-            <DetailAction title="Open Link" variant="secondary" onPress={openLink} />
-          ) : null}
+          {/* Price + link on one row: the cost in a glass pill beside a link
+              button labeled with the store's domain (replacing the plain cost
+              text and the stacked Open Link button). */}
+          {(wish.cost !== null || wish.link_url) && (
+            <View style={styles.priceLinkRow}>
+              {wish.cost !== null && (
+                <GlassPill style={[CommonScreenStyles.center, styles.pricePill]}>
+                  <Text style={styles.priceText}>{formatCost(wish.cost, wish.cost_currency)}</Text>
+                </GlassPill>
+              )}
+              {wish.link_url && (
+                <TouchableOpacity
+                  style={[CommonScreenStyles.outlinedPill, styles.linkButton]}
+                  onPress={openLink}
+                  activeOpacity={Opacity.pressed}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${storeDomain(wish.link_url)}`}
+                >
+                  <Ionicons name="open-outline" size={Spacing.chromeIconSize} color={Colors.primary} />
+                  <Text style={styles.linkText} numberOfLines={1}>{storeDomain(wish.link_url)}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
 
           <DetailAction
             title={wish.completed ? 'Mark as not fulfilled' : 'Mark as fulfilled'}
@@ -134,5 +165,31 @@ const styles = StyleSheet.create({
   },
   originName: {
     ...Typography.bodySecondaryStrong,
+  },
+  priceLinkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    marginTop: Spacing.lg,
+  },
+  pricePill: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+  },
+  priceText: {
+    ...Typography.bodySecondaryStrong,
+  },
+  linkButton: {
+    flexShrink: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+  },
+  linkText: {
+    ...Typography.bodySecondaryStrong,
+    color: Colors.primary,
+    flexShrink: 1,
   },
 });
