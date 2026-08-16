@@ -28,16 +28,7 @@ import BorderRadius from '../constants/BorderRadius';
 import Typography from '../constants/Typography';
 import Opacity from '../constants/Opacity';
 import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
-
-/** The hostname of a URL (no www.), or the raw URL if it won't parse — used to
-    match the page you're on against a brand's site for the active highlight. */
-function hostOf(url: string): string {
-  try {
-    return new URL(url).hostname.replace(/^www\./, '');
-  } catch {
-    return url;
-  }
-}
+import hostOf from '../utils/hostOf';
 
 /** How far the floating header slides up when hidden — enough to clear it and
     the top safe-area inset. */
