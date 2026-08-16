@@ -13,11 +13,10 @@ interface WishlistGridProps {
 }
 
 /**
- * The wishlist tile grid shared by My Stuff and a profile's Wishlists/Loved
- * sections: resolves each card's life-event emoji and lays the tonal
- * WishlistRailCards out. The card map lived in both screens until the profile
- * made it a third caller: one grid now, so the tile layout can't drift between
- * "your stuff" and "theirs".
+ * The wishlist tile grid shared by My Stuff, a profile's Wishlists/Loved
+ * sections, and an event's linked wishlists: resolves each card's life-event
+ * emoji and lays the tonal WishlistRailCards out. One grid across every place a
+ * set of wishlists is shown, so the tile layout can't drift between them.
  */
 const WishlistGrid: React.FC<WishlistGridProps> = ({
   wishlists,
