@@ -17,17 +17,15 @@ interface CatalogRowProps {
   accessibilityLabel: string;
   /** A one or two line blurb under the title. */
   description?: string | null;
-  /** Show the trailing chevron when the row leads on to another screen. */
-  showChevron?: boolean;
 }
 
 /**
  * A glyph-led row for a reference-data list: an icon in a rounded fill, a title,
- * an optional blurb, and an optional trailing chevron, all on the shared
- * outlined surface. The admin home menu, the admin life-events list, and the
- * Wish Store's "Browse real stores" link all list rows of exactly this shape,
- * differing only in the glyph, the blurb, and whether the row leads onward, so
- * the whole row lives here once and none of them respells the primitives.
+ * an optional blurb, and a trailing chevron, all on the shared outlined surface.
+ * The admin home menu, the admin life-events list, and the Wish Store's "Browse
+ * real stores" link all list rows of exactly this shape — every one leads on to
+ * another screen — differing only in the glyph and the blurb, so the whole row
+ * lives here once and none of them respells the primitives.
  */
 export default function CatalogRow({
   icon,
@@ -35,7 +33,6 @@ export default function CatalogRow({
   onPress,
   accessibilityLabel,
   description,
-  showChevron,
 }: CatalogRowProps) {
   return (
     <TouchableOpacity
@@ -54,9 +51,7 @@ export default function CatalogRow({
           <Text style={Typography.bodySecondary} numberOfLines={2}>{description}</Text>
         ) : null}
       </View>
-      {showChevron ? (
-        <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
-      ) : null}
+      <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
     </TouchableOpacity>
   );
 }

@@ -24,33 +24,25 @@ export default function AdminHomeScreen() {
           icon="people-outline"
           title="Users"
           accessibilityLabel="Users"
-          description="The roster, and who is an admin."
-          showChevron
-          onPress={() => navigation.navigate('AdminUsers')}
+          description="The roster, and who is an admin."          onPress={() => navigation.navigate('AdminUsers')}
         />
         <CatalogRow
           icon="pricetags-outline"
           title="Brands"
           accessibilityLabel="Brands"
-          description="The real-store directory."
-          showChevron
-          onPress={() => navigation.navigate('AdminBrands')}
+          description="The real-store directory."          onPress={() => navigation.navigate('AdminBrands')}
         />
         <CatalogRow
           icon="calendar-outline"
           title="Life events"
           accessibilityLabel="Life events"
-          description="The occasions wishlists are tagged with."
-          showChevron
-          onPress={() => navigation.navigate('AdminLifeEvents')}
+          description="The occasions wishlists are tagged with."          onPress={() => navigation.navigate('AdminLifeEvents')}
         />
         <CatalogRow
           icon="storefront-outline"
           title="Storefronts & products"
           accessibilityLabel="Storefronts and products"
-          description="The curated catalog and its products."
-          showChevron
-          onPress={() => navigation.navigate('AdminStorefronts')}
+          description="The curated catalog and its products."          onPress={() => navigation.navigate('AdminStorefronts')}
         />
       </View>
     </FloatingHeaderLayout>

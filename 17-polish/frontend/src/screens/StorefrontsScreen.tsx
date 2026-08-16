@@ -55,9 +55,7 @@ export default function StorefrontsScreen() {
         icon="globe-outline"
         title="Browse real stores"
         accessibilityLabel="Browse real stores"
-        description="Open a real brand's site and add any product to a wishlist."
-        showChevron
-        onPress={() => navigation.navigate('Brands')}
+        description="Open a real brand's site and add any product to a wishlist."        onPress={() => navigation.navigate('Brands')}
       />
     </View>
   );

@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import WishlistPlaceholderGlyph from './WishlistPlaceholderGlyph';
 import Colors from '../constants/Colors';
 import BorderRadius from '../constants/BorderRadius';
@@ -16,28 +15,19 @@ interface WishlistRailCardProps {
       the pastel wash behind an image-less tile. */
   lifeEvent?: LifeEvent;
   onPress: () => void;
-  /** A wish-count pill on the art, when the caller carries the count. Omitted
-      where the payload doesn't (My Stuff reads the list, which the tutorial
-      does not denormalize a wish_count onto). */
-  wishCount?: number;
-  /** Marks a co-owned (group) wishlist with a people chip, when the caller
-      knows it. Omitted where ownership isn't loaded. */
-  group?: boolean;
 }
 
 /**
  * A wishlist as a tonal tile: the uploaded cover photo fills the art block when
  * set, else a pastel wash in the life event's color with its emoji (or a gift)
- * centered. Small translucent pills ride the art — a love tally, a group chip,
- * a wish count — and the name sits below. The image-forward tile My Stuff and
- * the profile grids wear, replacing the caption-below ArtTileCard idiom.
+ * centered. A translucent love-tally pill rides the art when the list has loves,
+ * and the name sits below. The image-forward tile My Stuff and the profile grids
+ * wear, replacing the caption-below ArtTileCard idiom.
  */
 const WishlistRailCard: React.FC<WishlistRailCardProps> = ({
   wishlist,
   lifeEvent,
   onPress,
-  wishCount,
-  group,
 }) => (
   <TouchableOpacity onPress={onPress} activeOpacity={Opacity.pressed} accessibilityRole="button" accessibilityLabel={wishlist.name}>
     <View style={[CommonScreenStyles.center, styles.art, { backgroundColor: pastelForLifeEvent(wishlist.life_event_id) }]}>
@@ -47,19 +37,9 @@ const WishlistRailCard: React.FC<WishlistRailCardProps> = ({
         <WishlistPlaceholderGlyph lifeEvent={lifeEvent} size={Spacing.detailHeroGlyphSize} />
       )}
 
-      {group && (
-        <View style={[CommonScreenStyles.center, styles.groupChip]}>
-          <Ionicons name="people" size={13} color={Colors.dark} />
-        </View>
-      )}
       {wishlist.love_count > 0 && (
         <View style={[CommonScreenStyles.center, styles.lovePill]}>
           <Text style={styles.pillText}>♥ {wishlist.love_count}</Text>
-        </View>
-      )}
-      {wishCount !== undefined && (
-        <View style={[CommonScreenStyles.center, styles.countPill]}>
-          <Text style={styles.pillText}>{wishCount} {wishCount === 1 ? 'wish' : 'wishes'}</Text>
         </View>
       )}
     </View>
@@ -73,28 +53,10 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     overflow: 'hidden',
   },
-  groupChip: {
-    position: 'absolute',
-    top: Spacing.sm,
-    left: Spacing.sm,
-    width: 26,
-    height: 26,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.glassFallback,
-  },
   lovePill: {
     position: 'absolute',
     top: Spacing.sm,
     right: Spacing.sm,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.glassFallback,
-  },
-  countPill: {
-    position: 'absolute',
-    bottom: Spacing.sm,
-    left: Spacing.sm,
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.full,
