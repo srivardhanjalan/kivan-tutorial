@@ -32,6 +32,14 @@ interface FloatingHeaderLayoutProps {
    * itself, so the content behind stays scrollable.
    */
   floatingFooter?: React.ReactNode;
+  /**
+   * A node docked at the foot of the screen, below the scroll content and above
+   * the bottom safe-area inset (a form editor's pinned save CTA). Unlike
+   * floatingFooter it is opaque, full-width, and carries a hairline top divider;
+   * it stacks below the scroll in the safe-area column rather than floating over
+   * it, so it never overlaps the content it submits.
+   */
+  pinnedFooter?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -53,6 +61,7 @@ const FloatingHeaderLayout: React.FC<FloatingHeaderLayoutProps> = ({
   loading = false,
   scroll = true,
   floatingFooter,
+  pinnedFooter,
   children,
 }) => {
   const navigation = useAppNavigation();
@@ -74,6 +83,8 @@ const FloatingHeaderLayout: React.FC<FloatingHeaderLayoutProps> = ({
       ) : (
         <View style={styles.flex}>{children}</View>
       )}
+
+      {pinnedFooter && <View style={styles.pinnedFooter}>{pinnedFooter}</View>}
 
       <FloatingHeader
         title={title}
@@ -122,6 +133,16 @@ const styles = StyleSheet.create({
     right: Spacing.xl,
     bottom: Spacing.xl,
     alignItems: 'center',
+  },
+  // Docked below the scroll, above the bottom inset: an opaque bar carrying the
+  // editor's save CTA, set off from the content by a hairline top divider.
+  pinnedFooter: {
+    paddingHorizontal: Spacing.contentHorizontal,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.md,
+    backgroundColor: Colors.background,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.hairline,
   },
   scrollContent: {
     paddingTop: Spacing.floatingHeaderContentPadding,

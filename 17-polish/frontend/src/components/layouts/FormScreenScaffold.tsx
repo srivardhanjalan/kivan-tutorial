@@ -17,9 +17,9 @@ interface FormScreenScaffoldProps {
 /**
  * The create/edit scaffold shared by the entity editors (event, wishlist,
  * wish): a floating-header screen titled "New <noun>" / "Edit <noun>" with the
- * form's fields as children and a submit CTA pinned below. The CTA reads
- * "Save Changes" when editing, else the create-mode submitLabel. Each screen
- * owns only its own fields and save logic.
+ * form's fields as children and a submit CTA docked in a pinned footer below the
+ * scroll. The CTA reads "Save Changes" when editing, else the create-mode
+ * submitLabel. Each screen owns only its own fields and save logic.
  */
 export default function FormScreenScaffold({
   editing,
@@ -30,13 +30,18 @@ export default function FormScreenScaffold({
   children,
 }: FormScreenScaffoldProps) {
   return (
-    <FloatingHeaderLayout title={`${editing ? 'Edit' : 'New'} ${noun}`} showBack>
+    <FloatingHeaderLayout
+      title={`${editing ? 'Edit' : 'New'} ${noun}`}
+      showBack
+      pinnedFooter={
+        <PrimaryButton
+          title={editing ? 'Save Changes' : submitLabel}
+          onPress={onSubmit}
+          loading={saving}
+        />
+      }
+    >
       {children}
-      <PrimaryButton
-        title={editing ? 'Save Changes' : submitLabel}
-        onPress={onSubmit}
-        loading={saving}
-      />
     </FloatingHeaderLayout>
   );
 }

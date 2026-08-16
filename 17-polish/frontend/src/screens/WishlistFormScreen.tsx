@@ -8,6 +8,7 @@ import PrivacySelector from '../components/PrivacySelector';
 import { useToast } from '../components/ToastProvider';
 import useAsyncAction from '../hooks/useAsyncAction';
 import { usePendingImageUpload } from '../hooks/usePendingImageUpload';
+import useLifeEvents from '../hooks/useLifeEvents';
 import { createWishlist, updateWishlist } from '../services/api';
 import type { PrivacyType, WishlistCreate } from '../services/api';
 
@@ -22,6 +23,8 @@ export default function WishlistFormScreen() {
   const wishlist = route.params?.wishlist;
   const toast = useToast();
   const { loading: saving, run } = useAsyncAction();
+
+  const { lifeEventFor } = useLifeEvents();
 
   const [name, setName] = useState(wishlist?.name ?? '');
   const [lifeEventId, setLifeEventId] = useState<string | undefined>(
@@ -50,18 +53,26 @@ export default function WishlistFormScreen() {
       };
       if (wishlist) {
         await updateWishlist(wishlist.id, payload);
+        navigation.goBack();
       } else {
-        await createWishlist(payload);
+        // Straight into the new wishlist, ready to add wishes; replace so back
+        // doesn't return to the now-stale form.
+        const created = await createWishlist(payload);
+        navigation.replace('WishlistDetail', { wishlistId: created.id });
       }
-      navigation.goBack();
     }, 'Could not save your wishlist');
   };
+
+  // The create CTA leads with the chosen life-event's emoji, echoing the tag
+  // you just picked ("🎁  Start Adding Wishes"); editing keeps "Save Changes".
+  const eventIcon = lifeEventId ? lifeEventFor(lifeEventId)?.icon : undefined;
+  const createLabel = `${eventIcon ? `${eventIcon}  ` : ''}Start Adding Wishes`;
 
   return (
     <FormScreenScaffold
       editing={!!wishlist}
       noun="Wishlist"
-      submitLabel="Create Wishlist"
+      submitLabel={createLabel}
       onSubmit={save}
       saving={saving}
     >
