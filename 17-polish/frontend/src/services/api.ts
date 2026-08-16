@@ -143,11 +143,6 @@ async function request(path: string, init?: RequestInit): Promise<Response> {
   return res;
 }
 
-/** Resolves when the backend answers /health. */
-export async function fetchHealth(): Promise<void> {
-  await request('/health');
-}
-
 /** The current user's backend record — provisioned on this very call if
     it's the user's first authenticated request. */
 export async function fetchCurrentUser(): Promise<User> {
