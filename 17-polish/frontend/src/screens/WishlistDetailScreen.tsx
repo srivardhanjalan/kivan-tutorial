@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { useUser } from '@clerk/clerk-expo';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import DetailHeaderActions from '../components/DetailHeaderActions';
 import SectionHeader from '../components/SectionHeader';
 import EmptyStateView from '../components/EmptyStateView';
-import TileGrid from '../components/TileGrid';
+import MasonryGrid from '../components/MasonryGrid';
 import WishCard from '../components/WishCard';
 import AddTileCard from '../components/AddTileCard';
 import LifeEventDetailHero from '../components/LifeEventDetailHero';
@@ -75,6 +75,11 @@ export default function WishlistDetailScreen() {
   // so a co-owner briefly reads as a viewer until it arrives.
   const isOwner = !!owners && !!user && owners.some((o) => o.id === user.id);
   const addWish = () => navigation.navigate('WishForm', { wishlistId });
+
+  // Wider screens fit more masonry columns; the grid picks the count off the
+  // window width, so a tablet shows more wishes per row than a phone.
+  const { width } = useWindowDimensions();
+  const wishColumns = width >= 768 ? 4 : width >= 600 ? 3 : 2;
 
   const confirmRemoveOwner = () => {
     if (!removeTarget) return;
@@ -160,21 +165,29 @@ export default function WishlistDetailScreen() {
               onAction={isOwner ? addWish : undefined}
             />
           ) : (
-            <TileGrid>
-              {isOwner && <AddTileCard label="New Wish" onPress={addWish} />}
-              {wishes?.map((wish) => (
-                <WishCard
-                  key={wish.id}
-                  wish={wish}
-                  originLogo={originFor(wish)?.logoUrl}
-                  onPress={
-                    isOwner
-                      ? () => navigation.navigate('WishDetail', { wishId: wish.id })
-                      : undefined
-                  }
-                />
-              ))}
-            </TileGrid>
+            <MasonryGrid
+              data={[
+                ...(isOwner ? [{ kind: 'add' as const }] : []),
+                ...(wishes ?? []).map((wish) => ({ kind: 'wish' as const, wish })),
+              ]}
+              numColumns={wishColumns}
+              keyExtractor={(item) => (item.kind === 'add' ? 'add' : item.wish.id)}
+              renderItem={(item) =>
+                item.kind === 'add' ? (
+                  <AddTileCard label="New Wish" onPress={addWish} />
+                ) : (
+                  <WishCard
+                    wish={item.wish}
+                    originLogo={originFor(item.wish)?.logoUrl}
+                    onPress={
+                      isOwner
+                        ? () => navigation.navigate('WishDetail', { wishId: item.wish.id })
+                        : undefined
+                    }
+                  />
+                )
+              }
+            />
           )}
         </>
       )}

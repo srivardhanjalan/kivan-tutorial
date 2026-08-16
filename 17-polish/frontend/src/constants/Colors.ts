@@ -29,6 +29,9 @@ export default {
   surface: '#FFFFFF',
   /** Hairline borders on inputs and outlined buttons */
   hairline: 'rgba(0, 0, 0, 0.08)',
+  /** The faintest border — the outline on glass pills/tiles where the blur
+      itself carries the edge and a hairline would read too hard */
+  borderSubtle: 'rgba(0, 0, 0, 0.06)',
   /** Placeholder/disabled text */
   textMuted: '#A1A1A6',
   /** Soft grey disc behind empty-state icons */

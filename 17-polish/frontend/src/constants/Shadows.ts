@@ -20,6 +20,14 @@ export default {
     ...ctaLift,
     shadowColor: Colors.danger,
   },
+  /** The soft lift under image-forward tiles and cards */
+  card: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
+  },
   /** The floating chrome pills (tab bar) */
   chrome: {
     shadowColor: '#000',
