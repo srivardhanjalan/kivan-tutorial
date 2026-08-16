@@ -8,11 +8,12 @@ from app.utils.s3_helpers import get_signed_url_for_s3
 class StorefrontCreate(BaseModel):
     """POST /admin/storefronts body. `id` is a client-supplied slug (the seed
     writes stores by a stable id), put conditionally so a collision with a
-    seeded store is a 409, not a clobber. `logo_url` is omitted for the same
-    reason as a brand's (a seed-owned catalog object; no logo-upload UI in the
-    plain dashboard yet), and `product_count` is omitted because it is
-    denormalized: a new store has zero products, and the count is maintained by
-    the product create/delete routes, never hand-set here.
+    seeded store is a 409, not a clobber. `logo_url` is optional: the step-17
+    admin uploader sends a `pending/` key the route claims on save (the same
+    discipline a brand logo rides); a store created without one starts logoless.
+    `product_count` is omitted because it is denormalized: a new store has zero
+    products, and the count is maintained by the product create/delete routes,
+    never hand-set here.
 
     Length caps mirror the rest of the app so a validated body can never blow
     past DynamoDB's 400 KB item limit."""
@@ -20,18 +21,21 @@ class StorefrontCreate(BaseModel):
     id: str = Field(max_length=100)
     name: str = Field(max_length=200)
     description: Optional[str] = Field(default=None, max_length=2048)
+    logo_url: Optional[str] = Field(default=None, max_length=2048)
     display_order: int = 0
 
 
 class StorefrontUpdate(BaseModel):
     """PUT /admin/storefronts/{id} body — send only what changes; omitted or
-    null fields are left untouched. `id` and the seed-owned `logo_url` are not
-    editable, and `product_count` is not either: it is a denormalized tally the
-    product routes keep, so a hand-edit here would let it drift from the
-    products actually under the store."""
+    null fields are left untouched. `id` is not editable, and `product_count` is
+    not either: it is a denormalized tally the product routes keep, so a
+    hand-edit here would let it drift from the products actually under the store.
+    `logo_url` IS editable: a new upload's pending key swaps the logo (claimed on
+    save, the replaced object swept), exactly as WishlistUpdate.image_url does."""
 
     name: Optional[str] = Field(default=None, max_length=200)
     description: Optional[str] = Field(default=None, max_length=2048)
+    logo_url: Optional[str] = Field(default=None, max_length=2048)
     display_order: Optional[int] = None
 
 
@@ -48,9 +52,9 @@ class Storefront(BaseModel):
     wish's image_url: the seed uploads each committed placeholder logo under the
     catalog/ keyspace and stores that object's bucket URL, and the serializer
     below re-signs it on read (get_signed_url_for_s3) so the API returns a
-    short-lived presigned URL and the bucket stays fully private. Replacing a
-    placeholder with an admin-uploaded logo is a step-15 concern; the pipeline it
-    rides (store the S3 URL, sign on read) is already the real one.
+    short-lived presigned URL and the bucket stays fully private. The step-17
+    admin uploader replaces a placeholder with an admin-uploaded logo through
+    this same pipeline (store the S3 URL, sign on read).
     """
 
     id: str

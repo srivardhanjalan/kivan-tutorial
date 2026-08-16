@@ -5,7 +5,24 @@ routes carry storefront_id in the path and keep the store's denormalized
 product_count in step. Runs against the moto tables the shared fixtures build,
 with require_admin exercised end to end.
 """
-from conftest import STOREFRONTS_TABLE, put_product, put_storefront, put_user
+from conftest import (
+    PRODUCTS_TABLE,
+    STOREFRONTS_TABLE,
+    bucket_url,
+    head_exists,
+    photos_bucket,
+    put_product,
+    put_storefront,
+    put_user,
+)
+
+
+def _set_image(aws, product_id, url):
+    aws.Table(PRODUCTS_TABLE).update_item(
+        Key={"id": product_id},
+        UpdateExpression="SET image_url = :u",
+        ExpressionAttributeValues={":u": url},
+    )
 
 
 def _new_product(**overrides):
@@ -63,7 +80,7 @@ def test_create_product_roundtrips_and_counts(aws, client):
     assert body["id"] == "widget"
     assert body["price"] == 19.99  # Decimal stored, coerced back to float
     assert body["storefront_id"] == "acme"
-    assert body["image_url"] is None  # no photo-upload UI yet
+    assert body["image_url"] is None  # no photo uploaded — starts imageless
     # It lists under its store, and the store's tally moved up.
     listed = client("admin1").get("/storefronts/acme/products").json()
     assert {p["id"] for p in listed} == {"widget"}
@@ -190,3 +207,72 @@ def test_store_delete_blocked_until_its_product_is_removed(aws, client):
     assert client("admin1").delete("/admin/storefronts/acme").status_code == 409
     client("admin1").delete("/admin/storefronts/acme/products/widget")
     assert client("admin1").delete("/admin/storefronts/acme").status_code == 204
+
+
+# ── Photo upload: the pending-claim photo lifecycle (step 17) ─────────────────
+
+
+def test_create_product_claims_pending_photo(aws, client, monkeypatch):
+    """A create carrying a pending photo key claims it into the permanent
+    keyspace and returns a signed read of the permanent object."""
+    bucket, s3 = photos_bucket(monkeypatch)
+    put_user(aws, "admin1", role="admin")
+    put_storefront(aws, "acme")
+
+    pending_key = "pending/product_photo/admin1/photo.jpg"
+    permanent_key = "product_photo/admin1/photo.jpg"
+    s3.put_object(Bucket=bucket, Key=pending_key, Body=b"img")
+
+    resp = client("admin1").post(
+        "/admin/storefronts/acme/products",
+        json=_new_product(image_url=bucket_url(bucket, pending_key)),
+    )
+    assert resp.status_code == 201
+    assert permanent_key in resp.json()["image_url"]
+    assert not head_exists(s3, bucket, pending_key)  # claimed out of pending
+    assert head_exists(s3, bucket, permanent_key)  # ...into permanent
+
+
+def test_update_product_replaces_photo(aws, client, monkeypatch):
+    """Uploading a new photo on edit claims the new object and sweeps the old
+    admin-uploaded one it replaces (price and store are untouched)."""
+    bucket, s3 = photos_bucket(monkeypatch)
+    put_user(aws, "admin1", role="admin")
+    put_storefront(aws, "acme")
+
+    old_key = "product_photo/admin1/old.jpg"
+    s3.put_object(Bucket=bucket, Key=old_key, Body=b"old")
+    put_product(aws, "widget", storefront_id="acme")
+    _set_image(aws, "widget", bucket_url(bucket, old_key))
+
+    new_pending = "pending/product_photo/admin1/new.jpg"
+    new_permanent = "product_photo/admin1/new.jpg"
+    s3.put_object(Bucket=bucket, Key=new_pending, Body=b"new")
+
+    resp = client("admin1").put(
+        "/admin/storefronts/acme/products/widget",
+        json={"image_url": bucket_url(bucket, new_pending)},
+    )
+    assert resp.status_code == 200
+    assert new_permanent in resp.json()["image_url"]
+    assert head_exists(s3, bucket, new_permanent)  # new claimed
+    assert not head_exists(s3, bucket, new_pending)  # out of pending
+    assert not head_exists(s3, bucket, old_key)  # old admin photo swept
+
+
+def test_delete_product_sweeps_uploaded_photo(aws, client, monkeypatch):
+    """Deleting a product sweeps its admin-uploaded photo object."""
+    bucket, s3 = photos_bucket(monkeypatch)
+    put_user(aws, "admin1", role="admin")
+    put_storefront(aws, "acme", product_count=1)
+
+    photo_key = "product_photo/admin1/photo.jpg"
+    s3.put_object(Bucket=bucket, Key=photo_key, Body=b"img")
+    put_product(aws, "widget", storefront_id="acme")
+    _set_image(aws, "widget", bucket_url(bucket, photo_key))
+
+    assert (
+        client("admin1").delete("/admin/storefronts/acme/products/widget").status_code
+        == 204
+    )
+    assert not head_exists(s3, bucket, photo_key)
