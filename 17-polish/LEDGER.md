@@ -193,10 +193,19 @@ scope, not this one.
 
 ## Auth and onboarding
 
-- [ ] Cosmetic-only convergence. Sign-in, sign-up (email plus code
+- [x] Cosmetic-only convergence. Sign-in, sign-up (email plus code
       verification and OAuth), and the onboarding tutorial already hold
       functional parity; only styling and onboarding-slide copy need a polish
-      pass here.
+      pass here. *Converged (step 17 phase 4):* the onboarding carousel gained
+      the finished design's slide coverage (six slides — add-from-anywhere, the
+      Wish Store, events/following, notifications, ready — with refreshed copy)
+      in the tutorial's own idiom (the `PASTEL` one-off palette per study-17 §3,
+      the `GlassPill` next button, the `BrandMark` step-1 disc; no per-step
+      raw-hex colors and no floating-emoji `Animated` bloat from the source).
+      Sign-in/sign-up needed no change: their cosmetic convergence already landed
+      in the shared `AuthFormLayout`/`AuthMethods`/`OAuthButtons`/`BrandMark`
+      extraction (fully tokenized, cleaner than the source's raw-hex screens).
+      Auth flow untouched.
 
 ## Notifications (step 11)
 
@@ -725,21 +734,33 @@ Surface added (no source counterpart):
 
 Frontend (visual/workflow convergence, behavior held):
 
-- [ ] Plain row idiom over image-forward layouts. *source:* n/a (no admin UI).
-      *tutorial:* every admin list is the plain `DirectoryLayout`/`CatalogRow`
-      row idiom with a small logo/glyph each, and every editor is the inline
-      `FormScreenScaffold` form (labeled `FormInput`s, a `PrimaryButton` CTA
-      that scrolls with the form, delete as a danger button at its foot). Polish
-      brings the image-forward card/grid layouts the finished catalog screens
-      use, matching the directories entry above.
-- [ ] Catalog media uploader deferred. *source:* n/a. *tutorial:* logos and
-      product photos stay seed-owned; the admin editors carry NO image uploader
-      and never send (or round-trip) a `logo_url`/`image_url`, so an
-      admin-created brand, store, or product shows the placeholder glyph until a
-      later step ships an uploader. This is the same deferral the step-15 backend
-      recorded (no `brand_logo`/catalog upload type was added): a create/edit is
-      text-field CRUD only. Polish adds the uploader (reusing the step-06 media
-      pipeline) and the image-forward layouts that consume it.
+- [x] Plain row idiom over image-forward layouts. *source:* n/a (no admin UI).
+      *tutorial (pre-polish):* every admin list was the plain
+      `AdminCatalogScreen`/`CatalogRow` row idiom with a small logo/glyph each,
+      and every editor the inline `FormScreenScaffold` form (labeled
+      `FormInput`s, a `PrimaryButton` CTA that scrolls with the form, delete as a
+      danger button at its foot). (Nomenclature fixed per study-17 §6: admin
+      lists wrap `AdminCatalogScreen`, not `DirectoryLayout`.) *Converged (step
+      17 phase 4):* the brand/storefront/product lists now use the finished
+      directory's image-forward cards — the `BrandLogoCard` logo wall, the
+      `StorefrontCard` grid, and the `ProductCard` masonry — each tapping through
+      to its editor; life events keep the row (an icon glyph, no uploaded image).
+      The editors stay the `FormScreenScaffold` form, now headed by an
+      `ImageUploadField`.
+- [x] Catalog media uploader. *source:* n/a. *tutorial (pre-polish):* logos and
+      product photos stayed seed-owned; the admin editors carried NO image
+      uploader and never sent (or round-tripped) a `logo_url`/`image_url`, so an
+      admin-created brand, store, or product showed the placeholder glyph — the
+      same deferral the step-15 backend recorded (no `brand_logo`/catalog upload
+      type was added): a create/edit was text-field CRUD only. *Converged (step
+      17 phase 4):* the editors gain an `ImageUploadField` and the write models
+      carry `logo_url`/`image_url`, claimed on save via the step-06 media
+      pipeline (upload.py resource types `brand_logo`/`storefront_logo`/
+      `product_photo`; the same client-sends-the-key, reads-get-signed-URLs
+      discipline wishlist/wish photos use, with an admin-uploaded object swept on
+      replace/delete and a shared catalog/ seed object never reaped). An
+      admin-created brand/store/product now renders its uploaded image, the
+      placeholder glyph only when absent. Closes this step-15 deferral.
 - [ ] `id` (slug) as a plain typed field on create. *source:* n/a. *tutorial:*
       a reference-data id is a hand-typed slug field (the seed's stable ids), not
       generated or picked from a suggestion; a collision with a seeded row is a
