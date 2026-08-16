@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { useUser } from '@clerk/clerk-expo';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
@@ -9,10 +9,9 @@ import EmptyStateView from '../components/EmptyStateView';
 import MasonryGrid from '../components/MasonryGrid';
 import WishCard from '../components/WishCard';
 import AddTileCard from '../components/AddTileCard';
-import LifeEventDetailHero from '../components/LifeEventDetailHero';
+import CoverPhoto from '../components/CoverPhoto';
 import ConfirmModal from '../components/ConfirmModal';
-import LoveButton from '../components/LoveButton';
-import WishlistPlaceholderGlyph from '../components/WishlistPlaceholderGlyph';
+import CoverLoveHeart from '../components/CoverLoveHeart';
 import WishlistOwnerList from '../components/WishlistOwnerList';
 import ManageOwnersModal from '../components/ManageOwnersModal';
 import ShareWishlistModal from '../components/ShareWishlistModal';
@@ -32,6 +31,7 @@ import {
 } from '../services/api';
 import type { User } from '../services/api';
 import { userDisplayName } from '../utils/userName';
+import Typography from '../constants/Typography';
 import { Spacing } from '../constants/ScreenStyles';
 
 /**
@@ -115,24 +115,21 @@ export default function WishlistDetailScreen() {
     >
       {wishlist && (
         <>
-          <LifeEventDetailHero
-            lifeEvent={lifeEvent}
-            imageUrl={wishlist.image_url}
-            placeholder={
-              <WishlistPlaceholderGlyph lifeEvent={lifeEvent} size={Spacing.detailHeroGlyphSize} />
-            }
-          />
-
-          {/* Someone else's wishlist: love it. Mounts once love status loads. */}
-          {!isOwner && loved !== null && (
-            <View style={styles.loveRow}>
-              <LoveButton
-                wishlistId={wishlistId}
-                initialLoved={loved}
-                initialCount={wishlist.love_count}
-              />
-            </View>
-          )}
+          {/* The wishlist's cover band: its uploaded image, else the owner's
+              deterministic gradient. On someone else's wishlist, love it as a
+              heart floated on the cover (mounts once love status loads). */}
+          <CoverPhoto ownerId={wishlist.created_by} coverPhoto={wishlist.image_url}>
+            {!isOwner && loved !== null && (
+              <View style={styles.coverActions}>
+                <CoverLoveHeart
+                  wishlistId={wishlistId}
+                  initialLoved={loved}
+                  initialCount={wishlist.love_count}
+                />
+              </View>
+            )}
+          </CoverPhoto>
+          {lifeEvent && <Text style={styles.lifeEventName}>{lifeEvent.name}</Text>}
 
           {/* Co-owners: owner-only. A co-owner is a full owner, added directly
               (no invite step) and removable unless they're the last one. */}
@@ -234,7 +231,13 @@ export default function WishlistDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  loveRow: {
-    marginTop: Spacing.lg,
+  coverActions: {
+    position: 'absolute',
+    bottom: Spacing.md,
+    right: Spacing.md,
+  },
+  lifeEventName: {
+    ...Typography.bodySecondary,
+    marginTop: Spacing.md,
   },
 });
