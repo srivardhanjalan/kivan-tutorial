@@ -26,14 +26,17 @@ scope, not this one.
 
 ## Home
 
-- [ ] Cover-photo profile header. *source:* an edge-to-edge cover band with the
-      avatar overlapping it, the display name, and the settings button floated
-      on the cover. *tutorial:* a plain floating header greeting `Hi, {name}`
-      with a settings icon button, no cover.
-- [ ] A horizontal wishlist chip rail that filters the feed. *source:* a rail
-      of wishlist chips led by an **All Wishes** aggregate and an add tile,
-      selecting one filters the wishes below. *tutorial:* a `Your wishlists`
-      preview rail of the six newest lists, each chip opens the list.
+- [ ] Cover-photo profile header. *source:* an inset cover band (a rounded card
+      inside the content padding, not a full-bleed edge-to-edge band —
+      `HomeScreen.tsx:556-577`) with the avatar overlapping it, the display name,
+      and the settings button floated on the cover. *tutorial:* a plain floating
+      header greeting `Hi, {name}` with a settings icon button, no cover.
+- [ ] A horizontal wishlist card rail that filters the feed. *source:* a rail
+      of wishlist cover-photo cards (a horizontal `WishlistCardGrid`,
+      `HomeScreen.tsx:482-600` — rounded cover cards, not chips) led by an
+      **All Wishes** aggregate and an add tile, selecting one filters the wishes
+      below. *tutorial:* a `Your wishlists` preview rail of the six newest lists,
+      each chip opens the list.
 - [ ] The wishes feed as the body of Home. *source:* a masonry grid of your
       wishes (image-forward, infinite scroll, pull to refresh) is the main
       surface. *tutorial:* Home shows no wishes; they live inside each wishlist.
@@ -84,9 +87,9 @@ scope, not this one.
 - [ ] Follow as a cover heart. *source:* the follow control is a heart button
       overlaid on the cover with a follower-count badge. *tutorial:* tappable
       Followers/Following stat counts plus a Follow/Following text pill.
-- [ ] A wish-forward profile body. *source:* a horizontal wishlist chip rail
-      (led by an **All Items** aggregate) filters a masonry grid of the user's
-      wishes below. *tutorial:* two wishlist-tile grids, `Wishlists` and
+- [ ] A wish-forward profile body. *source:* a horizontal wishlist card rail
+      (the same cover-photo card rail as Home, not chips; led by an **All Items**
+      aggregate) filters a masonry grid of the user's wishes below. *tutorial:* two wishlist-tile grids, `Wishlists` and
       `Loved`, no wish grid.
 - [ ] Profile aggregated all-items view. *source:* the **All Items** chip shows
       every wish the user owns in one grid. *tutorial:* wishes are only visible
@@ -94,9 +97,10 @@ scope, not this one.
 
 ## Wishlist detail
 
-- [ ] Cover-photo band hero. *source:* an edge-to-edge cover band carries the
-      wishlist. *tutorial:* an `ArtTile` pastel/image hero with the life-event
-      name beneath it.
+- [ ] Cover-photo band hero. *source:* an inset cover band (a rounded card
+      inside the content padding, not full-bleed — `WishlistDetailScreen.tsx:254-330`)
+      carries the wishlist. *tutorial:* an `ArtTile` pastel/image hero with the
+      life-event name beneath it.
 - [ ] Love as a cover heart. *source:* love is a heart button overlaid on the
       cover with a count badge. *tutorial:* an outlined `LoveButton` pill sits
       below the hero.
