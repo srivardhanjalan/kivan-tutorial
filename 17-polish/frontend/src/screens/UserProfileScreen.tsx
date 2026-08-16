@@ -74,6 +74,9 @@ function ProfileBody({
   // read, so it fans the view-gated per-wishlist reads and stitches them (a
   // private list the viewer can't see returns nothing, so it drops out).
   const [wishesByList, setWishesByList] = useState<Record<string, Wish[]>>({});
+  // Gates the empty state so a "No wishes yet" flash can't show before the
+  // per-wishlist reads resolve.
+  const [wishesLoaded, setWishesLoaded] = useState(false);
 
   const { width } = useWindowDimensions();
   const numColumns = width >= 768 ? 4 : width >= 600 ? 3 : 2;
@@ -101,7 +104,10 @@ function ProfileBody({
           .catch(() => [wl.id, [] as Wish[]] as const)
       )
     ).then((entries) => {
-      if (!cancelled) setWishesByList(Object.fromEntries(entries));
+      if (!cancelled) {
+        setWishesByList(Object.fromEntries(entries));
+        setWishesLoaded(true);
+      }
     });
     return () => {
       cancelled = true;
@@ -151,7 +157,7 @@ function ProfileBody({
       )}
 
       <SectionHeader title="Wishes" meta={displayedWishes.length} />
-      {displayedWishes.length === 0 ? (
+      {wishesLoaded && displayedWishes.length === 0 ? (
         <EmptyStateView
           icon="gift-outline"
           title="No wishes yet"
