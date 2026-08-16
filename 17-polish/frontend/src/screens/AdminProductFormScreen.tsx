@@ -1,18 +1,26 @@
 import React from 'react';
 import { useAppRoute } from '../hooks/useAppNavigation';
 import AdminEntityForm, { AdminField, field } from '../components/layouts/AdminEntityForm';
+import { usePendingImageUpload } from '../hooks/usePendingImageUpload';
 import { createProduct, updateProduct, deleteProduct } from '../services/api';
 
 /**
  * One form for creating and editing a product under its store (the store is
  * passed in). On create the id is a client slug (a collision is a 409); on edit
  * it is fixed, and the store is not editable (move a product by deleting and
- * recreating it). The seed-owned photo is never sent, so a partial edit leaves
- * it intact. Delete lives on the edit form, behind a confirm.
+ * recreating it). The photo rides the shared image uploader: a new upload's key
+ * is sent and claimed on save, and an unchanged photo is left intact. Delete
+ * lives on the edit form, behind a confirm.
  */
 export default function AdminProductFormScreen() {
   const { storefront, product } = useAppRoute<'AdminProductForm'>().params;
   const editing = !!product;
+
+  const photo = usePendingImageUpload(
+    'product_photo',
+    'Could not upload the photo',
+    product?.image_url ?? null
+  );
 
   const fields: AdminField[] = [
     field.slug(product?.id, 'e.g. acme-mug', 'Give the product an id'),
@@ -29,6 +37,7 @@ export default function AdminProductFormScreen() {
       noun="Product"
       editing={editing}
       fields={fields}
+      image={{ label: 'Photo', upload: photo }}
       submitError="Could not save this product"
       onSubmit={async (values) => {
         const body = {
@@ -38,6 +47,9 @@ export default function AdminProductFormScreen() {
           // which surfaces honestly; an empty field parses to 0.
           price: Number(values.price) || 0,
           category: values.category.trim(),
+          // changedUrl is set only when a new photo was uploaded; an unchanged
+          // photo is left out so the backend edit never touches it.
+          ...(photo.changedUrl ? { image_url: photo.changedUrl } : {}),
           link_url: values.linkUrl.trim(),
           display_order: Number(values.displayOrder) || 0,
         };
