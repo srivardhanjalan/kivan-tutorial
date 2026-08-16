@@ -22,6 +22,24 @@ variable "apprunner_memory" {
   default     = "2048"
 }
 
+variable "budget_alert_email" {
+  description = "Email address subscribed to the operational alert topic; the subscription is created but stays PendingConfirmation until this inbox confirms it"
+  type        = string
+  default     = "alerts@example.com" # placeholder — set to a real inbox you can confirm
+}
+
+variable "monthly_budget_limit" {
+  description = "Monthly budget limit in USD for all Kivan resources (Project=kivan)"
+  type        = string
+  default     = "100.00"
+}
+
+variable "daily_budget_limit" {
+  description = "Daily budget limit in USD; catches unexpected same-day cost spikes"
+  type        = string
+  default     = "10.00"
+}
+
 variable "clerk_secret_key" {
   description = "Clerk secret key (sk_...) — the backend uses it to fetch JWKS and user profiles"
   type        = string
@@ -49,6 +67,18 @@ variable "mailgun_domain" {
 
 variable "mailgun_from_email" {
   description = "From address for notification emails (e.g. notifications@mg.example.com). Not secret"
+  type        = string
+  default     = ""
+}
+
+variable "github_repository" {
+  description = <<-EOT
+    "owner/repo" slug of the repository the backend deploy workflow runs from.
+    Empty (the default) creates NO GitHub OIDC provider or deploy role (see
+    cicd.tf) — a non-empty default would mint a live, assumable deploy role on
+    every learner's account. Set it to your own fork (e.g. "your-org/kivan") to
+    provision the CI/CD plumbing scoped to that repo.
+  EOT
   type        = string
   default     = ""
 }
