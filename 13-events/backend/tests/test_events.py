@@ -515,3 +515,26 @@ def test_cover_photo_claimed_on_create_and_deleted_on_delete(client, aws, monkey
 
     assert client("host").delete(f"/events/{event_id}").status_code == 204
     assert not _head_exists(s3, bucket, permanent_key)  # deleted with the event
+
+
+def test_signed_url_accepts_event_photo(aws, client, monkeypatch):
+    """The signed-url gate must accept event_photo — EventFormScreen's cover
+    upload starts here, and a Literal that omits it 422s the whole flow
+    before any S3 call (this exact regression shipped in this step's first
+    cut: the claim path knew events, the mint path did not)."""
+    from app.config import settings
+
+    bucket = "kivan-test-photos"
+    monkeypatch.setattr(settings, "photos_bucket_name", bucket)
+    s3 = boto3.client("s3", region_name="us-east-1")
+    s3.create_bucket(Bucket=bucket)
+
+    put_user(aws, "host")
+    resp = client("host").post(
+        "/upload/signed-url",
+        json={"resource_type": "event_photo", "file_extension": "jpeg"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "pending/event_photo/host/" in body["photo_url"]
+    assert body["upload_url"].startswith("https://")

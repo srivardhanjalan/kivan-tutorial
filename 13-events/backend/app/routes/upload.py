@@ -22,8 +22,10 @@ _UPLOAD_URL_TTL_SECONDS = 300
 class SignedUrlRequest(BaseModel):
     # Literal types make FastAPI reject anything else with a 422 before the
     # handler runs — the photo kinds this step knows: a user's profile and
-    # cover images, plus a wishlist's and a wish's image.
-    resource_type: Literal["profile_photo", "cover_photo", "wishlist_photo", "wish_photo"]
+    # cover images, a wishlist's and a wish's image, and an event's cover.
+    resource_type: Literal[
+        "profile_photo", "cover_photo", "wishlist_photo", "wish_photo", "event_photo"
+    ]
     file_extension: Literal["jpeg", "png", "gif", "webp"]
 
 
