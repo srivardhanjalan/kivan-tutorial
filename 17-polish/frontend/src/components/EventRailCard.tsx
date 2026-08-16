@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { resolveCover } from '../constants/DefaultCoverPhotos';
+import CoverPhoto from './CoverPhoto';
 import { RSVP_LABEL } from '../constants/rsvpLabels';
 import { eventDateChip } from '../utils/formatEventDate';
 import Colors from '../constants/Colors';
@@ -10,6 +10,8 @@ import BorderRadius from '../constants/BorderRadius';
 import Opacity from '../constants/Opacity';
 import { Spacing } from '../constants/ScreenStyles';
 import type { Event, RsvpStatus } from '../services/api';
+
+const BANNER_HEIGHT = 150;
 
 interface EventRailCardProps {
   event: Event;
@@ -21,52 +23,21 @@ interface EventRailCardProps {
 }
 
 /**
- * A full-width event banner for the My Stuff lists: the event's cover photo (or
- * a deterministic duotone gradient from the cover presets when it has none)
- * under a bottom scrim, with a compact date chip top-left, a Hosting/Invited
- * pill top-right (an invited event appends my RSVP), and the name + location at
- * the foot. The image-forward convergence of the old pastel EventCard tile; the
- * gradient stops are cover-preset DATA and every overlay color is a token, so
- * the banner invents no hex literals.
+ * A full-width event banner for the My Stuff lists: the event's cover photo (or,
+ * with none, the owner's deterministic gradient) rides the shared CoverPhoto
+ * band, under a bottom scrim, with a compact date chip top-left, a
+ * Hosting/Invited pill top-right (an invited event appends my RSVP), and the
+ * name + location at the foot. The image-forward convergence of the old pastel
+ * EventCard tile; every overlay color is a token, so the banner invents no hex
+ * literals.
  */
 const EventRailCard: React.FC<EventRailCardProps> = ({ event, onPress, isHosting, rsvp }) => {
-  const cover = resolveCover(event.image_url, event.id);
   const { month, day } = eventDateChip(event.event_date);
   const pillText = isHosting
     ? 'Hosting'
     : rsvp && rsvp !== 'pending'
       ? `Invited · ${RSVP_LABEL[rsvp]}`
       : 'Invited';
-
-  const overlays = (
-    <>
-      <LinearGradient
-        colors={['transparent', Colors.coverScrim]}
-        style={styles.scrim}
-        pointerEvents="none"
-      />
-      <View style={styles.dateChip}>
-        <Text style={styles.dateMonth}>{month}</Text>
-        {day ? <Text style={styles.dateDay}>{day}</Text> : null}
-      </View>
-      <View style={styles.rolePill}>
-        <Text style={styles.rolePillText}>{pillText}</Text>
-      </View>
-      <View style={styles.textBlock}>
-        <Text style={styles.name} numberOfLines={2}>
-          {event.name}
-        </Text>
-        {event.location ? (
-          <View style={styles.locationRow}>
-            <Ionicons name="location" size={12} color={Colors.white} />
-            <Text style={styles.locationText} numberOfLines={1}>
-              {event.location}
-            </Text>
-          </View>
-        ) : null}
-      </View>
-    </>
-  );
 
   return (
     <TouchableOpacity
@@ -76,38 +47,45 @@ const EventRailCard: React.FC<EventRailCardProps> = ({ event, onPress, isHosting
       accessibilityRole="button"
       accessibilityLabel={event.name}
     >
-      {cover.imageUrl ? (
-        <View style={styles.cover}>
-          <Image
-            source={{ uri: cover.imageUrl }}
-            style={StyleSheet.absoluteFill}
-            resizeMode="cover"
-          />
-          {overlays}
-        </View>
-      ) : (
+      <CoverPhoto
+        ownerId={event.id}
+        coverPhoto={event.image_url}
+        height={BANNER_HEIGHT}
+        borderRadius={BorderRadius.xl}
+      >
         <LinearGradient
-          colors={cover.colors}
-          style={styles.cover}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          {overlays}
-        </LinearGradient>
-      )}
+          colors={['transparent', Colors.coverScrim]}
+          style={styles.scrim}
+          pointerEvents="none"
+        />
+        <View style={styles.dateChip}>
+          <Text style={styles.dateMonth}>{month}</Text>
+          {day ? <Text style={styles.dateDay}>{day}</Text> : null}
+        </View>
+        <View style={styles.rolePill}>
+          <Text style={styles.rolePillText}>{pillText}</Text>
+        </View>
+        <View style={styles.textBlock}>
+          <Text style={styles.name} numberOfLines={2}>
+            {event.name}
+          </Text>
+          {event.location ? (
+            <View style={styles.locationRow}>
+              <Ionicons name="location" size={12} color={Colors.white} />
+              <Text style={styles.locationText} numberOfLines={1}>
+                {event.location}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+      </CoverPhoto>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    height: 150,
-    borderRadius: BorderRadius.xl,
-    overflow: 'hidden',
     marginBottom: Spacing.md,
-  },
-  cover: {
-    flex: 1,
   },
   scrim: {
     position: 'absolute',
