@@ -9,6 +9,8 @@ const NOTIFICATION_TYPE_ICON: Record<NotificationType, keyof typeof Ionicons.gly
   wishlist_created: 'list',
   wish_added: 'gift',
   wishlist_loved: 'heart',
+  event_created: 'calendar',
+  event_invitation: 'mail',
 };
 
 export default NOTIFICATION_TYPE_ICON;

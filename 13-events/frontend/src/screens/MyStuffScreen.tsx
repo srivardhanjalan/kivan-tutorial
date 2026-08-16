@@ -4,21 +4,32 @@ import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import SectionHeader from '../components/SectionHeader';
 import EmptyStateView from '../components/EmptyStateView';
 import WishlistGrid from '../components/WishlistGrid';
+import TileGrid from '../components/TileGrid';
+import EventCard from '../components/EventCard';
 import AddTileCard from '../components/AddTileCard';
 import useFetch from '../hooks/useFetch';
-import { fetchMyWishlists } from '../services/api';
+import { fetchMyWishlists, fetchMyEvents } from '../services/api';
 
 /**
- * My Stuff: the grid of everything you own. Wishlists load newest-first and
- * refetch on focus, so a create or edit shows the moment you return. Empty,
- * it points you at your first wishlist; full, an add tile leads the grid.
+ * My Stuff: the grid of everything you own. Wishlists and the events you host
+ * both load and refetch on focus, so a create or edit shows the moment you
+ * return. Empty, each section points you at your first one; full, an add tile
+ * leads the grid. Events you're invited to follow in their own section, each
+ * tile carrying my RSVP, and only when there are any (no empty prompt to plan
+ * someone else's event).
  */
 export default function MyStuffScreen() {
   const navigation = useAppNavigation();
   const { data: wishlists, loading } = useFetch(fetchMyWishlists, { refetchOnFocus: true });
+  const { data: myEvents } = useFetch(fetchMyEvents, { refetchOnFocus: true });
 
-  const create = () => navigation.navigate('WishlistForm', {});
-  const open = (id: string) => navigation.navigate('WishlistDetail', { wishlistId: id });
+  const createWishlist = () => navigation.navigate('WishlistForm', {});
+  const openWishlist = (id: string) => navigation.navigate('WishlistDetail', { wishlistId: id });
+  const createEvent = () => navigation.navigate('EventForm', {});
+  const openEvent = (id: string) => navigation.navigate('EventDetail', { eventId: id });
+
+  const hosting = myEvents?.hosting ?? [];
+  const invited = myEvents?.invited ?? [];
 
   return (
     <FloatingHeaderLayout title="My Stuff" loading={loading}>
@@ -29,14 +40,48 @@ export default function MyStuffScreen() {
           title="No wishlists yet"
           subtitle="Group the things you want by the occasion they're for."
           actionLabel="Create a wishlist"
-          onAction={create}
+          onAction={createWishlist}
         />
       ) : (
         <WishlistGrid
           wishlists={wishlists ?? []}
-          onPressWishlist={open}
-          leading={<AddTileCard label="New Wishlist" onPress={create} />}
+          onPressWishlist={openWishlist}
+          leading={<AddTileCard label="New Wishlist" onPress={createWishlist} />}
         />
+      )}
+
+      <SectionHeader title="Events" meta={hosting.length} />
+      {myEvents && hosting.length === 0 ? (
+        <EmptyStateView
+          icon="calendar-outline"
+          title="No events yet"
+          subtitle="Plan an occasion and link the wishlists people can shop from."
+          actionLabel="Create an event"
+          onAction={createEvent}
+        />
+      ) : (
+        <TileGrid>
+          <AddTileCard label="New Event" onPress={createEvent} />
+          {hosting.map((event) => (
+            <EventCard key={event.id} event={event} onPress={() => openEvent(event.id)} />
+          ))}
+        </TileGrid>
+      )}
+
+      {invited.length > 0 && (
+        <>
+          <SectionHeader title="Invited" meta={invited.length} />
+          <TileGrid>
+            {invited.map((event) => (
+              <EventCard
+                key={event.id}
+                event={event}
+                rsvp={event.my_rsvp_status}
+                onPress={() => openEvent(event.id)}
+              />
+            ))}
+          </TileGrid>
+        </>
       )}
     </FloatingHeaderLayout>
   );

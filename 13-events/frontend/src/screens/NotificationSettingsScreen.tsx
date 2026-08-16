@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Switch } from 'react-native';
+import AppSwitch from '../components/AppSwitch';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import NOTIFICATION_TYPE_ICON from '../constants/notificationTypeIcons';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
@@ -25,7 +26,7 @@ type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
     (the four mute flags plus `email_notifications`). */
 type ToggleKey = keyof NotificationSettingsUpdate;
 
-/** The four toggleable notification types, in feed order. Each row is keyed
+/** The six toggleable notification types, in feed order. Each row is keyed
     by the TYPE; its mute field is derived as `mute_\${type}`, the same
     derivation the Lambda consumer runs, so the relationship the API layer
     documents is enforced here rather than restated. Icons come from the
@@ -39,6 +40,8 @@ const ROWS: {
   { type: 'wishlist_created', label: 'Wishlist created', description: 'When someone you follow creates a wishlist' },
   { type: 'wish_added', label: 'Wish added', description: 'When someone you follow adds a wish' },
   { type: 'wishlist_loved', label: 'Wishlist loved', description: 'When someone loves your wishlist' },
+  { type: 'event_created', label: 'Event created', description: 'When someone you follow creates an event' },
+  { type: 'event_invitation', label: 'Event invitations', description: "When you're invited to an event" },
 ];
 
 const muteKeyFor = (type: NotificationType): ToggleKey => `mute_${type}` as ToggleKey;
@@ -70,14 +73,7 @@ function ToggleRow({
         <Text style={styles.label}>{label}</Text>
         <Text style={styles.description}>{description}</Text>
       </View>
-      <Switch
-        value={value}
-        onValueChange={onToggle}
-        trackColor={{ false: Colors.lightGrey, true: Colors.primary }}
-        thumbColor={Colors.white}
-        ios_backgroundColor={Colors.lightGrey}
-        disabled={disabled}
-      />
+      <AppSwitch value={value} onValueChange={onToggle} disabled={disabled} />
     </View>
   );
 }

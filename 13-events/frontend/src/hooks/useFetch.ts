@@ -5,7 +5,9 @@ import { useFocusEffect } from '@react-navigation/native';
  * Fetch once on mount — or on every screen focus with `refetchOnFocus`
  * (screens whose data other screens can change, like Home after Settings
  * edits a profile). Ignores results after unmount; exposes the value, a
- * human-readable error, and whether a request is in flight.
+ * human-readable error, whether a request is in flight, and a `refetch` to
+ * re-pull in place after an on-screen mutation (an RSVP or an invite whose
+ * server-computed result can't be reconstructed client-side).
  */
 export default function useFetch<T>(
   fetcher: () => Promise<T>,
@@ -53,5 +55,5 @@ export default function useFetch<T>(
     }, [refetchOnFocus, run])
   );
 
-  return { data, error, loading };
+  return { data, error, loading, refetch: run };
 }

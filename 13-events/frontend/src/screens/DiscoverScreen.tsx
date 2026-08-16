@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useAppNavigation } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import SectionHeader from '../components/SectionHeader';
@@ -7,13 +7,9 @@ import FormInput from '../components/FormInput';
 import UserRow from '../components/UserRow';
 import WishlistRail from '../components/WishlistRail';
 import useFetch from '../hooks/useFetch';
-import { searchUsers, fetchPopularUsers, fetchPopularWishlists } from '../services/api';
+import useUserSearch from '../hooks/useUserSearch';
+import { fetchPopularUsers, fetchPopularWishlists } from '../services/api';
 import { pluralize } from '../utils/pluralize';
-import type { User } from '../services/api';
-
-/** How long the box sits still before a search fires: one request per pause,
-    not per keystroke. */
-const SEARCH_DEBOUNCE_MS = 300;
 
 /**
  * Discover: find people to follow and wishlists to love. An empty box shows a
@@ -23,26 +19,9 @@ const SEARCH_DEBOUNCE_MS = 300;
  */
 export default function DiscoverScreen() {
   const navigation = useAppNavigation();
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<User[]>([]);
+  const { query, setQuery, results } = useUserSearch();
   const { data: popular } = useFetch(fetchPopularUsers);
   const { data: popularWishlists } = useFetch(fetchPopularWishlists);
-
-  // Debounced search: a trimmed query fires one request after the pause; an
-  // empty box clears results and falls back to the popular rail below.
-  useEffect(() => {
-    const trimmed = query.trim();
-    if (!trimmed) {
-      setResults([]);
-      return;
-    }
-    const timer = setTimeout(() => {
-      searchUsers(trimmed)
-        .then(setResults)
-        .catch(() => setResults([]));
-    }, SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [query]);
 
   const openProfile = (userId: string) =>
     navigation.navigate('UserProfile', { userId });

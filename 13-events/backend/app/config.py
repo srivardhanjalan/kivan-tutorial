@@ -79,6 +79,23 @@ class Settings(BaseSettings):
         return f"kivan-{self.environment}-notification-settings"
 
     @property
+    def events_table(self) -> str:
+        return f"kivan-{self.environment}-events"
+
+    @property
+    def event_hosts_table(self) -> str:
+        # Dashed name matches infra/dynamodb.tf (aws_dynamodb_table.event_hosts)
+        return f"kivan-{self.environment}-event-hosts"
+
+    @property
+    def event_invitees_table(self) -> str:
+        return f"kivan-{self.environment}-event-invitees"
+
+    @property
+    def event_wishlists_table(self) -> str:
+        return f"kivan-{self.environment}-event-wishlists"
+
+    @property
     def followers_table(self) -> str:
         return f"kivan-{self.environment}-followers"
 

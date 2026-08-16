@@ -10,6 +10,8 @@ import SignUpScreen from '../screens/SignUpScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import WishlistFormScreen from '../screens/WishlistFormScreen';
 import WishlistDetailScreen from '../screens/WishlistDetailScreen';
+import EventFormScreen from '../screens/EventFormScreen';
+import EventDetailScreen from '../screens/EventDetailScreen';
 import WishFormScreen from '../screens/WishFormScreen';
 import WishDetailScreen from '../screens/WishDetailScreen';
 import StorefrontDetailScreen from '../screens/StorefrontDetailScreen';
@@ -24,7 +26,7 @@ import {
   fetchOnboardingCompleted,
   completeOnboarding,
 } from '../services/api';
-import type { Wishlist, Wish, Storefront, Product, Brand } from '../services/api';
+import type { Wishlist, Wish, Storefront, Product, Brand, Event } from '../services/api';
 
 /** The signed-in stack: the tab shell, plus every screen pushed over it */
 export type RootStackParamList = {
@@ -38,6 +40,9 @@ export type RootStackParamList = {
   /** Create (wishlist only) or edit (the wish) one wish */
   WishForm: { wishlistId: string; wish?: Wish };
   WishDetail: { wishId: string };
+  /** Create (no param) or edit (the event) one event */
+  EventForm: { event?: Event };
+  EventDetail: { eventId: string };
   /** One curated store's products (the store is passed, not refetched) */
   StorefrontDetail: { storefront: Storefront };
   /** One catalog product, with the add-to-wishlist action */
@@ -120,6 +125,8 @@ export default function Navigation() {
           <Stack.Screen name="WishlistDetail" component={WishlistDetailScreen} />
           <Stack.Screen name="WishForm" component={WishFormScreen} />
           <Stack.Screen name="WishDetail" component={WishDetailScreen} />
+          <Stack.Screen name="EventForm" component={EventFormScreen} />
+          <Stack.Screen name="EventDetail" component={EventDetailScreen} />
           <Stack.Screen name="StorefrontDetail" component={StorefrontDetailScreen} />
           <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
           <Stack.Screen name="Brands" component={BrandsScreen} />

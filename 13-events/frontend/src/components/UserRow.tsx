@@ -1,12 +1,7 @@
 import React from 'react';
-import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
-import Avatar, { LIST_ROW_AVATAR_SIZE } from './Avatar';
+import PersonRow from './PersonRow';
 import { userDisplayName } from '../utils/userName';
-import Typography from '../constants/Typography';
-import Opacity from '../constants/Opacity';
-import { Spacing } from '../constants/ScreenStyles';
 import type { User } from '../services/api';
-
 
 interface UserRowProps {
   user: Pick<User, 'first_name' | 'last_name' | 'email' | 'image_url'>;
@@ -16,49 +11,17 @@ interface UserRowProps {
 }
 
 /**
- * One tappable person in a list: avatar, name, and an optional muted subtitle.
- * The shared row behind Discover's search results and the followers/following
- * lists, so a person looks the same wherever they appear.
+ * A {@link PersonRow} for a `User`: it derives the display name and avatar so a
+ * person looks the same behind Discover's search results and the
+ * followers/following lists.
  */
 const UserRow: React.FC<UserRowProps> = ({ user, onPress, subtitle }) => (
-  <TouchableOpacity
+  <PersonRow
+    imageUrl={user.image_url}
+    name={userDisplayName(user)}
+    subtitle={subtitle}
     onPress={onPress}
-    activeOpacity={Opacity.pressed}
-    accessibilityRole="button"
-    accessibilityLabel={userDisplayName(user)}
-    style={styles.row}
-  >
-    <Avatar imageUrl={user.image_url} name={userDisplayName(user)} size={LIST_ROW_AVATAR_SIZE} />
-    <View style={styles.text}>
-      <Text style={styles.name} numberOfLines={1}>
-        {userDisplayName(user)}
-      </Text>
-      {subtitle !== undefined && (
-        <Text style={styles.subtitle} numberOfLines={1}>
-          {subtitle}
-        </Text>
-      )}
-    </View>
-  </TouchableOpacity>
+  />
 );
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    paddingVertical: Spacing.sm,
-  },
-  text: {
-    flex: 1,
-  },
-  name: {
-    ...Typography.bodySecondaryStrong,
-  },
-  subtitle: {
-    ...Typography.bodySecondary,
-    marginTop: Spacing.hairlineGap,
-  },
-});
 
 export default UserRow;

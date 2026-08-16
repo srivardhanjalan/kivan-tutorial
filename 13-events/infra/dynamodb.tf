@@ -324,6 +324,140 @@ resource "aws_dynamodb_table" "notifications" {
   }
 }
 
+# Events table (step 13): one row per occasion. Hash id for the single-event
+# reads/writes. The only index is PublicEventsIndex, the discovery feed:
+# booleans can't be GSI keys, so a public event carries a sparse
+# public_marker = "PUBLIC" (absent on private events, so the index holds public
+# rows only) and is read newest-first by created_at. There is deliberately NO
+# by-creator index: "events I created" is a subset of "events I host" (the
+# creator is auto-inserted as a host), so it is served by event_hosts'
+# UserIdIndex; a created_by GSI here would be a second write with no reader.
+resource "aws_dynamodb_table" "events" {
+  name         = "${local.project_name}-${local.environment}-events"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "id"
+
+  attribute {
+    name = "id"
+    type = "S"
+  }
+
+  # Sparse discovery-feed key: present only on public events (see above).
+  attribute {
+    name = "public_marker"
+    type = "S"
+  }
+
+  # ISO timestamp, the range key the public feed sorts by (lexical =
+  # chronological).
+  attribute {
+    name = "created_at"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name            = "PublicEventsIndex"
+    hash_key        = "public_marker"
+    range_key       = "created_at"
+    projection_type = "ALL"
+  }
+
+  tags = {
+    Name = "${local.project_name}-${local.environment}-events"
+  }
+}
+
+# Event-hosts table (step 13): one row per host edge, keyed
+# (event_id, user_id): "who hosts this event" is a base-table Query, and "am I a
+# host" a direct GetItem. UserIdIndex flips the edge (hash user_id) to answer
+# "events I host", which is exactly GET /events/me's hosting list.
+resource "aws_dynamodb_table" "event_hosts" {
+  name         = "${local.project_name}-${local.environment}-event-hosts"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "event_id"
+  range_key    = "user_id"
+
+  attribute {
+    name = "event_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name            = "UserIdIndex"
+    hash_key        = "user_id"
+    range_key       = "event_id"
+    projection_type = "ALL"
+  }
+
+  tags = {
+    Name = "${local.project_name}-${local.environment}-event-hosts"
+  }
+}
+
+# Event-invitees table (step 13): one row per invite, keyed
+# (event_id, invitee_id) where invitee_id is EITHER a user id OR a raw email
+# address (an invite can be addressed to someone before they have an account).
+# InviteeIdIndex flips the edge (hash invitee_id) so GET /events/me can gather
+# "events I'm invited to" by BOTH my user id and my email in one Query each.
+resource "aws_dynamodb_table" "event_invitees" {
+  name         = "${local.project_name}-${local.environment}-event-invitees"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "event_id"
+  range_key    = "invitee_id"
+
+  attribute {
+    name = "event_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "invitee_id"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name            = "InviteeIdIndex"
+    hash_key        = "invitee_id"
+    range_key       = "event_id"
+    projection_type = "ALL"
+  }
+
+  tags = {
+    Name = "${local.project_name}-${local.environment}-event-invitees"
+  }
+}
+
+# Event-wishlists table (step 13): one row per link, keyed
+# (event_id, wishlist_id): an event's linked wishlists are a base-table Query,
+# and "is this wishlist already linked" a direct GetItem. No GSI: nothing reads
+# the reverse direction ("which events is this wishlist in") this step, so a
+# by-wishlist index would be a second write with no reader.
+resource "aws_dynamodb_table" "event_wishlists" {
+  name         = "${local.project_name}-${local.environment}-event-wishlists"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "event_id"
+  range_key    = "wishlist_id"
+
+  attribute {
+    name = "event_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "wishlist_id"
+    type = "S"
+  }
+
+  tags = {
+    Name = "${local.project_name}-${local.environment}-event-wishlists"
+  }
+}
+
 # Notification-settings table (step 11) — one row per user, their per-type mute
 # preferences. Keyed by user_id and read/written by a direct GetItem/UpdateItem;
 # no GSI (nothing lists settings, they're always fetched by the owner).

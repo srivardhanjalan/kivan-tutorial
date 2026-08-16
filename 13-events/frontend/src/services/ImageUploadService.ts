@@ -21,6 +21,8 @@ const ASPECT_BY_TYPE: Record<ResourceType, [number, number]> = {
   cover_photo: [16, 9],
   wishlist_photo: [1, 1],
   wish_photo: [1, 1],
+  // The event cover renders as a wide banner on the detail hero
+  event_photo: [16, 9],
 };
 
 /**

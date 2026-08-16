@@ -1,11 +1,9 @@
 import React from 'react';
-import { Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
 import useLifeEvents from '../hooks/useLifeEvents';
+import SelectablePill from './SelectablePill';
 import Colors from '../constants/Colors';
-import BorderRadius from '../constants/BorderRadius';
-import Typography from '../constants/Typography';
-import Opacity from '../constants/Opacity';
-import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
+import { Spacing } from '../constants/ScreenStyles';
 
 interface LifeEventSelectorProps {
   /** The chosen life-event id, or undefined for none */
@@ -15,8 +13,8 @@ interface LifeEventSelectorProps {
 
 /**
  * A single-select row of life-event chips (emoji + name) the user tags a
- * wishlist with — it fetches the taxonomy itself and lays the chips out in a
- * horizontal scroller. The selected chip fills with the brand accent.
+ * wishlist with: it fetches the taxonomy itself and lays the chips out in a
+ * horizontal scroller, each chip the shared SelectablePill.
  */
 const LifeEventSelector: React.FC<LifeEventSelectorProps> = ({ selectedId, onSelect }) => {
   const { lifeEvents, loading } = useLifeEvents();
@@ -31,23 +29,15 @@ const LifeEventSelector: React.FC<LifeEventSelectorProps> = ({ selectedId, onSel
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.row}
     >
-      {(lifeEvents ?? []).map((event) => {
-        const selected = event.id === selectedId;
-        return (
-          <TouchableOpacity
-            key={event.id}
-            onPress={() => onSelect(event.id)}
-            activeOpacity={Opacity.pressed}
-            accessibilityRole="button"
-            accessibilityState={{ selected }}
-            accessibilityLabel={event.name}
-            style={[styles.chip, selected ? styles.chipSelected : CommonScreenStyles.outlinedPill]}
-          >
-            {event.icon && <Text style={styles.emoji}>{event.icon}</Text>}
-            <Text style={[styles.label, selected && styles.labelSelected]}>{event.name}</Text>
-          </TouchableOpacity>
-        );
-      })}
+      {(lifeEvents ?? []).map((event) => (
+        <SelectablePill
+          key={event.id}
+          label={event.name}
+          emoji={event.icon || undefined}
+          selected={event.id === selectedId}
+          onPress={() => onSelect(event.id)}
+        />
+      ))}
     </ScrollView>
   );
 };
@@ -60,26 +50,6 @@ const styles = StyleSheet.create({
   row: {
     gap: Spacing.sm,
     paddingVertical: Spacing.sm,
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-  },
-  chipSelected: {
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.full,
-  },
-  emoji: {
-    fontSize: Typography.body.fontSize,
-  },
-  label: {
-    ...Typography.bodySecondaryStrong,
-  },
-  labelSelected: {
-    color: Colors.white,
   },
 });
 

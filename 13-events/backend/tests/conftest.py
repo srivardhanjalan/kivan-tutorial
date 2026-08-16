@@ -42,11 +42,15 @@ WISHLISTS_TABLE = f"kivan-{ENVIRONMENT}-wishlists"
 FOLLOWERS_TABLE = f"kivan-{ENVIRONMENT}-followers"
 WISHLIST_LOVES_TABLE = f"kivan-{ENVIRONMENT}-wishlist-loves"
 NOTIFICATION_SETTINGS_TABLE = f"kivan-{ENVIRONMENT}-notification-settings"
+EVENTS_TABLE = f"kivan-{ENVIRONMENT}-events"
+EVENT_HOSTS_TABLE = f"kivan-{ENVIRONMENT}-event-hosts"
+EVENT_INVITEES_TABLE = f"kivan-{ENVIRONMENT}-event-invitees"
+EVENT_WISHLISTS_TABLE = f"kivan-{ENVIRONMENT}-event-wishlists"
 
 
 def _create_tables(client) -> None:
-    """Create exactly the five tables the tested routes touch, each a faithful
-    copy of its infra/dynamodb.tf definition. Reference tables (life-events,
+    """Create exactly the tables the tested routes touch, each a faithful copy
+    of its infra/dynamodb.tf definition. Reference tables (life-events,
     storefronts, brands, products) and the wishes/notifications tables are
     omitted: no code path under test reads them, and a table without a caller is
     bloat here just as it would be in the app."""
@@ -156,11 +160,96 @@ def _create_tables(client) -> None:
         AttributeDefinitions=[{"AttributeName": "user_id", "AttributeType": "S"}],
         KeySchema=[{"AttributeName": "user_id", "KeyType": "HASH"}],
     )
+    # Events (step 13): hash id; the sparse PublicEventsIndex is the discovery
+    # feed (public_marker present only on public events, sorted by created_at).
+    client.create_table(
+        TableName=EVENTS_TABLE,
+        BillingMode="PAY_PER_REQUEST",
+        AttributeDefinitions=[
+            {"AttributeName": "id", "AttributeType": "S"},
+            {"AttributeName": "public_marker", "AttributeType": "S"},
+            {"AttributeName": "created_at", "AttributeType": "S"},
+        ],
+        KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
+        GlobalSecondaryIndexes=[
+            {
+                "IndexName": "PublicEventsIndex",
+                "KeySchema": [
+                    {"AttributeName": "public_marker", "KeyType": "HASH"},
+                    {"AttributeName": "created_at", "KeyType": "RANGE"},
+                ],
+                "Projection": {"ProjectionType": "ALL"},
+            },
+        ],
+    )
+    # Event hosts: one row per host edge, keyed (event_id, user_id); UserIdIndex
+    # flips it to "events I host" for GET /events/me.
+    client.create_table(
+        TableName=EVENT_HOSTS_TABLE,
+        BillingMode="PAY_PER_REQUEST",
+        AttributeDefinitions=[
+            {"AttributeName": "event_id", "AttributeType": "S"},
+            {"AttributeName": "user_id", "AttributeType": "S"},
+        ],
+        KeySchema=[
+            {"AttributeName": "event_id", "KeyType": "HASH"},
+            {"AttributeName": "user_id", "KeyType": "RANGE"},
+        ],
+        GlobalSecondaryIndexes=[
+            {
+                "IndexName": "UserIdIndex",
+                "KeySchema": [
+                    {"AttributeName": "user_id", "KeyType": "HASH"},
+                    {"AttributeName": "event_id", "KeyType": "RANGE"},
+                ],
+                "Projection": {"ProjectionType": "ALL"},
+            },
+        ],
+    )
+    # Event invitees: one row per invite, keyed (event_id, invitee_id) where
+    # invitee_id is a user id OR an email; InviteeIdIndex answers "events I'm
+    # invited to" (by id and by email) for GET /events/me.
+    client.create_table(
+        TableName=EVENT_INVITEES_TABLE,
+        BillingMode="PAY_PER_REQUEST",
+        AttributeDefinitions=[
+            {"AttributeName": "event_id", "AttributeType": "S"},
+            {"AttributeName": "invitee_id", "AttributeType": "S"},
+        ],
+        KeySchema=[
+            {"AttributeName": "event_id", "KeyType": "HASH"},
+            {"AttributeName": "invitee_id", "KeyType": "RANGE"},
+        ],
+        GlobalSecondaryIndexes=[
+            {
+                "IndexName": "InviteeIdIndex",
+                "KeySchema": [
+                    {"AttributeName": "invitee_id", "KeyType": "HASH"},
+                    {"AttributeName": "event_id", "KeyType": "RANGE"},
+                ],
+                "Projection": {"ProjectionType": "ALL"},
+            },
+        ],
+    )
+    # Event-wishlist links: one row per link, keyed (event_id, wishlist_id); no
+    # GSI (an event's links are a base-table Query, the only direction read).
+    client.create_table(
+        TableName=EVENT_WISHLISTS_TABLE,
+        BillingMode="PAY_PER_REQUEST",
+        AttributeDefinitions=[
+            {"AttributeName": "event_id", "AttributeType": "S"},
+            {"AttributeName": "wishlist_id", "AttributeType": "S"},
+        ],
+        KeySchema=[
+            {"AttributeName": "event_id", "KeyType": "HASH"},
+            {"AttributeName": "wishlist_id", "KeyType": "RANGE"},
+        ],
+    )
 
 
 @pytest.fixture
 def aws(monkeypatch):
-    """A fresh moto backend with the five tables, torn down after each test.
+    """A fresh moto backend with the app tables, torn down after each test.
 
     Also clears the module-level provisioning cache: it is process-lifetime, so
     a user id remembered by one test would let ensure_user_provisioned skip the

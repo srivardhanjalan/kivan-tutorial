@@ -1,18 +1,14 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
-import FieldLabel from '../components/FieldLabel';
-import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
+import FormScreenScaffold from '../components/layouts/FormScreenScaffold';
 import FormInput from '../components/FormInput';
-import LifeEventSelector from '../components/LifeEventSelector';
+import LifeEventField from '../components/LifeEventField';
 import ImageUploadField from '../components/ImageUploadField';
-import PrimaryButton from '../components/PrimaryButton';
 import { useToast } from '../components/ToastProvider';
 import useAsyncAction from '../hooks/useAsyncAction';
 import { usePendingImageUpload } from '../hooks/usePendingImageUpload';
 import { createWishlist, updateWishlist } from '../services/api';
 import type { WishlistCreate } from '../services/api';
-import { Spacing } from '../constants/ScreenStyles';
 
 /**
  * One form for both creating and editing a wishlist — the passed wishlist (if
@@ -57,34 +53,20 @@ export default function WishlistFormScreen() {
   };
 
   return (
-    <FloatingHeaderLayout
-      title={wishlist ? 'Edit Wishlist' : 'New Wishlist'}
-      showBack
+    <FormScreenScaffold
+      editing={!!wishlist}
+      noun="Wishlist"
+      submitLabel="Create Wishlist"
+      onSubmit={save}
+      saving={saving}
     >
       {/* maxLength mirrors the backend cap so an overlong paste truncates
           here instead of bouncing off validation with a generic toast */}
       <FormInput value={name} placeholder="Wishlist name" onChangeText={setName} maxLength={200} />
 
-      <FieldLabel>Life event</FieldLabel>
-      {/* The selector isn't a FormInput — it carries no margin of its own, so
-          the block spacing to the image field below lives here */}
-      <View style={styles.selector}>
-        <LifeEventSelector selectedId={lifeEventId} onSelect={setLifeEventId} />
-      </View>
+      <LifeEventField selectedId={lifeEventId} onSelect={setLifeEventId} />
 
       <ImageUploadField label="Wishlist image" upload={photo} />
-
-      <PrimaryButton
-        title={wishlist ? 'Save Changes' : 'Create Wishlist'}
-        onPress={save}
-        loading={saving}
-      />
-    </FloatingHeaderLayout>
+    </FormScreenScaffold>
   );
 }
-
-const styles = StyleSheet.create({
-  selector: {
-    marginBottom: Spacing.lg,
-  },
-});

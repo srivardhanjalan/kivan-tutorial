@@ -9,6 +9,7 @@ from boto3.dynamodb.conditions import Attr, Key
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.database import (
+    events_table,
     notification_settings_table,
     notifications_table,
     users_table,
@@ -32,21 +33,25 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 # A notification's resource_type maps to the table that holds its display
-# record. The tap-through targets this step covers: a follow/love opens a user
-# or wishlist, a new wish opens the wish.
+# record. The tap-through targets: a follow/love opens a user or wishlist, a new
+# wish opens the wish, an event notification (created or invitation) opens the
+# event.
 _RESOURCE_TABLES = {
     "wishlist": wishlists_table,
     "wish": wishes_table,
     "user": users_table,
+    "event": events_table,
 }
 
-# The four mute flags a user can toggle. Each name matches the Lambda consumer's
+# The six mute flags a user can toggle. Each name matches the Lambda consumer's
 # f"mute_{notification_type}" derivation exactly.
 _MUTE_FIELDS = (
     "mute_follow",
     "mute_wishlist_created",
     "mute_wish_added",
     "mute_wishlist_loved",
+    "mute_event_created",
+    "mute_event_invitation",
 )
 
 # Every writable settings field: the four mutes plus the email-copies toggle.

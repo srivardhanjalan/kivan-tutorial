@@ -296,3 +296,200 @@ pass must NOT "restore" the source's simpler-but-worse shape.
       *tutorial:* the same single template (no per-type subjects or bodies were
       invented). Not a divergence; recorded so a later step does not mistake the
       generic body for a gap to fill unless the finished design asks for it.
+
+## Events (step 13, phase A)
+
+Step 13 lands the events feature. Phase A ships the data model, core CRUD, and
+wishlist linking; the invitee/RSVP surfaces and the notification legs (with
+their own divergences) follow in later phases. As with notifications, some of
+what phase A records is deliberate BACKEND divergence the polish pass must NOT
+"restore".
+
+Backend (deliberate, do-not-restore):
+
+- [ ] Two source GSIs omitted for want of a reader. *source:* the events table
+      carries a `CreatedByIndex` and the event-wishlists join carries a
+      `WishlistIdIndex`. *tutorial:* neither is created: "events I created" is a
+      subset of "events I host" (the creator is auto-inserted as a host), served
+      by `event_hosts.UserIdIndex`, and the join is only ever read by `event_id`.
+      A GSI is a second write; keep them omitted until a query needs them.
+- [ ] Field-scoped, guarded event update. *source:* PUT reads the item, mutates
+      it in memory, and `put_item`s the whole thing back (a full-item rewrite
+      that can revert a field a concurrent host just changed). *tutorial:* an
+      `update_item` sets only the fields the body carries, guarded by
+      `attribute_exists(id)`, and re-asserts the sparse `public_marker`
+      (SET on public, REMOVE on private) so the discovery index never drifts.
+      Keep the field-scoped write.
+- [ ] Retry-safe delete cascade order. *source:* deletes the event row FIRST,
+      then its child rows (an interrupted cascade orphans hosts/invitees/links
+      with no event to find them by). *tutorial:* deletes the cover object and
+      the child rows first, the event row LAST, so an interrupted cascade leaves
+      only states a retry can finish (the wishlist-cascade discipline). Keep the
+      order.
+- [ ] Public feed pagination is an in-Python slice (parity note / simpler
+      idiom). *source & tutorial:* both Query the sparse `PublicEventsIndex` for
+      every page, then slice `[offset:offset+limit]` in Python: honest and one
+      partition while the public feed is small. Recorded so polish does not
+      mistake it for a bug; the convergence is a real cursor when the feed
+      outgrows a screen's worth of pages.
+- [ ] `event_type` is an unvalidated free string (parity note). *source &
+      tutorial:* the event's life-event id is stored verbatim and never checked
+      against the life-events table, exactly the laxness a wishlist's
+      `life_event_id` carries. Not a defect to "fix"; an unknown id just renders
+      the neutral wash client-side.
+
+Frontend (visual/workflow convergence, behavior held):
+
+- [ ] One event form for create and edit. *source:* a `CreateEventScreen`
+      (with a REQUIRED single-select wishlist grid and a co-host
+      `UserPickerSection`) and a separate `EventSettingsScreen` (edit plus
+      delete). *tutorial:* one `EventFormScreen` for both (the wishlist-form
+      idiom), an OPTIONAL wishlist link via a `SelectableList` on create, and no
+      co-host picker (co-hosts arrive with the invitee surfaces). Delete lives on
+      the detail screen, and the CTA is an inline `PrimaryButton` that goes back
+      on save, exactly the wishlist-form divergences above (pinned `EditorLayout`
+      CTA, `replace`-into-detail, delete-in-settings). Both reachable; placement
+      and merge only.
+- [ ] Date entry is a plain text field. *source:* a `DatePickerField` (a real
+      datetime picker). *tutorial:* a `FormInput` with a `YYYY-MM-DD` placeholder
+      this step; the app carries no date-picker dependency yet, and
+      `formatEventDate` reads the stored value defensively. Polish brings a
+      picker.
+- [ ] Privacy control. *source:* a `PrivacySelector`. *tutorial:* a labeled RN
+      `Switch` ("Public event"), the notification-settings toggle idiom.
+- [ ] Event detail. *source:* a cover BAND with location/type/date badges, an
+      RSVP button and modal, a guests view, overlapping host avatars, invite
+      modals, a share action, and a `WishlistCardGrid` + masonry `WishCard`
+      view. *tutorial:* an `ArtTile` pastel/image hero, plain type/date/location
+      and "Hosted by" text rows, the linked wishlists as a read-only
+      `WishlistGrid`, and host-only edit/delete in the header. RSVP, guests,
+      invites, and share arrive in later phases.
+- [ ] Event card and My Stuff surfacing. *source:* an `EventRailCard`, a
+      full-width duotone-gradient banner with a date chip and a Hosting/Invited
+      pill, listed vertically. *tutorial:* an `EventCard` (`ArtTileCard`) washed
+      in the event type's pastel with the date as its subtitle, in the My Stuff
+      `TileGrid` behind a "New Event" add tile; hosting only this step (invited
+      surfaces with RSVP).
+
+## Events (step 13, phase B)
+
+Phase B adds invitees and RSVP: the invite routes (create-time and add-later),
+the RSVP PATCH, and the detail-screen Guests view with its invite flow. The
+notification legs still wait for phase C. As with phase A, some of what phase B
+records is deliberate divergence the polish pass must NOT "restore".
+
+Backend (deliberate, do-not-restore):
+
+- [ ] No standalone `GET /events/{id}/invitees` route. *source:* a
+      `GET /events/{id}/invitees` returning raw `EventInvitee` rows, plus a
+      `getEventInvitees` API client method. *tutorial:* neither exists. The
+      detail response already carries the user-enriched invitees the Guests list
+      needs, and the source's client method had NO caller (its own
+      EventDetailScreen reads the detail's invitees). One invitee list, one
+      place; keep it folded into the detail response.
+- [ ] One shared add-invitees helper. *source:* `create_event` and the
+      add-invitees route each duplicate the user/email split (batch-validate
+      ids, write user rows, write email rows). *tutorial:* one `add_invitees`
+      helper (with `_is_invited` / `_put_invitee`) that both create-time and
+      add-later call, so the split lives once (the step-13 study flagged the
+      duplication). Keep it unified.
+- [ ] RSVP status validated at the model boundary. *source:* the PATCH route
+      hand-checks `rsvp_status` against a list and raises 400. *tutorial:*
+      `UpdateRsvpRequest.rsvp_status` is a `Literal["going","maybe","not_going"]`,
+      so an out-of-set value is a 422 at the boundary and the route carries no
+      validation branch. Behavior note: an invalid status is now 422, not 400.
+      Keep the Literal.
+- [ ] No notification calls yet (deferred to phase C, not a placeholder).
+      *source:* `create_event` and `add_event_invitees` call
+      `notify_event_invitation`. *tutorial:* neither call exists in phase B, and
+      there is no dead placeholder hook; phase C adds the calls at the real
+      sites and `add_invitees` will thread out the newly-added user ids then (it
+      returns None for now). Restore in phase C, not before.
+- [ ] `is_invitee` derived; `is_event_invitee` removed. *source:* a separate
+      `is_event_invitee` helper does targeted GetItems for the detail access
+      gate. *tutorial:* `get_enriched_invitees` already reads the invitee list
+      for the Guests view and reports `my_rsvp_status`, and `is_invitee` falls
+      out of it (None means not invited), so the standalone helper was orphaned
+      and deleted. Keep it derived.
+
+Frontend (visual/workflow convergence, behavior held):
+
+- [ ] RSVP is an inline chip row, not a modal. *source:* a four-state RSVP
+      button that auto-opens a Going/Maybe/Can't Go modal ~500ms after load for
+      pending invitees. *tutorial:* an always-visible `RsvpControl` chip row
+      (the life-event-selector chip look) under a "Your RSVP" header, no modal
+      and no timer. Both set the same RSVP.
+- [ ] One invite modal, and no "emailed" claim. *source:* separate add-invitee
+      and invite-by-email modals, with a toast "Invitation emailed to X".
+      *tutorial:* one `InviteGuestModal` on the shared `ModalCard`/`AddToWishlist`
+      surface, carrying the Discover user search and an email field; the email
+      toast reads "Invited X" because NO mail is sent to an email invitee (the
+      study's negative result), so the source's copy would lie. Keep the truthful
+      copy.
+- [ ] Guest list is a stacked section, not a view toggle. *source:* a
+      wishes/guests segmented toggle swaps the body between a `WishlistCardGrid`
+      and the guest list, whose rows carry overlapping-avatar host chrome.
+      *tutorial:* Guests and Wishlists are both plain stacked sections
+      (`SectionHeader` + rows); `EventGuestList` is Avatar + name + RSVP rows
+      with a host-only remove. Non-hosts still see only "going" guests (behavior
+      held).
+- [ ] My Stuff invited surfacing. *source:* hosting and invited merged in one
+      list, each `EventRailCard` carrying a Hosting/Invited pill. *tutorial:* a
+      separate "Invited" section shown only when non-empty (no empty prompt to
+      plan someone else's event), `EventCard` tiles whose subtitle appends my
+      RSVP ("Sep 1, 2026 · Going"). The `RSVP_LABEL` map is shared between the
+      guest list and the tile so the wording can't drift.
+- [ ] `useFetch` gained a `refetch`. *note:* `useFetch` now returns `refetch`
+      (its existing `run`), so EventDetailScreen can re-pull the detail after an
+      on-screen RSVP, invite, or remove whose server-computed result
+      (`my_rsvp_status`, `is_invitee`, enriched invitees) can't be reconstructed
+      client-side. Additive; existing callers are untouched.
+
+## Events (step 13, phase C)
+
+Phase C wires the two event notification types (`event_created`,
+`event_invitation`) into the four-type system: producers, mute fields, the
+settings rows, the feed icons/colors, and the tap-through. The phase-B deferral
+("no notification calls yet, restore in phase C") is now fulfilled. As before,
+some of what phase C records is deliberate divergence the polish pass must NOT
+"restore".
+
+Backend (deliberate, do-not-restore):
+
+- [ ] Invitation notify fires from the ONE shared `add_invitees` helper.
+      *source:* `create_event` and `add_event_invitees` each build a
+      `user_invitee_ids_added` list and call `notify_event_invitation` at two
+      duplicated sites. *tutorial:* the single `add_invitees` helper collects the
+      user invitees it actually wrote and fires the notification once, so both
+      create-time and add-later paths notify from one place (and only NEWLY
+      written invitees are notified, so a re-invite is silent). Keep it unified.
+- [ ] Producer names match the sibling convention. *source:*
+      `notify_followers_event_created`. *tutorial:* `notify_event_created`,
+      alongside `notify_wishlist_created` / `notify_wish_added` (one naming
+      shape for every fan-out producer). Keep the short name.
+- [ ] No per-type email templates. *source:* the Lambda mails ONE generic
+      template for every type (subject "You have a new notification on Kivan",
+      body = the message plus a humanized type label); there is no event-specific
+      subject/body anywhere. *tutorial:* identical, so the two event types need
+      zero Lambda change and mail exactly like the other four. Do NOT add
+      per-type event copy in polish; the feature never had it.
+- [ ] Consumer untouched, no new Lambda grant. *source & tutorial:* the consumer
+      is type-agnostic (writes any type, mutes by `f"mute_{type}"`). Resource
+      enrichment for the event tap-through (`{id, type, name}`) is added on the
+      backend read side (`_RESOURCE_TABLES` gains `event`), which already has
+      events-table access. The Lambda gets no events-table read. Keep it there.
+
+Frontend (visual/workflow convergence, behavior held):
+
+- [ ] Notification-type colors are tokens, not literals. *source:* the feed
+      hardcodes `#2196F3` (event_created) and `#9C27B0` (event_invitation) inline.
+      *tutorial:* `Colors.notifyEventCreated` / `Colors.notifyEventInvitation`,
+      matching the existing `notify*` accent tokens. Keep the tokens.
+- [ ] No dead `resource.event_id` fallback in the tap. *source:* the feed reads
+      `notification.resource?.id || notification.resource?.event_id` for events.
+      *tutorial:* just `resource.id` (the backend resource only ever carries
+      `id`; the event IS the tap target, no secondary key). Keep the single read.
+- [ ] Six-type derivation property test. *note:* `test_notification_settings.py`
+      now asserts `f"mute_{type}"` is a real settings field AND a writable mute
+      for all six types with no orphans either way, locking the model, the route,
+      and the type list together. Additive.

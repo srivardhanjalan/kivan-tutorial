@@ -9,8 +9,9 @@ import { Spacing } from '../constants/ScreenStyles';
  * detail-hero height with a neutral wash, showing the item's photo or the
  * image-glyph placeholder when it has none. The wish detail and the product
  * detail lead with the identical block, so its height, wash, and placeholder
- * live here once instead of drifting between them. (The wishlist detail's hero
- * is a different flavor: a life-event pastel and emoji, so it stays bespoke.)
+ * live here once instead of drifting between them. (The wishlist and event
+ * details lead with a different flavor: a life-event pastel and glyph, which
+ * lives once in its sibling {@link LifeEventDetailHero}.)
  */
 const PhotoDetailHero: React.FC<{ imageUrl?: string | null }> = ({ imageUrl }) => (
   <ArtTile

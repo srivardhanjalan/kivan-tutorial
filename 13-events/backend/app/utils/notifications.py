@@ -3,7 +3,8 @@
 Each producer composes the human message (using the actor's name), works out
 who should hear about it, and hands an event to notification_queue for the
 Lambda consumer to write. Two shapes: a direct notification to one user (a
-follow, a love), and a fan-out to every follower (a new wishlist, a new wish).
+follow, a love), a fan-out to every follower (a new wishlist, a new wish, a new
+event), and a targeted fan-out to a chosen set (an event invitation).
 
 Every producer is best-effort by contract, wrapped so a notification failure
 never touches the action that triggered it — the call sites wrap them again,
@@ -119,6 +120,54 @@ def notify_wish_added(
             )
     except Exception as e:
         logger.error(f"Error creating wish_added notifications: {e}")
+
+
+def notify_event_created(actor_id: str, event_id: str, event_name: str) -> None:
+    """A user created an event: fan out to their followers, the same shape as
+    notify_wishlist_created. The event is the resource (resource_type "event"),
+    so the tap opens its detail screen. Public/private gating is step 14's job;
+    this step notifies unconditionally."""
+    try:
+        actor_name = _actor_name(actor_id)
+        if actor_name is None:
+            return
+        follower_ids = _get_follower_ids(actor_id)
+        if follower_ids:
+            publish_notification_event(
+                user_ids=follower_ids,
+                actor_id=actor_id,
+                notification_type="event_created",
+                message=f"{actor_name} created a new event: {event_name}",
+                resource_id=event_id,
+                resource_type="event",
+            )
+    except Exception as e:
+        logger.error(f"Error creating event_created notifications: {e}")
+
+
+def notify_event_invitation(
+    actor_id: str, event_id: str, event_name: str, invitee_ids: list[str]
+) -> None:
+    """A host invited people to an event: a targeted fan-out to the added USER
+    invitees only. Email invitees are never passed here: they have no account
+    to notify (an email invite is a bare DynamoDB row, claimed if that address
+    ever signs up). The event is the resource, so the tap opens its detail
+    screen."""
+    try:
+        actor_name = _actor_name(actor_id)
+        if actor_name is None:
+            return
+        if invitee_ids:
+            publish_notification_event(
+                user_ids=invitee_ids,
+                actor_id=actor_id,
+                notification_type="event_invitation",
+                message=f"{actor_name} invited you to an event: {event_name}",
+                resource_id=event_id,
+                resource_type="event",
+            )
+    except Exception as e:
+        logger.error(f"Error creating event_invitation notifications: {e}")
 
 
 def notify_wishlist_loved(actor_id: str, wishlist_id: str, owner_id: str) -> None:
