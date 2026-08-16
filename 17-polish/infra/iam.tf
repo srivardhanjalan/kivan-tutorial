@@ -1,0 +1,413 @@
+# IAM Role for App Runner ECR Access (pull images from ECR)
+resource "aws_iam_role" "apprunner_ecr_access" {
+  name = "${local.project_name}-apprunner-ecr-access-${local.environment}"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "build.apprunner.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${local.project_name}-apprunner-ecr-access-role"
+  }
+}
+
+# IAM Policy for App Runner to access ECR
+resource "aws_iam_role_policy" "apprunner_ecr_access" {
+  name = "${local.project_name}-apprunner-ecr-access-policy-${local.environment}"
+  role = aws_iam_role.apprunner_ecr_access.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        # The only ECR action that requires "*" — it issues the registry
+        # login token, not access to any repository
+        Effect   = "Allow"
+        Action   = ["ecr:GetAuthorizationToken"]
+        Resource = "*"
+      },
+      {
+        # Image pulls are scoped to this service's one repository
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:DescribeImages"
+        ]
+        Resource = aws_ecr_repository.backend.arn
+      }
+    ]
+  })
+}
+
+# IAM Policy for the running backend to resolve its secrets from SSM: the
+# Clerk key (JWKS + profile calls) and the Firecrawl key (the scrape proxy).
+# App Runner resolves runtime_environment_secrets through this one grant, so
+# both parameter ARNs are listed here.
+resource "aws_iam_role_policy" "apprunner_instance_ssm" {
+  name = "${local.project_name}-apprunner-ssm-policy-${local.environment}"
+  role = aws_iam_role.apprunner_instance.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["ssm:GetParameters"]
+        Resource = [
+          aws_ssm_parameter.clerk_secret_key.arn,
+          aws_ssm_parameter.firecrawl_api_key.arn
+        ]
+      }
+    ]
+  })
+}
+
+# IAM Policy for the running backend to reach its DynamoDB tables
+resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
+  name = "${local.project_name}-apprunner-dynamodb-policy-${local.environment}"
+  role = aws_iam_role.apprunner_instance.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        # Users: get/put/update by id (JIT provisioning + profile), plus the
+        # social reads step 10 adds: Query on the search/Discover GSIs,
+        # BatchGetItem to resolve a follower/following id list to user records,
+        # and UpdateItem for the denormalized follower/following counts.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:BatchGetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:Query"
+        ]
+        Resource = [
+          aws_dynamodb_table.users.arn,
+          "${aws_dynamodb_table.users.arn}/index/*"
+        ]
+      },
+      {
+        # Wishlists: get/put/delete by id, UpdateItem (guarded field-scoped
+        # updates, utils/dynamo.update_item_fields, and the denormalized
+        # love_count), Query on CreatedByIndex (GET /wishlists/me, a user's
+        # public wishlists, the account-deletion sweep), and BatchGetItem to
+        # resolve a loved-wishlist id list to records. Scan (step 15) backs the
+        # life-event referenced-delete guard, which Scans wishlists by
+        # life_event_id (no GSId on that soft reference) before retiring a
+        # life event.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:BatchGetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+          "dynamodb:Scan"
+        ]
+        Resource = [
+          aws_dynamodb_table.wishlists.arn,
+          "${aws_dynamodb_table.wishlists.arn}/index/*"
+        ]
+      },
+      {
+        # Wishlist owners (step 14): put/delete an owner edge, GetItem for "am I
+        # an owner" (the write gate), BatchGetItem to hydrate the owners list,
+        # Query on the base table (a wishlist's owners, the delete cascade) and
+        # UserIdIndex (wishlists I co-own), and BatchWriteItem for the cascade's
+        # batched deletes. Same access shape as event_hosts.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:BatchGetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+          "dynamodb:BatchWriteItem"
+        ]
+        Resource = [
+          aws_dynamodb_table.wishlist_owners.arn,
+          "${aws_dynamodb_table.wishlist_owners.arn}/index/*"
+        ]
+      },
+      {
+        # Notifications: the feed and unread count Query the
+        # UserNotificationsIndex, mark-read/read-all UpdateItem, delete
+        # DeleteItem, and the ownership check GetItem by id. The Lambda
+        # consumer writes the rows under its own role; this role never
+        # PutItems a notification.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query"
+        ]
+        Resource = [
+          aws_dynamodb_table.notifications.arn,
+          "${aws_dynamodb_table.notifications.arn}/index/*"
+        ]
+      },
+      {
+        # Notification settings: GET reads the row (GetItem), PUT upserts the
+        # mute flags (UpdateItem creates the row on first write). Keyed by the
+        # caller's own user_id; no index, no delete path.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:UpdateItem"
+        ]
+        Resource = [
+          aws_dynamodb_table.notification_settings.arn
+        ]
+      },
+      {
+        # Wishes: item CRUD (UpdateItem flips `completed`), Query on
+        # WishlistIdIndex (listing + cascade delete), BatchWriteItem for
+        # the cascade's batched deletes, and BatchGetItem for the
+        # notification feed's wish_added resource enrichment.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:BatchGetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+          "dynamodb:BatchWriteItem"
+        ]
+        Resource = [
+          aws_dynamodb_table.wishes.arn,
+          "${aws_dynamodb_table.wishes.arn}/index/*"
+        ]
+      },
+      {
+        # Life events (step 15 admin): GET /life-events Scans the taxonomy; the
+        # admin write side (POST/PUT/DELETE /admin/life-events, require_admin)
+        # runs under THIS role, so it also needs GetItem (the no-op-update read),
+        # PutItem (conditional create), UpdateItem (field edit) and DeleteItem
+        # (the referenced-delete). Seeding still writes under local developer
+        # credentials; these grants exist for the running admin routes. The E2E
+        # caught the write actions still withheld by a pre-step-15 comment after
+        # the admin catalog endpoints shipped.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:Scan",
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem"
+        ]
+        Resource = aws_dynamodb_table.life_events.arn
+      },
+      {
+        # Storefronts (step 15 admin): GET /storefronts Scans the catalog; the
+        # admin write side (POST/PUT/DELETE /admin/storefronts, require_admin)
+        # runs under THIS role and needs GetItem (get_item_or_404), PutItem
+        # (conditional create), UpdateItem (field edit AND the denormalized
+        # product_count adjust_count driven by the product routes) and DeleteItem
+        # (the empty-store delete). Seeding still writes under developer
+        # credentials; these grants exist for the running admin routes.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:Scan",
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem"
+        ]
+        Resource = aws_dynamodb_table.storefronts.arn
+      },
+      {
+        # Brands (step 15 admin): GET /brands Scans the directory; the admin
+        # write side (POST/PUT/DELETE /admin/brands, require_admin) runs under
+        # THIS role and needs GetItem (the no-op-update read), PutItem
+        # (conditional create), UpdateItem (field edit) and DeleteItem (the
+        # unguarded delete). Seeding still writes under developer credentials;
+        # these grants exist for the running admin routes.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:Scan",
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem"
+        ]
+        Resource = aws_dynamodb_table.brands.arn
+      },
+      {
+        # Products (step 15 admin): GET /storefronts/{id}/products Queries
+        # StorefrontIdIndex; the admin write side (POST/PUT/DELETE
+        # /admin/storefronts/{id}/products, require_admin) runs under THIS role
+        # and needs GetItem (get_item_or_404 / the product-under-store check),
+        # PutItem (conditional create), UpdateItem (field edit) and DeleteItem.
+        # Seeding still writes under developer credentials; these grants exist
+        # for the running admin routes.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:Query",
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem"
+        ]
+        Resource = [
+          aws_dynamodb_table.products.arn,
+          "${aws_dynamodb_table.products.arn}/index/*"
+        ]
+      },
+      {
+        # Followers: put/delete a follow edge, GetItem for "am I following X",
+        # and Query on both the base table (who X follows) and FollowingIndex
+        # (who follows X).
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query"
+        ]
+        Resource = [
+          aws_dynamodb_table.followers.arn,
+          "${aws_dynamodb_table.followers.arn}/index/*"
+        ]
+      },
+      {
+        # Wishlist loves: put/delete a love edge, GetItem for "do I love this",
+        # and Query on the base table (a user's loved wishlists). No GSI.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query"
+        ]
+        Resource = aws_dynamodb_table.wishlist_loves.arn
+      },
+      {
+        # Events (step 13): item CRUD (create PutItem, edit UpdateItem, delete
+        # DeleteItem, get GetItem), BatchGetItem to hydrate the /events/me id
+        # list, and Query on PublicEventsIndex (the public feed). Scan (step 15)
+        # backs the life-event referenced-delete guard, which Scans events by
+        # event_type (no GSI on that soft reference) before retiring a life event.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:BatchGetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+          "dynamodb:Scan"
+        ]
+        Resource = [
+          aws_dynamodb_table.events.arn,
+          "${aws_dynamodb_table.events.arn}/index/*"
+        ]
+      },
+      {
+        # Event hosts: put/delete a host edge, GetItem for "am I a host", Query
+        # on the base table (an event's hosts, the delete cascade) and
+        # UserIdIndex (events I host, for /events/me), and BatchWriteItem for the
+        # cascade's batched deletes.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+          "dynamodb:BatchWriteItem"
+        ]
+        Resource = [
+          aws_dynamodb_table.event_hosts.arn,
+          "${aws_dynamodb_table.event_hosts.arn}/index/*"
+        ]
+      },
+      {
+        # Event invitees: GetItem for the access check; Query on the base table
+        # (an event's invitees, the delete cascade) and InviteeIdIndex (events
+        # I'm invited to by id and by email, for /events/me); PutItem to add an
+        # invitee, UpdateItem for the RSVP PATCH, DeleteItem for a host's
+        # single remove; BatchWriteItem for the cascade. The E2E caught the
+        # write actions still withheld by a phase-A comment after the invitee
+        # endpoints shipped.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:Query",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:BatchWriteItem"
+        ]
+        Resource = [
+          aws_dynamodb_table.event_invitees.arn,
+          "${aws_dynamodb_table.event_invitees.arn}/index/*"
+        ]
+      },
+      {
+        # Event-wishlist links: put/delete a link, GetItem for "already linked",
+        # Query on the base table (an event's linked wishlists, the delete
+        # cascade), and BatchWriteItem for the cascade. No GSI on this table.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+          "dynamodb:BatchWriteItem"
+        ]
+        Resource = aws_dynamodb_table.event_wishlists.arn
+      }
+    ]
+  })
+}
+
+# IAM Policy for the running backend to publish notification events. The
+# producers only ever send_message (the queue URL is injected as an env var, so
+# nothing resolves it by name) — so SendMessage alone, scoped to the one queue.
+resource "aws_iam_role_policy" "apprunner_instance_sqs" {
+  name = "${local.project_name}-apprunner-sqs-policy-${local.environment}"
+  role = aws_iam_role.apprunner_instance.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["sqs:SendMessage"]
+        Resource = aws_sqs_queue.notifications.arn
+      }
+    ]
+  })
+}
+
+# IAM Role for App Runner Instance
+resource "aws_iam_role" "apprunner_instance" {
+  name = "${local.project_name}-apprunner-instance-role-${local.environment}"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "tasks.apprunner.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${local.project_name}-apprunner-instance-role"
+  }
+}
