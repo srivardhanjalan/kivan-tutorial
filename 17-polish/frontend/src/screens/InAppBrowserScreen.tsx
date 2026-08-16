@@ -36,16 +36,20 @@ function hostOf(url: string): string {
  */
 export default function InAppBrowserScreen() {
   const navigation = useAppNavigation();
-  const { brand } = useAppRoute<'InAppBrowser'>().params;
+  const params = useAppRoute<'InAppBrowser'>().params;
+  // Opened on a curated brand, or on a raw pasted URL. A brand stamps its id on
+  // a captured wish (for the origin badge); a pasted-URL wish has no brand.
+  const brand = 'brand' in params ? params.brand : null;
+  const initialUrl = 'brand' in params ? params.brand.website_url : params.url;
   const toast = useToast();
   const { loading: scraping, run } = useAsyncAction();
 
   const webViewRef = useRef<WebView>(null);
   // The live URL, kept in a ref so Add reads the page you are on RIGHT NOW,
   // not a render-stale copy.
-  const currentUrlRef = useRef(brand.website_url);
-  const [pageTitle, setPageTitle] = useState(brand.name);
-  const [host, setHost] = useState(hostOf(brand.website_url));
+  const currentUrlRef = useRef(initialUrl);
+  const [pageTitle, setPageTitle] = useState(brand ? brand.name : hostOf(initialUrl));
+  const [host, setHost] = useState(hostOf(initialUrl));
   const [canGoBack, setCanGoBack] = useState(false);
   const [canGoForward, setCanGoForward] = useState(false);
   const [draft, setDraft] = useState<WishDraft | null>(null);
@@ -77,7 +81,9 @@ export default function InAppBrowserScreen() {
         cost_currency: scraped.currency ?? null,
         link_url: url,
         image_url: scraped.image,
-        brand_id: brand.id,
+        // Stamp the brand only when the browser opened on one; a pasted-URL wish
+        // carries no origin badge.
+        ...(brand ? { brand_id: brand.id } : {}),
       });
     }, 'Could not read this page');
 
@@ -94,7 +100,7 @@ export default function InAppBrowserScreen() {
 
       <WebView
         ref={webViewRef}
-        source={{ uri: brand.website_url }}
+        source={{ uri: initialUrl }}
         onNavigationStateChange={onNavStateChange}
         style={styles.web}
       />
