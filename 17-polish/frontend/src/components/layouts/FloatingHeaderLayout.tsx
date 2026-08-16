@@ -25,6 +25,13 @@ interface FloatingHeaderLayoutProps {
    * app-wide content edge (Spacing.contentHorizontal) on its list itself.
    */
   scroll?: boolean;
+  /**
+   * A node pinned above the bottom safe-area inset, floating over the scroll
+   * content (a detail screen's call-to-action pill). The layout owns the
+   * absolute positioning and centers it; the node passes taps through around
+   * itself, so the content behind stays scrollable.
+   */
+  floatingFooter?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -45,6 +52,7 @@ const FloatingHeaderLayout: React.FC<FloatingHeaderLayoutProps> = ({
   headerRight,
   loading = false,
   scroll = true,
+  floatingFooter,
   children,
 }) => {
   const navigation = useAppNavigation();
@@ -87,6 +95,12 @@ const FloatingHeaderLayout: React.FC<FloatingHeaderLayoutProps> = ({
         }
         rightContent={headerRight}
       />
+
+      {floatingFooter && (
+        <View style={styles.floatingFooter} pointerEvents="box-none">
+          {floatingFooter}
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -99,6 +113,15 @@ const styles = StyleSheet.create({
     width: Spacing.chromeTouchTarget,
     height: Spacing.chromeTouchTarget,
     marginLeft: Spacing.backChevronPull,
+  },
+  // Pinned above the bottom safe-area inset (absolute measures from the padding
+  // box, so bottom sits clear of the inset SafeAreaView reserves).
+  floatingFooter: {
+    position: 'absolute',
+    left: Spacing.xl,
+    right: Spacing.xl,
+    bottom: Spacing.xl,
+    alignItems: 'center',
   },
   scrollContent: {
     paddingTop: Spacing.floatingHeaderContentPadding,
