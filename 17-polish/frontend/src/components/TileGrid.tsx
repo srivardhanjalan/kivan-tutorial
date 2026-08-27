@@ -15,10 +15,16 @@ const TileGrid: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const cellWidth =
     (width - Spacing.contentHorizontal * 2 - Spacing.md) / 2;
 
+  // toArray (not Children.map) so a null/undefined/false child — e.g. an
+  // omitted `leading` add-tile — is dropped rather than becoming an empty cell.
+  // A phantom leading cell pushed a lone tile into the second column (a
+  // right-aligned wishlist with dead space on the left, seen on an event's
+  // single linked wishlist).
+  const cells = React.Children.toArray(children);
   return (
     <View style={styles.grid}>
-      {React.Children.map(children, (child) => (
-        <View style={[styles.cell, { width: cellWidth }]}>{child}</View>
+      {cells.map((child, i) => (
+        <View key={i} style={[styles.cell, { width: cellWidth }]}>{child}</View>
       ))}
     </View>
   );
