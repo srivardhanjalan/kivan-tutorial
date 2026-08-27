@@ -2,10 +2,8 @@ import React from 'react';
 import { useAppNavigation } from '../hooks/useAppNavigation';
 import useFetch from '../hooks/useFetch';
 import AdminCatalogScreen from '../components/layouts/AdminCatalogScreen';
-import TileGrid from '../components/TileGrid';
-import StorefrontCard from '../components/StorefrontCard';
+import StorefrontGrid from '../components/StorefrontGrid';
 import { fetchStorefronts } from '../services/api';
-import type { Storefront } from '../services/api';
 
 /**
  * The curated store catalog, admin side: the same image-forward card grid the
@@ -31,15 +29,10 @@ export default function AdminStorefrontsScreen() {
         subtitle: 'Add a store, or seed the catalog (see the step README).',
       }}
     >
-      <TileGrid>
-        {storefronts?.map((storefront: Storefront) => (
-          <StorefrontCard
-            key={storefront.id}
-            storefront={storefront}
-            onPress={() => navigation.navigate('AdminStorefrontForm', { storefront })}
-          />
-        ))}
-      </TileGrid>
+      <StorefrontGrid
+        storefronts={storefronts}
+        onPressStorefront={(storefront) => navigation.navigate('AdminStorefrontForm', { storefront })}
+      />
     </AdminCatalogScreen>
   );
 }

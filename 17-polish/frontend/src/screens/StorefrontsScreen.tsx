@@ -5,8 +5,7 @@ import useFetch from '../hooks/useFetch';
 import DirectoryLayout from '../components/DirectoryLayout';
 import CatalogRow from '../components/CatalogRow';
 import FormInput from '../components/FormInput';
-import TileGrid from '../components/TileGrid';
-import StorefrontCard from '../components/StorefrontCard';
+import StorefrontGrid from '../components/StorefrontGrid';
 import { useToast } from '../components/ToastProvider';
 import { isValidProductUrl, normalizeUrl } from '../utils/productUrl';
 import { fetchStorefronts } from '../services/api';
@@ -66,15 +65,10 @@ export default function StorefrontsScreen() {
       title: 'Stores',
       count: storefronts?.length ?? 0,
       children: (
-        <TileGrid>
-          {storefronts?.map((storefront) => (
-            <StorefrontCard
-              key={storefront.id}
-              storefront={storefront}
-              onPress={() => navigation.navigate('StorefrontDetail', { storefront })}
-            />
-          ))}
-        </TileGrid>
+        <StorefrontGrid
+          storefronts={storefronts}
+          onPressStorefront={(storefront) => navigation.navigate('StorefrontDetail', { storefront })}
+        />
       ),
     },
   ];
