@@ -21,7 +21,7 @@ import {
 } from '../services/api';
 import type { User, Wishlist } from '../services/api';
 import Colors from '../constants/Colors';
-import { Spacing } from '../constants/ScreenStyles';
+import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 
 type Tab = 'discover' | 'following' | 'followers';
 
@@ -87,7 +87,7 @@ export default function DiscoverScreen() {
   return (
     <FloatingHeaderLayout title="Discover" scroll={false}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={CommonScreenStyles.floatingHeaderContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -174,11 +174,6 @@ export default function DiscoverScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: {
-    paddingTop: Spacing.floatingHeaderContentPadding,
-    paddingBottom: Spacing.scrollContentBottom,
-    paddingHorizontal: Spacing.contentHorizontal,
-  },
   tabs: {
     flexDirection: 'row',
     justifyContent: 'center',

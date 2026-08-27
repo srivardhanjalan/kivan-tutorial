@@ -75,7 +75,7 @@ const FloatingHeaderLayout: React.FC<FloatingHeaderLayoutProps> = ({
       {scroll ? (
         <ScrollView
           style={styles.flex}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={CommonScreenStyles.floatingHeaderContent}
           showsVerticalScrollIndicator={false}
         >
           {children}
@@ -143,13 +143,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Colors.hairline,
-  },
-  scrollContent: {
-    paddingTop: Spacing.floatingHeaderContentPadding,
-    paddingBottom: Spacing.scrollContentBottom,
-    // The layout owns the single app-wide content edge; screens must not
-    // re-apply their own horizontal padding
-    paddingHorizontal: Spacing.contentHorizontal,
   },
 });
 

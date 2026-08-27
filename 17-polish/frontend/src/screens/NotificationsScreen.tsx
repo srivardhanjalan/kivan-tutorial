@@ -23,7 +23,7 @@ import Colors from '../constants/Colors';
 import Opacity from '../constants/Opacity';
 import Shadows from '../constants/Shadows';
 import { ChromeMaxFontSizeMultiplier } from '../constants/Typography';
-import { Spacing } from '../constants/ScreenStyles';
+import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 import BorderRadius from '../constants/BorderRadius';
 
 /** The page size for the feed's infinite scroll (the backend caps limit at 50). */
@@ -264,7 +264,7 @@ export default function NotificationsScreen() {
         <FlatList
           data={notifications}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={CommonScreenStyles.floatingHeaderContent}
           showsVerticalScrollIndicator={false}
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
@@ -294,11 +294,6 @@ const styles = StyleSheet.create({
   emptyWrap: {
     flex: 1,
     paddingTop: Spacing.floatingHeaderContentPadding,
-  },
-  listContent: {
-    paddingTop: Spacing.floatingHeaderContentPadding,
-    paddingBottom: Spacing.scrollContentBottom,
-    paddingHorizontal: Spacing.contentHorizontal,
   },
   card: {
     flexDirection: 'row',

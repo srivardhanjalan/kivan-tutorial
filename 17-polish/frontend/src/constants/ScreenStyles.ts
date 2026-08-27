@@ -137,4 +137,13 @@ export const CommonScreenStyles = StyleSheet.create({
     gap: Spacing.md,
     paddingVertical: Spacing.sm,
   },
+  /** The content inset under the floating header: header clearance on top,
+      tab-bar clearance below, the app content edge sideways. FloatingHeaderLayout
+      applies it to its own ScrollView; a screen that opts out (`scroll={false}`)
+      with its own FlatList references this so the inset can't drift. */
+  floatingHeaderContent: {
+    paddingTop: Spacing.floatingHeaderContentPadding,
+    paddingBottom: Spacing.scrollContentBottom,
+    paddingHorizontal: Spacing.contentHorizontal,
+  },
 });
