@@ -29,7 +29,7 @@ session JWT the backend verifies via JWKS exactly as a signed-in app's would be.
 import os
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Callable, Optional
 
 import httpx
@@ -40,17 +40,9 @@ _TEST_PASSWORD = "Kivan-E2E-Harness-2026!verify"
 
 
 # --------------------------------------------------------------------------- #
-# Marker registration + the unset-URL skip                                    #
+# The unset-URL skip (the e2e/stepNN markers themselves are declared once, in   #
+# pytest.ini — this hook only reacts to them).                                  #
 # --------------------------------------------------------------------------- #
-_STEP_MARKS = ("step11", "step12", "step13", "step14", "step15", "step16", "step17")
-
-
-def pytest_configure(config):
-    config.addinivalue_line("markers", "e2e: live-stack end-to-end test (needs E2E_API_URL)")
-    for m in _STEP_MARKS:
-        config.addinivalue_line("markers", f"{m}: kivan tutorial step {m[4:]} flow suite")
-
-
 def pytest_collection_modifyitems(config, items):
     """When E2E_API_URL is unset, mark every e2e test skipped so collection is
     clean and the unit suite is unaffected — a skip, never a collection error."""
@@ -330,3 +322,25 @@ def clerk_user(api_url, clerk_secret_key) -> Callable[..., ClerkUser]:
         except Exception:
             pass
     bapi.close()
+
+
+@pytest.fixture
+def grant_admin(table):
+    """`grant_admin(user)` promotes a ClerkUser to catalog admin.
+
+    Provisions the DynamoDB row (a /users/me touch) then writes role=admin onto
+    it — the same effect the operator infra/scripts/grant_admin.py has, done here
+    as a direct table write so the suite is re-runnable without a subprocess. The
+    step-15 default-deny gate reads role off this exact row. Shared here (not
+    per-suite) because both the admin (step 15) and media (step 17) suites need
+    an admin identity.
+    """
+    def _grant(user):
+        assert user.client.get("/users/me").status_code == 200
+        table("users").update_item(
+            Key={"id": user.user_id},
+            UpdateExpression="SET #r = :a",
+            ExpressionAttributeNames={"#r": "role"},
+            ExpressionAttributeValues={":a": "admin"},
+        )
+    return _grant

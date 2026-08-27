@@ -15,6 +15,11 @@ import pytest
 
 pytestmark = [pytest.mark.e2e, pytest.mark.step17]
 
+# An independent re-declaration of the backend's upload contract — the
+# `resource_type` Literal in app/routes/upload.py. Kept in the harness (not
+# imported from the app) on purpose: the point of the parametrized test below is
+# to prove the deployed API accepts exactly these eight types, so the harness
+# must name them itself rather than trust the same source the API is built from.
 _RESOURCE_TYPES = [
     "profile_photo", "cover_photo", "wishlist_photo", "wish_photo",
     "event_photo", "brand_logo", "storefront_logo", "product_photo",
@@ -22,16 +27,6 @@ _RESOURCE_TYPES = [
 
 # A minimal valid JPEG (SOI + APP0 + EOI) — enough bytes for a real PUT.
 _JPEG = bytes.fromhex("ffd8ffe000104a46494600010100000100010000ffd9")
-
-
-def _grant_admin(user, table):
-    assert user.client.get("/users/me").status_code == 200
-    table("users").update_item(
-        Key={"id": user.user_id},
-        UpdateExpression="SET #r = :a",
-        ExpressionAttributeNames={"#r": "role"},
-        ExpressionAttributeValues={":a": "admin"},
-    )
 
 
 @pytest.mark.parametrize("resource_type", _RESOURCE_TYPES)
@@ -52,7 +47,7 @@ def test_signed_url_rejects_unknown_resource_type(clerk_user):
                                   "file_extension": "jpeg"}).status_code == 422
 
 
-def test_catalog_logo_upload_and_claim_round_trip(clerk_user, table, s3, photos_bucket):
+def test_catalog_logo_upload_and_claim_round_trip(clerk_user, grant_admin, s3, photos_bucket):
     """Mint a signed URL for a brand logo, land the bytes at the pending key,
     create the brand carrying that URL (which CLAIMS the object), and verify the
     claim: the permanent object exists and the pending one is gone.
@@ -65,7 +60,7 @@ def test_catalog_logo_upload_and_claim_round_trip(clerk_user, table, s3, photos_
     test proves is the step-17 CLAIM logic (copy pending→permanent, drop pending).
     """
     admin = clerk_user("Gina", "Gallery")
-    _grant_admin(admin, table)
+    grant_admin(admin)
 
     minted = admin.client.post("/upload/signed-url",
                                json={"resource_type": "brand_logo", "file_extension": "jpeg"})
@@ -114,7 +109,7 @@ def test_wishlist_cover_and_life_event_persist(clerk_user):
     owner = clerk_user("Cora", "Cover")
     r = owner.client.post("/wishlists/", json={
         "name": f"Cover WL {uuid.uuid4().hex[:6]}",
-        "image_url": "preset:birthday",   # a chosen cover preset (frontend encoding)
+        "image_url": "preset:sunset-bliss",   # a real COVER_PRESETS id (frontend encoding)
         "life_event_id": "birthday",
     })
     assert r.status_code == 201
@@ -122,7 +117,7 @@ def test_wishlist_cover_and_life_event_persist(clerk_user):
     try:
         back = owner.client.get(f"/wishlists/{wid}").json()
         assert back["image_url"] is not None
-        assert back["image_url"] == "preset:birthday"
+        assert back["image_url"] == "preset:sunset-bliss"
         assert back["life_event_id"] is not None
         assert back["life_event_id"] == "birthday"
     finally:

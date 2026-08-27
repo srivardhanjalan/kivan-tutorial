@@ -14,19 +14,7 @@ import pytest
 pytestmark = [pytest.mark.e2e, pytest.mark.step15]
 
 
-def _grant_admin(user, table):
-    """Provision the row (a /users/me touch), then set role=admin on it — the
-    default-deny gate reads role off this exact row."""
-    assert user.client.get("/users/me").status_code == 200
-    table("users").update_item(
-        Key={"id": user.user_id},
-        UpdateExpression="SET #r = :a",
-        ExpressionAttributeNames={"#r": "role"},
-        ExpressionAttributeValues={":a": "admin"},
-    )
-
-
-def test_grant_admin_and_default_deny(clerk_user, table):
+def test_grant_admin_and_default_deny(clerk_user, grant_admin):
     plain = clerk_user("Pat", "Plain")
     me = plain.client.get("/users/me")
     assert me.status_code == 200
@@ -34,14 +22,14 @@ def test_grant_admin_and_default_deny(clerk_user, table):
     assert plain.client.get("/admin/users").status_code == 403
 
     admin = clerk_user("Ada", "Admin")
-    _grant_admin(admin, table)
+    grant_admin(admin)
     assert admin.client.get("/admin/users").status_code == 200
 
 
-def test_role_round_trip(clerk_user, table):
+def test_role_round_trip(clerk_user, grant_admin):
     admin = clerk_user("Rex", "Root")
     target = clerk_user("Tara", "Target")
-    _grant_admin(admin, table)
+    grant_admin(admin)
     assert target.client.get("/users/me").status_code == 200  # provision the row
 
     # promote
@@ -87,9 +75,9 @@ def test_admin_routes_403_sweep(clerk_user):
         assert resp.status_code == 403, f"{method.upper()} {path} → {resp.status_code}, want 403 (gate preempts body)"
 
 
-def test_brand_crud_and_collision_409(clerk_user, table):
+def test_brand_crud_and_collision_409(clerk_user, grant_admin):
     admin = clerk_user("Bree", "BrandAdmin")
-    _grant_admin(admin, table)
+    grant_admin(admin)
     bid = f"brand-{uuid.uuid4().hex[:8]}"
     body = {"id": bid, "name": "Acme", "website_url": "https://acme.test",
             "category": "general", "country": "US"}
@@ -105,9 +93,9 @@ def test_brand_crud_and_collision_409(clerk_user, table):
         admin.client.delete(f"/admin/brands/{bid}")  # best-effort if an assert bailed early
 
 
-def test_life_event_in_use_delete_409(clerk_user, table):
+def test_life_event_in_use_delete_409(clerk_user, grant_admin):
     admin = clerk_user("Lena", "LifeAdmin")
-    _grant_admin(admin, table)
+    grant_admin(admin)
     leid = f"le-{uuid.uuid4().hex[:8]}"
     assert admin.client.post("/admin/life-events",
                              json={"id": leid, "name": "Graduation"}).status_code == 201
@@ -128,9 +116,9 @@ def test_life_event_in_use_delete_409(clerk_user, table):
         admin.client.delete(f"/admin/life-events/{leid}")
 
 
-def test_storefront_product_crud_and_409(clerk_user, table):
+def test_storefront_product_crud_and_409(clerk_user, grant_admin):
     admin = clerk_user("Sven", "StoreAdmin")
-    _grant_admin(admin, table)
+    grant_admin(admin)
     sid = f"store-{uuid.uuid4().hex[:8]}"
     pid = f"prod-{uuid.uuid4().hex[:8]}"
     sf = admin.client.post("/admin/storefronts", json={"id": sid, "name": "Corner Shop"})

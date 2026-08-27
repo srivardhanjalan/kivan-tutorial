@@ -60,17 +60,26 @@ def test_email_settings_round_trip(clerk_user):
     assert on.json()["email_notifications"] is True
 
 
-@pytest.mark.skipif(_MAILGUN_LIVE, reason="stack has Mailgun configured (E2E_MAILGUN=1)")
-def test_mailgun_unconfigured_log_contract(clerk_user, logs_client, lambda_log_group):
-    """With no Mailgun key, a delivered notification logs the skip line."""
-    actor = clerk_user("Manny", "Mailer")
+def _follow_and_expect_log(clerk_user, logs_client, group, needle, message):
+    """Fire the simplest delivered notification — an actor follows a recipient —
+    and assert `needle` shows up in the consumer's log group. The unconfigured-skip
+    and live-success log contracts differ only in that needle, so they share this
+    scaffold (each still under its own Mailgun-gated skipif)."""
+    actor = clerk_user("Ann", "Actor")
     recipient = clerk_user("Rae", "Recipient")
     since = int(time.time() * 1000) - 5000
     assert actor.client.post(f"/users/{recipient.user_id}/follow").status_code == 204
 
-    line = _wait_for_log(logs_client, lambda_log_group, since,
-                         "Mailgun not configured, skipping email send")
-    assert line is not None, "expected the Mailgun-not-configured skip line"
+    line = _wait_for_log(logs_client, group, since, needle)
+    assert line is not None, message
+
+
+@pytest.mark.skipif(_MAILGUN_LIVE, reason="stack has Mailgun configured (E2E_MAILGUN=1)")
+def test_mailgun_unconfigured_log_contract(clerk_user, logs_client, lambda_log_group):
+    """With no Mailgun key, a delivered notification logs the skip line."""
+    _follow_and_expect_log(clerk_user, logs_client, lambda_log_group,
+                           "Mailgun not configured, skipping email send",
+                           "expected the Mailgun-not-configured skip line")
 
 
 def test_opt_out_suppresses_email_but_not_feed(clerk_user, poll, logs_client, lambda_log_group):
@@ -101,10 +110,6 @@ def test_opt_out_suppresses_email_but_not_feed(clerk_user, poll, logs_client, la
 def test_live_send_logs_success(clerk_user, logs_client, lambda_log_group):
     """On a Mailgun-configured stack a delivered notification logs the success
     line (which only prints on a Mailgun HTTP 200)."""
-    actor = clerk_user("Liv", "Live")
-    recipient = clerk_user("Sam", "Send")
-    since = int(time.time() * 1000) - 5000
-    assert actor.client.post(f"/users/{recipient.user_id}/follow").status_code == 204
-
-    line = _wait_for_log(logs_client, lambda_log_group, since, "Email sent successfully to")
-    assert line is not None, "expected a Mailgun success line"
+    _follow_and_expect_log(clerk_user, logs_client, lambda_log_group,
+                           "Email sent successfully to",
+                           "expected a Mailgun success line")
