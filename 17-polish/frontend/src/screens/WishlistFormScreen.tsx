@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { useUser } from '@clerk/clerk-expo';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FormScreenScaffold from '../components/layouts/FormScreenScaffold';
@@ -8,12 +8,12 @@ import FieldLabel from '../components/FieldLabel';
 import LifeEventField from '../components/LifeEventField';
 import CoOwnerPickerSection from '../components/CoOwnerPickerSection';
 import CoverPhoto from '../components/CoverPhoto';
-import CoverPickerModal from '../components/CoverPickerModal';
-import SettingItemList from '../components/SettingItemList';
+import CoverPickerField from '../components/CoverPickerField';
 import PrivacySelector from '../components/PrivacySelector';
 import { useToast } from '../components/ToastProvider';
 import useAsyncAction from '../hooks/useAsyncAction';
 import { usePendingImageUpload } from '../hooks/usePendingImageUpload';
+import { useCoverPicker } from '../hooks/useCoverPicker';
 import useLifeEvents from '../hooks/useLifeEvents';
 import { createWishlist, updateWishlist } from '../services/api';
 import {
@@ -21,8 +21,6 @@ import {
   coverValueToPersist,
   presetFromCoverPhoto,
 } from '../constants/DefaultCoverPhotos';
-import type { CoverPreset } from '../constants/DefaultCoverPhotos';
-import Colors from '../constants/Colors';
 import { Spacing } from '../constants/ScreenStyles';
 import type { PrivacyType, User, WishlistCreate } from '../services/api';
 
@@ -70,22 +68,10 @@ export default function WishlistFormScreen() {
     'Could not upload your wishlist image',
     seededPreset ? null : wishlist?.image_url ?? null
   );
-  const [chosenPreset, setChosenPreset] = useState<string | null>(
+  const coverPicker = useCoverPicker(
+    cover,
     seededPreset ? coverPhotoValue(seededPreset) : null
   );
-  const [showCoverPicker, setShowCoverPicker] = useState(false);
-  // What the preview band shows: a just-picked preset, else the upload slot
-  // (seeded from the saved image, updated on a new upload).
-  const effectiveCover = chosenPreset ?? cover.imagePreview;
-
-  const pickPreset = (preset: CoverPreset) => {
-    setChosenPreset(coverPhotoValue(preset));
-    setShowCoverPicker(false);
-  };
-  const uploadCover = () => {
-    setChosenPreset(null);
-    cover.handleUpload();
-  };
 
   const save = () => {
     if (!name.trim()) {
@@ -94,7 +80,7 @@ export default function WishlistFormScreen() {
     }
     run(async () => {
       // A picked preset wins; else a new upload; else leave the cover untouched.
-      const coverValue = coverValueToPersist(chosenPreset, cover.changedUrl);
+      const coverValue = coverValueToPersist(coverPicker.chosenPreset, cover.changedUrl);
       const payload: WishlistCreate = {
         name: name.trim(),
         privacy_type: privacy,
@@ -154,30 +140,11 @@ export default function WishlistFormScreen() {
       <FieldLabel>Cover</FieldLabel>
       <CoverPhoto
         ownerId={user?.id ?? ''}
-        coverPhoto={effectiveCover}
+        coverPhoto={coverPicker.effectiveCover}
         height={140}
         style={styles.coverPreview}
       />
-      <SettingItemList
-        items={[
-          { id: 'choose-cover', label: 'Choose a cover', onPress: () => setShowCoverPicker(true) },
-          {
-            id: 'upload-cover',
-            label: 'Upload your own',
-            onPress: uploadCover,
-            rightContent: cover.isUploading ? (
-              <ActivityIndicator color={Colors.primary} />
-            ) : undefined,
-          },
-        ]}
-      />
-
-      <CoverPickerModal
-        visible={showCoverPicker}
-        currentCover={effectiveCover}
-        onSelect={pickPreset}
-        onClose={() => setShowCoverPicker(false)}
-      />
+      <CoverPickerField picker={coverPicker} />
     </FormScreenScaffold>
   );
 }

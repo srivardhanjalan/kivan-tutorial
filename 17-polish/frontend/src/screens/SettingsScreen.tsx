@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
@@ -12,19 +12,18 @@ import ModalCard from '../components/ModalCard';
 import OnboardingTutorial from '../components/OnboardingTutorial';
 import ImageUploadField from '../components/ImageUploadField';
 import CoverPhoto from '../components/CoverPhoto';
-import CoverPickerModal from '../components/CoverPickerModal';
+import CoverPickerField from '../components/CoverPickerField';
 import SettingItemList from '../components/SettingItemList';
 import useFetch from '../hooks/useFetch';
 import useAsyncAction from '../hooks/useAsyncAction';
 import { usePendingImageUpload } from '../hooks/usePendingImageUpload';
+import { useCoverPicker } from '../hooks/useCoverPicker';
 import { useAppNavigation } from '../hooks/useAppNavigation';
 import { deleteAccount, fetchCurrentUser, updateProfile } from '../services/api';
 import type { ProfileUpdate } from '../services/api';
-import { coverPhotoValue, coverValueToPersist } from '../constants/DefaultCoverPhotos';
-import type { CoverPreset } from '../constants/DefaultCoverPhotos';
+import { coverValueToPersist } from '../constants/DefaultCoverPhotos';
 import { isAdmin } from '../utils/adminAccess';
 import { clerkFullName, clerkPrimaryEmail } from '../utils/clerkName';
-import Colors from '../constants/Colors';
 import Typography from '../constants/Typography';
 import { Spacing } from '../constants/ScreenStyles';
 
@@ -75,24 +74,10 @@ export default function SettingsScreen() {
 
   const profilePhoto = usePendingImageUpload('profile_photo', 'Could not upload your profile photo');
   const coverPhoto = usePendingImageUpload('cover_photo', 'Could not upload your cover photo');
-  // A chosen gradient preset (stored as `preset:<id>` in the cover_photo
-  // field). Null until picked; it and the custom upload are the two ways to set
-  // a cover, last one wins (picking a preset supersedes an upload and the
-  // upload button clears any picked preset).
-  const [chosenPreset, setChosenPreset] = useState<string | null>(null);
-  const [showCoverPicker, setShowCoverPicker] = useState(false);
-  // What the cover preview and save reflect: a just-picked preset, else the
-  // upload slot (seeded from the saved cover_photo, updated on a new upload).
-  const effectiveCover = chosenPreset ?? coverPhoto.imagePreview;
-
-  const pickPreset = (preset: CoverPreset) => {
-    setChosenPreset(coverPhotoValue(preset));
-    setShowCoverPicker(false);
-  };
-  const uploadCover = () => {
-    setChosenPreset(null);
-    coverPhoto.handleUpload();
-  };
+  // The cover preset picker layered over the upload slot: a chosen gradient
+  // preset (stored as `preset:<id>` in cover_photo) or the custom upload, last
+  // one wins. Seeds null; the saved cover_photo goes into the upload slot below.
+  const coverPicker = useCoverPicker(coverPhoto);
 
   const [showTutorial, setShowTutorial] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -145,7 +130,7 @@ export default function SettingsScreen() {
         update.image_url = profilePhoto.changedUrl;
       }
       // A picked preset wins; else persist a new custom upload if there was one
-      const cover = coverValueToPersist(chosenPreset, coverPhoto.changedUrl);
+      const cover = coverValueToPersist(coverPicker.chosenPreset, coverPhoto.changedUrl);
       if (cover) {
         update.cover_photo = cover;
       }
@@ -220,23 +205,11 @@ export default function SettingsScreen() {
         <FieldLabel>Cover photo</FieldLabel>
         <CoverPhoto
           ownerId={user?.id ?? ''}
-          coverPhoto={effectiveCover}
+          coverPhoto={coverPicker.effectiveCover}
           height={140}
           style={styles.coverPreview}
         />
-        <SettingItemList
-          items={[
-            { id: 'choose-cover', label: 'Choose a cover', onPress: () => setShowCoverPicker(true) },
-            {
-              id: 'upload-cover',
-              label: 'Upload your own',
-              onPress: uploadCover,
-              rightContent: coverPhoto.isUploading ? (
-                <ActivityIndicator color={Colors.primary} />
-              ) : undefined,
-            },
-          ]}
-        />
+        <CoverPickerField picker={coverPicker} />
         <View style={styles.profilePhoto}>
           <ImageUploadField label="Profile photo" upload={profilePhoto} />
         </View>
@@ -314,13 +287,6 @@ export default function SettingsScreen() {
           }}
         />
       </ModalCard>
-
-      <CoverPickerModal
-        visible={showCoverPicker}
-        currentCover={effectiveCover}
-        onSelect={pickPreset}
-        onClose={() => setShowCoverPicker(false)}
-      />
     </FloatingHeaderLayout>
   );
 }
