@@ -255,6 +255,26 @@ def _mint_session(bapi, user_id):
     return mint
 
 
+def _create_user(bapi, email: str, first_name: str, last_name: str) -> str:
+    """POST /users → the new +clerk_test user's id. The single place the harness
+    encodes the create-user payload (a password plus the skip_*_checks a dev
+    instance needs), shared by the pytest factory below and the mint_ui_user
+    pre-arm script so the two never drift on how a harness user is created."""
+    r = _retry(lambda: bapi.post(
+        "/users",
+        json={
+            "email_address": [email],
+            "password": _TEST_PASSWORD,
+            "skip_password_checks": True,
+            "skip_legal_checks": True,
+            "first_name": first_name,
+            "last_name": last_name,
+        },
+    ))
+    r.raise_for_status()
+    return r.json()["id"]
+
+
 @pytest.fixture
 def clerk_user(api_url, clerk_secret_key) -> Callable[..., ClerkUser]:
     """Factory: `make = clerk_user; alice = make("Alice", "Actor")`.
@@ -273,25 +293,13 @@ def clerk_user(api_url, clerk_secret_key) -> Callable[..., ClerkUser]:
     def make(first_name: str = "E2E", last_name: str = "User", email: Optional[str] = None) -> ClerkUser:
         suffix = uuid.uuid4().hex[:12]
         email = email or f"kivan-e2e-{suffix}+clerk_test@example.com"
-        pw = _TEST_PASSWORD
 
-        r = _retry(lambda: bapi.post(
-            "/users",
-            json={
-                "email_address": [email],
-                "password": pw,
-                "skip_password_checks": True,
-                "skip_legal_checks": True,
-                "first_name": first_name,
-                "last_name": last_name,
-            },
-        ))
-        r.raise_for_status()
-        user_id = r.json()["id"]
+        user_id = _create_user(bapi, email, first_name, last_name)
         created_ids.append(user_id)  # mark for deletion before anything can fail
 
         # verify_password: sanity that the credential we'll sign in with is live
-        vr = _retry(lambda: bapi.post(f"/users/{user_id}/verify_password", json={"password": pw}))
+        vr = _retry(lambda: bapi.post(f"/users/{user_id}/verify_password",
+                                      json={"password": _TEST_PASSWORD}))
         if vr.status_code == 200 and not vr.json().get("verified", False):
             raise RuntimeError(f"Clerk verify_password failed for {user_id}")
 

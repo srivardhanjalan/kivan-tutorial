@@ -37,7 +37,7 @@ import sys
 
 # Import the harness's Backend-API helpers instead of duplicating them.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from conftest import _bapi, _retry, _TEST_PASSWORD  # noqa: E402
+from conftest import _bapi, _retry, _create_user  # noqa: E402
 
 
 def find_or_create_user(bapi, email: str, first: str, last: str) -> str:
@@ -52,19 +52,7 @@ def find_or_create_user(bapi, email: str, first: str, last: str) -> str:
     existing = r.json()
     if existing:
         return existing[0]["id"]
-    r = _retry(lambda: bapi.post(
-        "/users",
-        json={
-            "email_address": [email],
-            "password": _TEST_PASSWORD,
-            "skip_password_checks": True,
-            "skip_legal_checks": True,
-            "first_name": first,
-            "last_name": last,
-        },
-    ))
-    r.raise_for_status()
-    return r.json()["id"]
+    return _create_user(bapi, email, first, last)
 
 
 def mint_sign_in_ticket(bapi, user_id: str, ttl_seconds: int = 3000) -> str:
