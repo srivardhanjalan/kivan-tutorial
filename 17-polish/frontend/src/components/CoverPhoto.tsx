@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Image, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import GradientFill from './GradientFill';
 import Colors from '../constants/Colors';
 import BorderRadius from '../constants/BorderRadius';
 import { Spacing } from '../constants/ScreenStyles';
@@ -51,12 +51,7 @@ const CoverPhoto: React.FC<CoverPhotoProps> = ({
           onError={() => setImageError(true)}
         />
       ) : (
-        <LinearGradient
-          colors={colors}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
+        <GradientFill colors={colors} />
       )}
       {children}
     </View>

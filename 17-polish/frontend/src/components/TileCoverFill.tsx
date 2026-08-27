@@ -1,6 +1,6 @@
 import React from 'react';
 import { Image, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import GradientFill from './GradientFill';
 import { tileCover } from '../constants/DefaultCoverPhotos';
 
 /**
@@ -24,14 +24,7 @@ export default function TileCoverFill({
     return <Image source={{ uri: cover.imageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />;
   }
   if (cover.kind === 'preset') {
-    return (
-      <LinearGradient
-        colors={cover.colors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-    );
+    return <GradientFill colors={cover.colors} />;
   }
   return <>{placeholder}</>;
 }
