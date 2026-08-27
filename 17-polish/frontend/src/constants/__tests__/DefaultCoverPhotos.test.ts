@@ -3,6 +3,7 @@ import {
   coverPhotoValue,
   coverValueToPersist,
   presetFromCoverPhoto,
+  tileCover,
 } from '../DefaultCoverPhotos';
 
 // The two cover-bearing forms (Settings' profile cover, the wishlist form's
@@ -41,5 +42,39 @@ describe('coverPhotoValue / presetFromCoverPhoto round-trip', () => {
 
   it('treats an uploaded image URL as not a preset', () => {
     expect(presetFromCoverPhoto('https://b.s3.us-west-2.amazonaws.com/x.jpg')).toBeUndefined();
+  });
+});
+
+// The image-forward wishlist tile (My Stuff / profile grids) must never hand a
+// `preset:<id>` string to <Image> — RN throws "No suitable URL request handler
+// found for preset:…" (the My Stuff grid red-box the Maestro run surfaced).
+// tileCover is the one classifier that keeps the tile from re-deciding
+// preset-vs-URL inline and reintroducing that bug.
+describe('tileCover', () => {
+  it('resolves a preset cover to its gradient, never an image URL', () => {
+    const preset = COVER_PRESETS.find((p) => p.id === 'sunset-bliss')!;
+    expect(tileCover('preset:sunset-bliss')).toEqual({ kind: 'preset', colors: preset.colors });
+  });
+
+  it('resolves a custom uploaded URL to an image', () => {
+    expect(tileCover('https://b.s3.us-west-2.amazonaws.com/x.jpg')).toEqual({
+      kind: 'image',
+      imageUrl: 'https://b.s3.us-west-2.amazonaws.com/x.jpg',
+    });
+  });
+
+  it('falls back to the glyph when there is no cover', () => {
+    expect(tileCover(null)).toEqual({ kind: 'glyph' });
+    expect(tileCover(undefined)).toEqual({ kind: 'glyph' });
+    expect(tileCover('')).toEqual({ kind: 'glyph' });
+  });
+
+  it('never emits a preset:<id> string as an image uri', () => {
+    for (const preset of COVER_PRESETS) {
+      const cover = tileCover(`preset:${preset.id}`);
+      expect(cover.kind).toBe('preset');
+      // guards the exact RN crash: no branch hands preset:<id> to <Image>
+      expect(JSON.stringify(cover)).not.toContain('preset:');
+    }
   });
 });

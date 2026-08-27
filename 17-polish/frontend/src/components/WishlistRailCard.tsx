@@ -1,11 +1,13 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import WishlistPlaceholderGlyph from './WishlistPlaceholderGlyph';
 import Colors from '../constants/Colors';
 import BorderRadius from '../constants/BorderRadius';
 import Typography from '../constants/Typography';
 import Opacity from '../constants/Opacity';
 import pastelForLifeEvent from '../constants/lifeEventPastels';
+import { tileCover } from '../constants/DefaultCoverPhotos';
 import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 import type { Wishlist, LifeEvent } from '../services/api';
 
@@ -28,11 +30,15 @@ const WishlistRailCard: React.FC<WishlistRailCardProps> = ({
   wishlist,
   lifeEvent,
   onPress,
-}) => (
+}) => {
+  const cover = tileCover(wishlist.image_url);
+  return (
   <TouchableOpacity onPress={onPress} activeOpacity={Opacity.pressed} accessibilityRole="button" accessibilityLabel={wishlist.name}>
     <View style={[CommonScreenStyles.center, styles.art, { backgroundColor: pastelForLifeEvent(wishlist.life_event_id) }]}>
-      {wishlist.image_url ? (
-        <Image source={{ uri: wishlist.image_url }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      {cover.kind === 'image' ? (
+        <Image source={{ uri: cover.imageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      ) : cover.kind === 'preset' ? (
+        <LinearGradient colors={cover.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
       ) : (
         <WishlistPlaceholderGlyph lifeEvent={lifeEvent} size={Spacing.detailHeroGlyphSize} />
       )}
@@ -45,7 +51,8 @@ const WishlistRailCard: React.FC<WishlistRailCardProps> = ({
     </View>
     <Text style={styles.name} numberOfLines={2}>{wishlist.name}</Text>
   </TouchableOpacity>
-);
+  );
+};
 
 const styles = StyleSheet.create({
   art: {

@@ -100,3 +100,28 @@ export function resolveCover(coverPhoto: string | null | undefined, ownerId: str
   if (coverPhoto) return { imageUrl: coverPhoto, colors: fallback };
   return { imageUrl: null, colors: fallback };
 }
+
+/** What a wishlist/event TILE's `image_url` resolves to for rendering. Unlike
+    {@link ResolvedCover} (the band on the profile/home/detail surfaces), a tile's
+    empty state is not a deterministic gradient but the caller's own glyph-on-a-
+    life-event-pastel fallback, so this reports `glyph` rather than a color set. */
+export type TileCover =
+  | { kind: 'image'; imageUrl: string }
+  | { kind: 'preset'; colors: [string, string, string] }
+  | { kind: 'glyph' };
+
+/**
+ * Classify a tile's stored `image_url` the same three ways {@link resolveCover}
+ * does — a `preset:<id>` gradient, a custom uploaded URL, or empty — but for the
+ * image-forward tile idiom (My Stuff / profile wishlist grids) whose no-cover
+ * fallback is a life-event glyph, not a gradient band. The preset-vs-URL decision
+ * lives once, in {@link presetFromCoverPhoto}: a tile must never hand a
+ * `preset:<id>` string straight to <Image> (RN throws "No suitable URL request
+ * handler found for preset:…"), so it asks here instead of re-deciding inline.
+ */
+export function tileCover(coverPhoto: string | null | undefined): TileCover {
+  const preset = presetFromCoverPhoto(coverPhoto);
+  if (preset) return { kind: 'preset', colors: preset.colors };
+  if (coverPhoto) return { kind: 'image', imageUrl: coverPhoto };
+  return { kind: 'glyph' };
+}
