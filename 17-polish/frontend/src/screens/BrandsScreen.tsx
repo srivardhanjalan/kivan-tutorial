@@ -2,7 +2,7 @@ import React from 'react';
 import { useAppNavigation } from '../hooks/useAppNavigation';
 import useFetch from '../hooks/useFetch';
 import DirectoryLayout from '../components/DirectoryLayout';
-import CatalogRow from '../components/CatalogRow';
+import BrandWall from '../components/BrandWall';
 import { fetchBrands } from '../services/api';
 import type { Brand } from '../services/api';
 
@@ -34,19 +34,12 @@ export default function BrandsScreen() {
     key: category,
     title: category,
     count: categoryBrands.length,
-    children: categoryBrands.map((brand) => (
-      <CatalogRow
-        key={brand.id}
-        icon="globe-outline"
-        logoUrl={brand.logo_url}
-        title={brand.name}
-        accessibilityLabel={`${brand.name}, ${brand.country}`}
-        description={brand.description}
-        meta={[{ icon: 'location-outline', text: brand.country }]}
-        showChevron
-        onPress={() => navigation.navigate('InAppBrowser', { brand })}
+    children: (
+      <BrandWall
+        brands={categoryBrands}
+        onPressBrand={(brand) => navigation.navigate('InAppBrowser', { brand })}
       />
-    )),
+    ),
   }));
 
   return (

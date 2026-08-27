@@ -49,8 +49,16 @@ export function usePendingImageUpload(
     setImagePreview(url);
   };
 
+  const changedUrl = imageUrl !== seedUrl ? imageUrl : null;
+
   return {
-    changedUrl: imageUrl !== seedUrl ? imageUrl : null,
+    changedUrl,
+    /** The create/edit body fragment for this slot: the changed URL under
+        `field`, or nothing when the image is unchanged — so an edit's PATCH
+        never rewrites a logo/photo the user left alone. Spread into the body. */
+    bodyPatch<K extends string>(field: K): Partial<Record<K, string>> {
+      return changedUrl ? ({ [field]: changedUrl } as Record<K, string>) : {};
+    },
     imagePreview,
     isUploading,
     handleUpload,

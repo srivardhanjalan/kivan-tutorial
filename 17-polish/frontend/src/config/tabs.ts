@@ -6,8 +6,8 @@ type IoniconName = ComponentProps<typeof Ionicons>['name'];
 export interface TabConfig {
   /** Route name (stable key — later steps mount real screens on these) */
   key: string;
-  /** The tab button's accessibility label — and the header title on tabs
-      still showing the placeholder */
+  /** The tab button's accessibility label (each screen supplies its own header
+      title through its FloatingHeaderLayout). */
   title: string;
   icon: IoniconName;
   iconActive: IoniconName;

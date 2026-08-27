@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
-import WishlistCard from './WishlistCard';
+import ArtTileCard from './ArtTileCard';
+import WishlistPlaceholderGlyph from './WishlistPlaceholderGlyph';
 import useLifeEvents from '../hooks/useLifeEvents';
-import { Spacing } from '../constants/ScreenStyles';
+import pastelForLifeEvent from '../constants/lifeEventPastels';
+import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 import type { Wishlist } from '../services/api';
 
 /** A rail card's width: a horizontal preview's own metric, not a grid cell
@@ -15,9 +17,10 @@ interface WishlistRailProps {
 }
 
 /**
- * A horizontal, swipeable row of wishlist tiles: the Home preview of your
- * newest lists and Discover's "wishlists to love" rail share it. Resolves each
- * card's life-event emoji; the caller slices to its own limit.
+ * A horizontal, swipeable row of wishlist tiles — Discover's "popular" and
+ * "wishlists to love" rails both ride it. Each tile is an art block washed in
+ * the life event's pastel (its image when set, else the event's emoji) with the
+ * name below; the caller slices to its own limit.
  */
 const WishlistRail: React.FC<WishlistRailProps> = ({ wishlists, onPressWishlist }) => {
   const { lifeEventFor } = useLifeEvents();
@@ -25,14 +28,21 @@ const WishlistRail: React.FC<WishlistRailProps> = ({ wishlists, onPressWishlist 
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.rail}
+      contentContainerStyle={CommonScreenStyles.horizontalRail}
     >
       {wishlists.map((wishlist) => (
         <View key={wishlist.id} style={styles.railCard}>
-          <WishlistCard
-            wishlist={wishlist}
-            lifeEvent={lifeEventFor(wishlist.life_event_id)}
+          <ArtTileCard
+            title={wishlist.name}
             onPress={() => onPressWishlist(wishlist.id)}
+            color={pastelForLifeEvent(wishlist.life_event_id)}
+            imageUrl={wishlist.image_url}
+            placeholder={
+              <WishlistPlaceholderGlyph
+                lifeEvent={lifeEventFor(wishlist.life_event_id)}
+                size={Spacing.tileGlyphSize}
+              />
+            }
           />
         </View>
       ))}
@@ -41,10 +51,6 @@ const WishlistRail: React.FC<WishlistRailProps> = ({ wishlists, onPressWishlist 
 };
 
 const styles = StyleSheet.create({
-  rail: {
-    gap: Spacing.md,
-    paddingVertical: Spacing.sm,
-  },
   railCard: {
     width: RAIL_CARD_WIDTH,
   },

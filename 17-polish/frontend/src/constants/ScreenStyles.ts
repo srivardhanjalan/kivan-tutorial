@@ -2,6 +2,7 @@ import { StyleSheet } from 'react-native';
 import Colors from './Colors';
 import BorderRadius from './BorderRadius';
 import Opacity from './Opacity';
+import Shadows from './Shadows';
 
 /**
  * Spacing + chrome metrics. The chrome numbers are a single source of truth
@@ -57,6 +58,9 @@ export const Spacing = {
   detailHeroHeight: 180,
   detailHeroGlyphSize: 64, // placeholder glyph in a detail hero (emoji + Ionicons)
   tileGlyphSize: 40,       // placeholder glyph in a tile-sized slot (cards, add tile, upload field)
+  /** The cover band height — the profile/home header cover and the form
+      cover previews render at the same height so the preview matches the band */
+  coverBandHeight: 140,
 
   floatingHeaderContentGap: 12,
   /** Top padding for content under the floating header (60 + 12 = 72) */
@@ -110,5 +114,36 @@ export const CommonScreenStyles = StyleSheet.create({
       love, and tile cards all share. */
   dimmed: {
     opacity: Opacity.disabled,
+  },
+  /** The image-forward card surface the wish/product tiles and the store card
+      share: a fully-rounded surface that clips its photo to the round, raised
+      off the screen. Callers add only their own layout. */
+  imageCard: {
+    borderRadius: BorderRadius.xxl,
+    overflow: 'hidden',
+    backgroundColor: Colors.surface,
+    ...Shadows.card,
+  },
+  /** The neutral fill an image card shows in place of a missing photo,
+      centering the placeholder glyph. Pairs with imageCard. */
+  imageCardPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.subtleFill,
+  },
+  /** The content padding a horizontal rail's ScrollView carries: the people
+      rail and the wishlist-card rail share it, so the app's rails line up. */
+  horizontalRail: {
+    gap: Spacing.md,
+    paddingVertical: Spacing.sm,
+  },
+  /** The content inset under the floating header: header clearance on top,
+      tab-bar clearance below, the app content edge sideways. FloatingHeaderLayout
+      applies it to its own ScrollView; a screen that opts out (`scroll={false}`)
+      with its own FlatList references this so the inset can't drift. */
+  floatingHeaderContent: {
+    paddingTop: Spacing.floatingHeaderContentPadding,
+    paddingBottom: Spacing.scrollContentBottom,
+    paddingHorizontal: Spacing.contentHorizontal,
   },
 });

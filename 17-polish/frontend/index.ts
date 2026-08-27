@@ -1,3 +1,6 @@
+// Must be the first import for react-native-gesture-handler (the swipe-to-delete
+// on notifications) to register its native handlers before anything renders.
+import 'react-native-gesture-handler';
 import { registerRootComponent } from 'expo';
 
 import App from './App';

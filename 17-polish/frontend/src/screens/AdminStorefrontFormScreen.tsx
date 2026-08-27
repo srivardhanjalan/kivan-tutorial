@@ -2,21 +2,28 @@ import React from 'react';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import AdminEntityForm, { AdminField, field } from '../components/layouts/AdminEntityForm';
 import PrimaryButton from '../components/PrimaryButton';
+import { usePendingImageUpload } from '../hooks/usePendingImageUpload';
 import { createStorefront, updateStorefront, deleteStorefront } from '../services/api';
-import { pluralize } from '../utils/pluralize';
 
 /**
  * One form for creating and editing a storefront. On create the id is a client
  * slug (a collision is a 409); on edit it is fixed. An existing store also shows
  * a bridge to its products and a delete: deleting a store that still has
  * products is refused by the backend with a 409, whose reason surfaces on the
- * toast (clear its products first). The seed-owned logo and the denormalized
- * product_count are never sent.
+ * toast (clear its products first). The logo rides the shared image uploader (a
+ * new upload's key is claimed on save); the denormalized product_count is never
+ * sent.
  */
 export default function AdminStorefrontFormScreen() {
   const navigation = useAppNavigation();
   const storefront = useAppRoute<'AdminStorefrontForm'>().params?.storefront;
   const editing = !!storefront;
+
+  const logo = usePendingImageUpload(
+    'storefront_logo',
+    'Could not upload the logo',
+    storefront?.logo_url ?? null
+  );
 
   const fields: AdminField[] = [
     field.slug(storefront?.id, 'e.g. acme-goods', 'Give the storefront an id'),
@@ -30,11 +37,13 @@ export default function AdminStorefrontFormScreen() {
       noun="Storefront"
       editing={editing}
       fields={fields}
+      image={{ label: 'Logo', upload: logo }}
       submitError="Could not save this storefront"
       onSubmit={async (values) => {
         const body = {
           name: values.name.trim(),
           description: values.description,
+          ...logo.bodyPatch('logo_url'),
           display_order: Number(values.displayOrder) || 0,
         };
         if (editing) {
@@ -47,11 +56,18 @@ export default function AdminStorefrontFormScreen() {
       deleteError="Could not delete this storefront"
       deleteMessage="It is removed from the catalog. This cannot be undone."
       editActions={
-        <PrimaryButton
-          title={`Manage products (${pluralize(storefront!.product_count, 'product')})`}
-          variant="secondary"
-          onPress={() => navigation.navigate('AdminStorefrontProducts', { storefront: storefront! })}
-        />
+        // Only construct this button when a storefront exists: AdminEntityForm
+        // renders editActions solely in edit mode, but the JSX is evaluated
+        // eagerly here, so an unguarded storefront!.product_count crashes the
+        // CREATE path (no route param) before that gate is reached. Narrowing on
+        // `storefront` also drops the unsafe non-null assertions.
+        storefront ? (
+          <PrimaryButton
+            title={`Manage products (${storefront.product_count} product${storefront.product_count === 1 ? '' : 's'})`}
+            variant="secondary"
+            onPress={() => navigation.navigate('AdminStorefrontProducts', { storefront })}
+          />
+        ) : undefined
       }
     />
   );

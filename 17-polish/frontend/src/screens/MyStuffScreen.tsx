@@ -1,14 +1,16 @@
 import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import { useAppNavigation } from '../hooks/useAppNavigation';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import SectionHeader from '../components/SectionHeader';
 import EmptyStateView from '../components/EmptyStateView';
 import WishlistGrid from '../components/WishlistGrid';
-import TileGrid from '../components/TileGrid';
-import EventCard from '../components/EventCard';
+import EventRailCard from '../components/EventRailCard';
+import PrimaryButton from '../components/PrimaryButton';
 import AddTileCard from '../components/AddTileCard';
 import useFetch from '../hooks/useFetch';
 import { fetchMyWishlists, fetchMyEvents } from '../services/api';
+import { Spacing } from '../constants/ScreenStyles';
 
 /**
  * My Stuff: the grid of everything you own. Wishlists and the events you host
@@ -60,29 +62,41 @@ export default function MyStuffScreen() {
           onAction={createEvent}
         />
       ) : (
-        <TileGrid>
-          <AddTileCard label="New Event" onPress={createEvent} />
+        <>
+          <View style={styles.addEvent}>
+            <PrimaryButton title="New Event" variant="secondary" onPress={createEvent} />
+          </View>
           {hosting.map((event) => (
-            <EventCard key={event.id} event={event} onPress={() => openEvent(event.id)} />
+            <EventRailCard
+              key={event.id}
+              event={event}
+              isHosting
+              onPress={() => openEvent(event.id)}
+            />
           ))}
-        </TileGrid>
+        </>
       )}
 
       {invited.length > 0 && (
         <>
           <SectionHeader title="Invited" meta={invited.length} />
-          <TileGrid>
-            {invited.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                rsvp={event.my_rsvp_status}
-                onPress={() => openEvent(event.id)}
-              />
-            ))}
-          </TileGrid>
+          {invited.map((event) => (
+            <EventRailCard
+              key={event.id}
+              event={event}
+              isHosting={false}
+              rsvp={event.my_rsvp_status}
+              onPress={() => openEvent(event.id)}
+            />
+          ))}
         </>
       )}
     </FloatingHeaderLayout>
   );
 }
+
+const styles = StyleSheet.create({
+  addEvent: {
+    marginBottom: Spacing.md,
+  },
+});

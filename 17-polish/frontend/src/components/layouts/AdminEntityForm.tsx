@@ -6,9 +6,11 @@ import FormInput from '../FormInput';
 import FieldLabel from '../FieldLabel';
 import PrimaryButton from '../PrimaryButton';
 import ConfirmModal from '../ConfirmModal';
+import ImageUploadField from '../ImageUploadField';
 import { useToast } from '../ToastProvider';
 import useAsyncAction from '../../hooks/useAsyncAction';
 import useConfirmedDelete from '../../hooks/useConfirmedDelete';
+import type { PendingImageUpload } from '../../hooks/usePendingImageUpload';
 import { Spacing } from '../../constants/ScreenStyles';
 
 /** One text field of an admin entity form. The value lives in the controller,
@@ -108,6 +110,11 @@ interface AdminEntityFormProps {
   noun: string;
   editing: boolean;
   fields: AdminField[];
+  /** The entity's one image slot (a brand/store logo, a product photo). When
+      given, an ImageUploadField heads the form; the screen owns the hook and
+      reads its changedUrl in onSubmit, so the value never routes through the
+      text-field state. Omit for an entity with no image (a life event). */
+  image?: { label: string; upload: PendingImageUpload };
   /** Builds the body and calls the create/update API; the controller has
       already validated and wraps this in the loading + toast + goBack dance. */
   onSubmit: (values: Record<string, string>) => Promise<void>;
@@ -133,6 +140,7 @@ export default function AdminEntityForm({
   noun,
   editing,
   fields,
+  image,
   onSubmit,
   submitError,
   onDelete,
@@ -173,6 +181,8 @@ export default function AdminEntityForm({
       onSubmit={save}
       saving={saving}
     >
+      {image ? <ImageUploadField label={image.label} upload={image.upload} /> : null}
+
       {fields.map((f) =>
         f.slugOnCreate && editing ? null : (
           <React.Fragment key={f.key}>

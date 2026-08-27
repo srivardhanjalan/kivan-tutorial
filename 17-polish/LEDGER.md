@@ -26,14 +26,17 @@ scope, not this one.
 
 ## Home
 
-- [ ] Cover-photo profile header. *source:* an edge-to-edge cover band with the
-      avatar overlapping it, the display name, and the settings button floated
-      on the cover. *tutorial:* a plain floating header greeting `Hi, {name}`
-      with a settings icon button, no cover.
-- [ ] A horizontal wishlist chip rail that filters the feed. *source:* a rail
-      of wishlist chips led by an **All Wishes** aggregate and an add tile,
-      selecting one filters the wishes below. *tutorial:* a `Your wishlists`
-      preview rail of the six newest lists, each chip opens the list.
+- [ ] Cover-photo profile header. *source:* an inset cover band (a rounded card
+      inside the content padding, not a full-bleed edge-to-edge band —
+      `HomeScreen.tsx:556-577`) with the avatar overlapping it, the display name,
+      and the settings button floated on the cover. *tutorial:* a plain floating
+      header greeting `Hi, {name}` with a settings icon button, no cover.
+- [ ] A horizontal wishlist card rail that filters the feed. *source:* a rail
+      of wishlist cover-photo cards (a horizontal `WishlistCardGrid`,
+      `HomeScreen.tsx:482-600` — rounded cover cards, not chips) led by an
+      **All Wishes** aggregate and an add tile, selecting one filters the wishes
+      below. *tutorial:* a `Your wishlists` preview rail of the six newest lists,
+      each chip opens the list.
 - [ ] The wishes feed as the body of Home. *source:* a masonry grid of your
       wishes (image-forward, infinite scroll, pull to refresh) is the main
       surface. *tutorial:* Home shows no wishes; they live inside each wishlist.
@@ -63,11 +66,16 @@ scope, not this one.
 
 ## Discover
 
-- [ ] Discover / Following / Followers tabs in the header. *source:* three
+- [x] Discover / Following / Followers tabs in the header. *source:* three
       floating-header tabs switch between the popular feed, the people you
-      follow (with a loved-wishlists section), and your followers. *tutorial:*
-      a single Discover view; following and followers are reached instead as
-      drill-down lists from a profile's stat counts.
+      follow (with a loved-wishlists section), and your followers.
+      *tutorial (pre-polish):* a single Discover view; following and followers
+      were reached instead as drill-down lists from a profile's stat counts.
+      *Converged (step 17 phase 2):* `DiscoverScreen` renders the three
+      `SelectablePill` header tabs (`tab: 'discover' | 'following' | 'followers'`)
+      over the people/wishlist graph — Discover is the popular feed, Following
+      the people you follow with your loved wishlists, Followers who follow you —
+      matching the finished design.
 - [ ] A horizontal people rail. *source:* `People` is a horizontal rail of
       circular avatars (`UserRailItem`). *tutorial:* `People to follow` is a
       vertical list of `UserRow` rows.
@@ -84,9 +92,9 @@ scope, not this one.
 - [ ] Follow as a cover heart. *source:* the follow control is a heart button
       overlaid on the cover with a follower-count badge. *tutorial:* tappable
       Followers/Following stat counts plus a Follow/Following text pill.
-- [ ] A wish-forward profile body. *source:* a horizontal wishlist chip rail
-      (led by an **All Items** aggregate) filters a masonry grid of the user's
-      wishes below. *tutorial:* two wishlist-tile grids, `Wishlists` and
+- [ ] A wish-forward profile body. *source:* a horizontal wishlist card rail
+      (the same cover-photo card rail as Home, not chips; led by an **All Items**
+      aggregate) filters a masonry grid of the user's wishes below. *tutorial:* two wishlist-tile grids, `Wishlists` and
       `Loved`, no wish grid.
 - [ ] Profile aggregated all-items view. *source:* the **All Items** chip shows
       every wish the user owns in one grid. *tutorial:* wishes are only visible
@@ -94,9 +102,10 @@ scope, not this one.
 
 ## Wishlist detail
 
-- [ ] Cover-photo band hero. *source:* an edge-to-edge cover band carries the
-      wishlist. *tutorial:* an `ArtTile` pastel/image hero with the life-event
-      name beneath it.
+- [ ] Cover-photo band hero. *source:* an inset cover band (a rounded card
+      inside the content padding, not full-bleed — `WishlistDetailScreen.tsx:254-330`)
+      carries the wishlist. *tutorial:* an `ArtTile` pastel/image hero with the
+      life-event name beneath it.
 - [ ] Love as a cover heart. *source:* love is a heart button overlaid on the
       cover with a count badge. *tutorial:* an outlined `LoveButton` pill sits
       below the hero.
@@ -189,10 +198,19 @@ scope, not this one.
 
 ## Auth and onboarding
 
-- [ ] Cosmetic-only convergence. Sign-in, sign-up (email plus code
+- [x] Cosmetic-only convergence. Sign-in, sign-up (email plus code
       verification and OAuth), and the onboarding tutorial already hold
       functional parity; only styling and onboarding-slide copy need a polish
-      pass here.
+      pass here. *Converged (step 17 phase 4):* the onboarding carousel gained
+      the finished design's slide coverage (six slides — add-from-anywhere, the
+      Wish Store, events/following, notifications, ready — with refreshed copy)
+      in the tutorial's own idiom (the `PASTEL` one-off palette per study-17 §3,
+      the `GlassPill` next button, the `BrandMark` step-1 disc; no per-step
+      raw-hex colors and no floating-emoji `Animated` bloat from the source).
+      Sign-in/sign-up needed no change: their cosmetic convergence already landed
+      in the shared `AuthFormLayout`/`AuthMethods`/`OAuthButtons`/`BrandMark`
+      extraction (fully tokenized, cleaner than the source's raw-hex screens).
+      Auth flow untouched.
 
 ## Notifications (step 11)
 
@@ -721,21 +739,33 @@ Surface added (no source counterpart):
 
 Frontend (visual/workflow convergence, behavior held):
 
-- [ ] Plain row idiom over image-forward layouts. *source:* n/a (no admin UI).
-      *tutorial:* every admin list is the plain `DirectoryLayout`/`CatalogRow`
-      row idiom with a small logo/glyph each, and every editor is the inline
-      `FormScreenScaffold` form (labeled `FormInput`s, a `PrimaryButton` CTA
-      that scrolls with the form, delete as a danger button at its foot). Polish
-      brings the image-forward card/grid layouts the finished catalog screens
-      use, matching the directories entry above.
-- [ ] Catalog media uploader deferred. *source:* n/a. *tutorial:* logos and
-      product photos stay seed-owned; the admin editors carry NO image uploader
-      and never send (or round-trip) a `logo_url`/`image_url`, so an
-      admin-created brand, store, or product shows the placeholder glyph until a
-      later step ships an uploader. This is the same deferral the step-15 backend
-      recorded (no `brand_logo`/catalog upload type was added): a create/edit is
-      text-field CRUD only. Polish adds the uploader (reusing the step-06 media
-      pipeline) and the image-forward layouts that consume it.
+- [x] Plain row idiom over image-forward layouts. *source:* n/a (no admin UI).
+      *tutorial (pre-polish):* every admin list was the plain
+      `AdminCatalogScreen`/`CatalogRow` row idiom with a small logo/glyph each,
+      and every editor the inline `FormScreenScaffold` form (labeled
+      `FormInput`s, a `PrimaryButton` CTA that scrolls with the form, delete as a
+      danger button at its foot). (Nomenclature fixed per study-17 §6: admin
+      lists wrap `AdminCatalogScreen`, not `DirectoryLayout`.) *Converged (step
+      17 phase 4):* the brand/storefront/product lists now use the finished
+      directory's image-forward cards — the `BrandLogoCard` logo wall, the
+      `StorefrontCard` grid, and the `ProductCard` masonry — each tapping through
+      to its editor; life events keep the row (an icon glyph, no uploaded image).
+      The editors stay the `FormScreenScaffold` form, now headed by an
+      `ImageUploadField`.
+- [x] Catalog media uploader. *source:* n/a. *tutorial (pre-polish):* logos and
+      product photos stayed seed-owned; the admin editors carried NO image
+      uploader and never sent (or round-tripped) a `logo_url`/`image_url`, so an
+      admin-created brand, store, or product showed the placeholder glyph — the
+      same deferral the step-15 backend recorded (no `brand_logo`/catalog upload
+      type was added): a create/edit was text-field CRUD only. *Converged (step
+      17 phase 4):* the editors gain an `ImageUploadField` and the write models
+      carry `logo_url`/`image_url`, claimed on save via the step-06 media
+      pipeline (upload.py resource types `brand_logo`/`storefront_logo`/
+      `product_photo`; the same client-sends-the-key, reads-get-signed-URLs
+      discipline wishlist/wish photos use, with an admin-uploaded object swept on
+      replace/delete and a shared catalog/ seed object never reaped). An
+      admin-created brand/store/product now renders its uploaded image, the
+      placeholder glyph only when absent. Closes this step-15 deferral.
 - [ ] `id` (slug) as a plain typed field on create. *source:* n/a. *tutorial:*
       a reference-data id is a hand-typed slug field (the seed's stable ids), not
       generated or picked from a suggestion; a collision with a seeded row is a
@@ -778,3 +808,16 @@ Tests (parity note):
       surfacing. The on-screen role-gate render (the Settings row appearing for
       an admin) is proven by the step's E2E check, not a jest-expo component
       render; polish may bring a component-render harness later.
+
+Backend (source-app warts polish fixes, not screen divergences):
+
+- [ ] Regional S3 presigning. *source:* the S3 client presigns against boto3's
+      default endpoint, which resolves to the region-less global host
+      `bucket.s3.amazonaws.com` even for a us-west-2 bucket — the signed host is
+      global while the SigV4 scope is regional, so a non-us-east-1 bucket's 307
+      to its regional host breaks the host-bound signature (403 on every photo
+      GET/PUT outside us-east-1). *tutorial:* `s3_helpers.s3_client` pins an
+      explicit regional `endpoint_url` + virtual addressing, so presigned URLs
+      carry `bucket.s3.{region}.amazonaws.com` — signed host == served host in
+      every region. Host shape pinned by a backend test (the us-east-1 suite
+      would otherwise never catch a us-west-2-only regression).

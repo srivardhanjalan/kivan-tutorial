@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Image, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import TileCoverFill from './TileCoverFill';
 import BorderRadius from '../constants/BorderRadius';
 import { CommonScreenStyles } from '../constants/ScreenStyles';
 
@@ -13,19 +14,17 @@ interface ArtTileProps {
   /** The image-less fallback — the tile itself renders it only when there is
       no image, so that rule lives here, not at every call site */
   placeholder?: React.ReactNode;
-  /** True overlays that ride on top of photo and placeholder alike (the wish
-      check badge, the origin logo badge) */
-  children?: React.ReactNode;
 }
 
 /**
- * The one place the app turns a stored image URL into a clipped art block —
- * the tile family (wishlist, wish, product, and add-new tiles) and (via
- * `height`) the detail hero banners all share this exact shape, radius, and clip. When
- * `imageUrl` is set it renders full-bleed and the placeholder stays hidden;
- * children always render on top.
+ * The one place the app turns a stored cover/image value into a clipped art
+ * block — the tile family (the wishlist and add-new tiles) and (via `height`)
+ * the detail hero banner both share this exact shape, radius, and clip. The
+ * fill itself (a custom-upload image, a `preset:<id>` gradient, or the
+ * placeholder) is delegated to {@link TileCoverFill}; this owns the square/
+ * banner box and the pastel wash behind it.
  */
-const ArtTile: React.FC<ArtTileProps> = ({ color, imageUrl, height, placeholder, children }) => (
+const ArtTile: React.FC<ArtTileProps> = ({ color, imageUrl, height, placeholder }) => (
   <View
     style={[
       CommonScreenStyles.center,
@@ -34,12 +33,7 @@ const ArtTile: React.FC<ArtTileProps> = ({ color, imageUrl, height, placeholder,
       { backgroundColor: color },
     ]}
   >
-    {imageUrl ? (
-      <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-    ) : (
-      placeholder
-    )}
-    {children}
+    <TileCoverFill coverPhoto={imageUrl} placeholder={placeholder} />
   </View>
 );
 

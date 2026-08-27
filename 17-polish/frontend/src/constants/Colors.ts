@@ -29,10 +29,19 @@ export default {
   surface: '#FFFFFF',
   /** Hairline borders on inputs and outlined buttons */
   hairline: 'rgba(0, 0, 0, 0.08)',
+  /** The faintest border — the outline on glass pills/tiles where the blur
+      itself carries the edge and a hairline would read too hard */
+  borderSubtle: 'rgba(0, 0, 0, 0.06)',
   /** Placeholder/disabled text */
   textMuted: '#A1A1A6',
   /** Soft grey disc behind empty-state icons */
   subtleFill: 'rgba(224, 224, 224, 0.33)',
+  // Controls floated on a cover band read against a photo, so they carry their
+  // own translucent chrome instead of the app's surface/hairline tokens.
+  /** The translucent dark disc behind a control floated on a cover */
+  coverScrim: 'rgba(0, 0, 0, 0.35)',
+  /** The light outline on a cover-floated control */
+  coverHairline: 'rgba(255, 255, 255, 0.4)',
   /** Success/confirmation */
   success: '#34C759',
   /** Destructive/error */

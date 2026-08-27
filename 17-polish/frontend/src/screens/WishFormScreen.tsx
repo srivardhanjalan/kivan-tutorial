@@ -54,7 +54,7 @@ export default function WishFormScreen() {
           description: description.trim() ? description.trim() : null,
           cost: costValue ?? null,
           link_url: link.trim() ? link.trim() : null,
-          ...(photo.changedUrl ? { image_url: photo.changedUrl } : {}),
+          ...photo.bodyPatch('image_url'),
         };
         await updateWish(wish.id, body);
       } else {
@@ -65,7 +65,7 @@ export default function WishFormScreen() {
           ...(description.trim() ? { description: description.trim() } : {}),
           ...(costValue !== undefined ? { cost: costValue } : {}),
           ...(link.trim() ? { link_url: link.trim() } : {}),
-          ...(photo.changedUrl ? { image_url: photo.changedUrl } : {}),
+          ...photo.bodyPatch('image_url'),
         };
         await createWish(body);
       }

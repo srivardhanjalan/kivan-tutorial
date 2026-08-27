@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
@@ -10,42 +10,25 @@ import ConfirmCancelButtons from '../components/ConfirmCancelButtons';
 import ModalCard from '../components/ModalCard';
 import OnboardingTutorial from '../components/OnboardingTutorial';
 import ImageUploadField from '../components/ImageUploadField';
+import CoverPickerField from '../components/CoverPickerField';
+import SettingItemList from '../components/SettingItemList';
 import useFetch from '../hooks/useFetch';
 import useAsyncAction from '../hooks/useAsyncAction';
 import { usePendingImageUpload } from '../hooks/usePendingImageUpload';
+import { useCoverPicker } from '../hooks/useCoverPicker';
 import { useAppNavigation } from '../hooks/useAppNavigation';
 import { deleteAccount, fetchCurrentUser, updateProfile } from '../services/api';
 import type { ProfileUpdate } from '../services/api';
+import { coverValueToPersist } from '../constants/DefaultCoverPhotos';
 import { isAdmin } from '../utils/adminAccess';
 import { clerkFullName, clerkPrimaryEmail } from '../utils/clerkName';
-import Colors from '../constants/Colors';
 import Typography from '../constants/Typography';
-import Opacity from '../constants/Opacity';
 import { Spacing } from '../constants/ScreenStyles';
 
 const DAYS = Array.from({ length: 31 }, (_, i) => String(i + 1));
 const MONTHS = Array.from({ length: 12 }, (_, i) => String(i + 1));
 const THIS_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 100 }, (_, i) => String(THIS_YEAR - i));
-
-/** One tappable settings row: label left, current value right. */
-const SettingsRow: React.FC<{
-  label: string;
-  value?: string;
-  onPress?: () => void;
-}> = ({ label, value, onPress }) => (
-  <TouchableOpacity
-    style={styles.row}
-    onPress={onPress}
-    disabled={!onPress}
-    activeOpacity={Opacity.pressed}
-    accessibilityRole={onPress ? 'button' : 'text'}
-    accessibilityLabel={label}
-  >
-    <Text style={styles.rowLabel}>{label}</Text>
-    {value ? <Text style={styles.rowValue}>{value}</Text> : null}
-  </TouchableOpacity>
-);
 
 /**
  * One birthday wheel. VALUES stay unpadded ("1") — a padded value never
@@ -89,6 +72,10 @@ export default function SettingsScreen() {
 
   const profilePhoto = usePendingImageUpload('profile_photo', 'Could not upload your profile photo');
   const coverPhoto = usePendingImageUpload('cover_photo', 'Could not upload your cover photo');
+  // The cover preset picker layered over the upload slot: a chosen gradient
+  // preset (stored as `preset:<id>` in cover_photo) or the custom upload, last
+  // one wins. Seeds null; the saved cover_photo goes into the upload slot below.
+  const coverPicker = useCoverPicker(coverPhoto);
 
   const [showTutorial, setShowTutorial] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -140,8 +127,10 @@ export default function SettingsScreen() {
       if (profilePhoto.changedUrl) {
         update.image_url = profilePhoto.changedUrl;
       }
-      if (coverPhoto.changedUrl) {
-        update.cover_photo = coverPhoto.changedUrl;
+      // A picked preset wins; else persist a new custom upload if there was one
+      const cover = coverValueToPersist(coverPicker.chosenPreset, coverPhoto.changedUrl);
+      if (cover) {
+        update.cover_photo = cover;
       }
       if (Object.keys(update).length === 0) return;
       await updateProfile(update);
@@ -168,17 +157,7 @@ export default function SettingsScreen() {
             onCancel={() => setEditingName(false)}
           />
         </View>
-      ) : (
-        <SettingsRow
-          label="Name"
-          value={clerkFullName(user) || 'Add'}
-          onPress={startNameEdit}
-        />
-      )}
-
-      <SettingsRow label="Email" value={clerkPrimaryEmail(user)} />
-
-      {editingBirthday ? (
+      ) : editingBirthday ? (
         <View style={styles.editBlock}>
           <View style={styles.pickers}>
             <WheelColumn values={DAYS} selected={day} onChange={setDay} padLabels />
@@ -193,43 +172,80 @@ export default function SettingsScreen() {
           />
         </View>
       ) : (
-        <SettingsRow
-          label="Birthday"
-          value={birthday ?? 'Add'}
-          onPress={() => setEditingBirthday(true)}
+        <SettingItemList
+          items={[
+            {
+              id: 'name',
+              label: 'Name',
+              rightContent: <Text style={styles.value}>{clerkFullName(user) || 'Add'}</Text>,
+              onPress: startNameEdit,
+            },
+            {
+              id: 'email',
+              label: 'Email',
+              rightContent: <Text style={styles.value}>{clerkPrimaryEmail(user)}</Text>,
+            },
+            {
+              id: 'birthday',
+              label: 'Birthday',
+              rightContent: <Text style={styles.value}>{birthday ?? 'Add'}</Text>,
+              onPress: () => setEditingBirthday(true),
+            },
+          ]}
         />
       )}
 
       <SectionHeader title="Photos" />
       <View style={styles.editBlock}>
-        <ImageUploadField label="Profile photo" upload={profilePhoto} />
-        <ImageUploadField label="Cover photo" upload={coverPhoto} />
+        {/* The cover field (labeled preview + preset picker + custom upload),
+            then the profile photo the tutorial already shipped. */}
+        <CoverPickerField picker={coverPicker} label="Cover photo" />
+        <View style={styles.profilePhoto}>
+          <ImageUploadField label="Profile photo" upload={profilePhoto} />
+        </View>
         <PrimaryButton title="Save Photos" onPress={savePhotos} loading={saving} />
       </View>
 
       <SectionHeader title="Notifications" />
-      <SettingsRow
-        label="Notification settings"
-        onPress={() => navigation.navigate('NotificationSettings')}
+      <SettingItemList
+        items={[
+          {
+            id: 'notif',
+            label: 'Notification settings',
+            onPress: () => navigation.navigate('NotificationSettings'),
+          },
+        ]}
       />
 
       <SectionHeader title="Help" />
-      <SettingsRow label="Replay the tutorial" onPress={() => setShowTutorial(true)} />
+      <SettingItemList
+        items={[{ id: 'tutorial', label: 'Replay the tutorial', onPress: () => setShowTutorial(true) }]}
+      />
 
       {/* The only entry to the admin dashboard, shown to admins alone: a
           non-admin never sees this row (the backend gates every write too). */}
       {isAdmin(backendUser) && (
         <>
           <SectionHeader title="Admin" />
-          <SettingsRow
-            label="Admin dashboard"
-            onPress={() => navigation.navigate('AdminHome')}
+          <SettingItemList
+            items={[
+              { id: 'admin', label: 'Admin dashboard', onPress: () => navigation.navigate('AdminHome') },
+            ]}
           />
         </>
       )}
 
       <SectionHeader title="Danger zone" />
-      <SettingsRow label="Delete account" onPress={() => setShowDeleteModal(true)} />
+      <SettingItemList
+        items={[
+          {
+            id: 'delete',
+            label: 'Delete account',
+            destructive: true,
+            onPress: () => setShowDeleteModal(true),
+          },
+        ]}
+      />
 
       <View style={styles.signOut}>
         <PrimaryButton title="Sign Out" variant="secondary" onPress={() => signOut()} />
@@ -266,19 +282,11 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: Spacing.lg,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.hairline,
-  },
-  rowLabel: {
-    ...Typography.body,
-  },
-  rowValue: {
+  value: {
     ...Typography.bodySecondary,
+  },
+  profilePhoto: {
+    marginTop: Spacing.xxl,
   },
   editBlock: {
     paddingVertical: Spacing.lg,

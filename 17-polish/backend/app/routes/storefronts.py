@@ -10,6 +10,11 @@ from app.utils.dynamo import (
     put_item_or_409,
     update_item_fields,
 )
+from app.utils.s3_helpers import (
+    claim_pending_photo,
+    delete_photo_by_url,
+    plan_photo_update,
+)
 
 router = APIRouter(prefix="/storefronts", tags=["storefronts"])
 
@@ -50,35 +55,62 @@ def list_storefronts(_user_id: str = Depends(get_current_user_id)):
 
 @admin_router.post("", response_model=Storefront, status_code=status.HTTP_201_CREATED)
 def create_storefront(
-    storefront: StorefrontCreate, _admin_id: str = Depends(require_admin)
+    storefront: StorefrontCreate, admin_id: str = Depends(require_admin)
 ):
     """Add a store to the catalog. The id is the client's slug, put
     conditionally so a collision with a seeded store is a 409. product_count
     starts at zero — the store has no products until they are created under it,
-    and the product routes move the tally from there."""
+    and the product routes move the tally from there. An optional admin-uploaded
+    logo rides the wishlist-create photo discipline: plan, write, then claim only
+    after the write commits."""
     item = {**storefront.model_dump(), "product_count": 0}
-    return put_item_or_409(
+    to_claim = None
+    if storefront.logo_url is not None:
+        item["logo_url"], to_claim, _ = plan_photo_update(
+            storefront.logo_url, None, admin_id
+        )
+    created = put_item_or_409(
         storefronts_table, item, f"A storefront with id {storefront.id!r} already exists"
     )
+    if to_claim:
+        claim_pending_photo(to_claim)
+    return created
 
 
 @admin_router.put("/{storefront_id}", response_model=Storefront)
 def update_storefront(
     storefront_id: str,
     update: StorefrontUpdate,
-    _admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_admin),
 ):
-    """Edit a store's text fields. Field-scoped and null-ignored: only the keys
-    the body carries are written, so an edit never touches a seeded logo_url or
-    the denormalized product_count."""
+    """Edit a store's text fields and, optionally, its logo. Field-scoped and
+    null-ignored: only the keys the body carries are written, so an edit never
+    touches the denormalized product_count. A new logo rides the same key-based
+    discipline as PUT /wishlists — plan, write, then claim the pending object and
+    delete the replaced one only after the write commits."""
+    existing = get_item_or_404(storefronts_table, storefront_id, "Storefront not found")
+    update_data = update.model_dump(exclude_unset=True)
+
+    to_claim = to_delete = None
     changes = {
-        k: v for k, v in update.model_dump(exclude_unset=True).items() if v is not None
+        k: v for k, v in update_data.items() if v is not None and k != "logo_url"
     }
+    if update_data.get("logo_url") is not None:
+        stored, to_claim, to_delete = plan_photo_update(
+            update_data["logo_url"], existing.get("logo_url"), admin_id
+        )
+        if stored is not None:
+            changes["logo_url"] = stored
     if not changes:
-        return get_item_or_404(storefronts_table, storefront_id, "Storefront not found")
-    return update_item_fields(
+        return existing
+    result = update_item_fields(
         storefronts_table, {"id": storefront_id}, changes, "Storefront not found"
     )
+    if to_claim:
+        claim_pending_photo(to_claim)
+    if to_delete:
+        delete_photo_by_url(to_delete)
+    return result
 
 
 @admin_router.delete("/{storefront_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -93,10 +125,14 @@ def delete_storefront(storefront_id: str, _admin_id: str = Depends(require_admin
     (eventually consistent, no ConsistentRead), so a product not yet propagated
     can be missed here — the same window the public products listing, which
     reads the same index, already lives with. An admin-only rare path, and the
-    orphan would not list either, so this is an accepted bound, not a guarantee."""
+    orphan would not list either, so this is an accepted bound, not a guarantee.
+    An admin-uploaded logo is the store's own object, so it is swept after the
+    row is gone (a shared seed logo under catalog/ is left alone)."""
     if _has_products(storefront_id):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="This storefront still has products; delete them first",
         )
+    existing = get_item_or_404(storefronts_table, storefront_id, "Storefront not found")
     delete_item_or_404(storefronts_table, {"id": storefront_id}, "Storefront not found")
+    delete_photo_by_url(existing.get("logo_url"))

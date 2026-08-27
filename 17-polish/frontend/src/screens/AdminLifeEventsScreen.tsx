@@ -35,9 +35,7 @@ export default function AdminLifeEventsScreen() {
           icon="calendar-outline"
           title={lifeEvent.icon ? `${lifeEvent.icon}  ${lifeEvent.name}` : lifeEvent.name}
           accessibilityLabel={lifeEvent.name}
-          description={lifeEvent.description}
-          showChevron
-          onPress={() => navigation.navigate('AdminLifeEventForm', { lifeEvent })}
+          description={lifeEvent.description}          onPress={() => navigation.navigate('AdminLifeEventForm', { lifeEvent })}
         />
       ))}
     </AdminCatalogScreen>

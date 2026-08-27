@@ -19,3 +19,20 @@ export default function formatEventDate(iso: string | null): string {
   }
   return `${MONTHS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
 }
+
+/**
+ * The month/day parts for a compact date chip (the event banner's corner):
+ * `{ month: "AUG", day: "12" }`, or `{ month: "TBD", day: "" }` for a null or
+ * unparseable date. Split out so the chip needs no fragile string-splitting of
+ * the long format.
+ */
+export function eventDateChip(iso: string | null): { month: string; day: string } {
+  if (!iso) {
+    return { month: 'TBD', day: '' };
+  }
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return { month: 'TBD', day: '' };
+  }
+  return { month: MONTHS[date.getMonth()].toUpperCase(), day: String(date.getDate()) };
+}

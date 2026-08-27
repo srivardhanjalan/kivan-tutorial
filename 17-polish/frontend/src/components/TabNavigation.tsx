@@ -10,15 +10,14 @@ import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 import { Tabs, SearchTab, TabConfig, TabKey } from '../config/tabs';
 import { fetchUnreadNotificationCount } from '../services/api';
 import GlassPill from './GlassPill';
-import PlaceholderScreen from '../screens/PlaceholderScreen';
 import HomeScreen from '../screens/HomeScreen';
 import MyStuffScreen from '../screens/MyStuffScreen';
 import StorefrontsScreen from '../screens/StorefrontsScreen';
 import DiscoverScreen from '../screens/DiscoverScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 
-// Tabs with a real screen; the rest stay placeholders until their step
-const TabScreens: Partial<Record<TabKey, React.ComponentType>> = {
+// Every tab now has a real screen — the map is total over TabKey
+const TabScreens: Record<TabKey, React.ComponentType> = {
   HomeTab: HomeScreen,
   AddWishTab: StorefrontsScreen,
   MyStuffTab: MyStuffScreen,
@@ -126,8 +125,8 @@ function CustomTabBar({ state, navigation }: any) {
 
 /**
  * The app shell: a bottom-tab navigator whose tabs come entirely from
- * config/tabs.ts. Tabs without a real screen yet mount a PlaceholderScreen —
- * steps replace them one by one without touching the chrome.
+ * config/tabs.ts. Every tab now mounts its real screen (the map is total
+ * over TabKey), so the chrome stays untouched as screens evolve.
  */
 export default function TabNavigation() {
   return (
@@ -140,7 +139,7 @@ export default function TabNavigation() {
         const Screen = TabScreens[tab.key];
         return (
           <Tab.Screen key={tab.key} name={tab.key}>
-            {() => (Screen ? <Screen /> : <PlaceholderScreen tab={tab} />)}
+            {() => <Screen />}
           </Tab.Screen>
         );
       })}

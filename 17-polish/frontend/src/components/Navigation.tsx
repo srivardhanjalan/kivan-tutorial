@@ -72,7 +72,9 @@ export type RootStackParamList = {
   /** The real-store directory, grouped by category */
   Brands: undefined;
   /** The in-app browser opened on one real store (the brand is passed) */
-  InAppBrowser: { brand: Brand };
+  // Opened on a curated brand's site, or on a raw pasted product URL (the
+  // paste-a-link entry); either way you browse to a product and scrape it.
+  InAppBrowser: { brand: Brand } | { url: string };
   /** A user's public profile, reached from Discover or a follow list. Only the
       id is passed: the profile fetches the record. */
   UserProfile: { userId: string };

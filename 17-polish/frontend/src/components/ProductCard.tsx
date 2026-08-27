@@ -1,9 +1,8 @@
 import React from 'react';
-import ArtTileCard from './ArtTileCard';
-import ImagePlaceholderGlyph from './ImagePlaceholderGlyph';
-import Colors from '../constants/Colors';
-import { Spacing } from '../constants/ScreenStyles';
-import { formatCost } from '../utils/formatCost';
+import { TouchableOpacity } from 'react-native';
+import ImageForwardCard from './ImageForwardCard';
+import GlassPricePill from './GlassPricePill';
+import Opacity from '../constants/Opacity';
 import type { Product } from '../services/api';
 
 interface ProductCardProps {
@@ -12,20 +11,22 @@ interface ProductCardProps {
 }
 
 /**
- * A catalog product as a tile (the shared ArtTileCard): the same art block,
- * caption, and cost line as a wish card, since a product becomes a wish. The
- * product photo fills the art block (a placeholder glyph stands in when it has
- * none); name and price sit below.
+ * A catalog product as an image-forward tile — the same ImageForwardCard a wish
+ * takes, since a product becomes a wish: the photo fills a rounded card and
+ * sizes to its own aspect ratio (so a column staggers into a masonry), with a
+ * glass price pill on the bottom and no caption (the name rides the a11y label).
  */
 const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) => (
-  <ArtTileCard
-    title={product.name}
+  <TouchableOpacity
     onPress={onPress}
-    color={Colors.subtleFill}
-    imageUrl={product.image_url}
-    placeholder={<ImagePlaceholderGlyph size={Spacing.tileGlyphSize} />}
-    subtitle={formatCost(product.price)}
-  />
+    activeOpacity={Opacity.pressed}
+    accessibilityRole="button"
+    accessibilityLabel={product.name}
+  >
+    <ImageForwardCard imageUrl={product.image_url}>
+      <GlassPricePill cost={product.price} />
+    </ImageForwardCard>
+  </TouchableOpacity>
 );
 
 export default ProductCard;

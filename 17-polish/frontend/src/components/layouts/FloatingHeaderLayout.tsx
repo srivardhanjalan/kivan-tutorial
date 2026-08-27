@@ -25,6 +25,21 @@ interface FloatingHeaderLayoutProps {
    * app-wide content edge (Spacing.contentHorizontal) on its list itself.
    */
   scroll?: boolean;
+  /**
+   * A node pinned above the bottom safe-area inset, floating over the scroll
+   * content (a detail screen's call-to-action pill). The layout owns the
+   * absolute positioning and centers it; the node passes taps through around
+   * itself, so the content behind stays scrollable.
+   */
+  floatingFooter?: React.ReactNode;
+  /**
+   * A node docked at the foot of the screen, below the scroll content and above
+   * the bottom safe-area inset (a form editor's pinned save CTA). Unlike
+   * floatingFooter it is opaque, full-width, and carries a hairline top divider;
+   * it stacks below the scroll in the safe-area column rather than floating over
+   * it, so it never overlaps the content it submits.
+   */
+  pinnedFooter?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -45,6 +60,8 @@ const FloatingHeaderLayout: React.FC<FloatingHeaderLayoutProps> = ({
   headerRight,
   loading = false,
   scroll = true,
+  floatingFooter,
+  pinnedFooter,
   children,
 }) => {
   const navigation = useAppNavigation();
@@ -58,7 +75,7 @@ const FloatingHeaderLayout: React.FC<FloatingHeaderLayoutProps> = ({
       {scroll ? (
         <ScrollView
           style={styles.flex}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={CommonScreenStyles.floatingHeaderContent}
           showsVerticalScrollIndicator={false}
         >
           {children}
@@ -66,6 +83,8 @@ const FloatingHeaderLayout: React.FC<FloatingHeaderLayoutProps> = ({
       ) : (
         <View style={styles.flex}>{children}</View>
       )}
+
+      {pinnedFooter && <View style={styles.pinnedFooter}>{pinnedFooter}</View>}
 
       <FloatingHeader
         title={title}
@@ -87,6 +106,12 @@ const FloatingHeaderLayout: React.FC<FloatingHeaderLayoutProps> = ({
         }
         rightContent={headerRight}
       />
+
+      {floatingFooter && (
+        <View style={styles.floatingFooter} pointerEvents="box-none">
+          {floatingFooter}
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -100,12 +125,24 @@ const styles = StyleSheet.create({
     height: Spacing.chromeTouchTarget,
     marginLeft: Spacing.backChevronPull,
   },
-  scrollContent: {
-    paddingTop: Spacing.floatingHeaderContentPadding,
-    paddingBottom: Spacing.scrollContentBottom,
-    // The layout owns the single app-wide content edge; screens must not
-    // re-apply their own horizontal padding
+  // Pinned above the bottom safe-area inset (absolute measures from the padding
+  // box, so bottom sits clear of the inset SafeAreaView reserves).
+  floatingFooter: {
+    position: 'absolute',
+    left: Spacing.xl,
+    right: Spacing.xl,
+    bottom: Spacing.xl,
+    alignItems: 'center',
+  },
+  // Docked below the scroll, above the bottom inset: an opaque bar carrying the
+  // editor's save CTA, set off from the content by a hairline top divider.
+  pinnedFooter: {
     paddingHorizontal: Spacing.contentHorizontal,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.md,
+    backgroundColor: Colors.background,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.hairline,
   },
 });
 

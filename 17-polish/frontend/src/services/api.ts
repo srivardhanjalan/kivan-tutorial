@@ -51,13 +51,17 @@ export interface ProfileUpdate {
 }
 
 /** The image slots this app uploads for — the S3 path is keyed on it.
-    Collections add art for a wishlist tile and a wish card. */
+    Collections add art for a wishlist tile and a wish card; the admin catalog
+    (step 17) adds a brand logo, a storefront logo, and a product photo. */
 export type ResourceType =
   | 'profile_photo'
   | 'cover_photo'
   | 'wishlist_photo'
   | 'wish_photo'
-  | 'event_photo';
+  | 'event_photo'
+  | 'brand_logo'
+  | 'storefront_logo'
+  | 'product_photo';
 
 /** Extensions the signed-url endpoint accepts (drives the S3 key + MIME) */
 export type FileExtension = 'jpeg' | 'png' | 'gif' | 'webp';
@@ -141,11 +145,6 @@ async function request(path: string, init?: RequestInit): Promise<Response> {
     throw new ApiError(path, res.status, await errorDetail(res));
   }
   return res;
-}
-
-/** Resolves when the backend answers /health. */
-export async function fetchHealth(): Promise<void> {
-  await request('/health');
 }
 
 /** The current user's backend record — provisioned on this very call if
@@ -261,6 +260,10 @@ export interface WishlistCreate {
   life_event_id?: string;
   /** Visibility (step 14); omitted on create the backend defaults it public. */
   privacy_type?: PrivacyType;
+  /** Co-owners to seed at create (step 14 phase A); the form's picker sends the
+      chosen user ids, and none makes it a personal wishlist. Create-only — the
+      PUT form never sends it (owners are managed from the detail screen). */
+  owner_ids?: string[];
 }
 
 /** POST /wishes/ body — wishlist_id and name required, the rest optional.
@@ -935,7 +938,8 @@ export async function setUserRole(userId: string, role: Role): Promise<User> {
   return res.json();
 }
 
-/** POST /admin/brands body — `id` is a client slug; logo_url is seed-owned. */
+/** POST /admin/brands body — `id` is a client slug; `logo_url` is the S3 key of
+    an upload, claimed on save (omit it and the brand starts logoless). */
 export interface BrandCreate {
   id: string;
   name: string;
@@ -943,16 +947,19 @@ export interface BrandCreate {
   website_url: string;
   category: string;
   country: string;
+  logo_url?: string;
   display_order?: number;
 }
 
-/** PUT /admin/brands/{id} body — send only what changes; `id` is immutable. */
+/** PUT /admin/brands/{id} body — send only what changes; `id` is immutable.
+    A new `logo_url` (an upload's S3 key) swaps the logo, claimed on save. */
 export interface BrandUpdate {
   name?: string;
   description?: string;
   website_url?: string;
   category?: string;
   country?: string;
+  logo_url?: string;
   display_order?: number;
 }
 
@@ -1018,18 +1025,22 @@ export async function deleteLifeEvent(id: string): Promise<void> {
   await request(`/admin/life-events/${id}`, { method: 'DELETE' });
 }
 
-/** POST /admin/storefronts body — `id` is a client slug; logo/count seed-owned. */
+/** POST /admin/storefronts body — `id` is a client slug; `product_count` is
+    seed-owned, `logo_url` is an upload's S3 key claimed on save (omit for none). */
 export interface StorefrontCreate {
   id: string;
   name: string;
   description?: string;
+  logo_url?: string;
   display_order?: number;
 }
 
-/** PUT /admin/storefronts/{id} body — send only what changes. */
+/** PUT /admin/storefronts/{id} body — send only what changes; a new `logo_url`
+    (an upload's S3 key) swaps the logo, claimed on save. */
 export interface StorefrontUpdate {
   name?: string;
   description?: string;
+  logo_url?: string;
   display_order?: number;
 }
 
@@ -1058,23 +1069,27 @@ export async function deleteStorefront(id: string): Promise<void> {
   await request(`/admin/storefronts/${id}`, { method: 'DELETE' });
 }
 
-/** POST products body — `storefront_id` comes from the path; image seed-owned. */
+/** POST products body — `storefront_id` comes from the path; `image_url` is an
+    upload's S3 key claimed on save (omit and the product starts imageless). */
 export interface ProductCreate {
   id: string;
   name: string;
   description?: string;
   price: number;
   category: string;
+  image_url?: string;
   link_url: string;
   display_order?: number;
 }
 
-/** PUT product body — send only what changes; `storefront_id` is not editable. */
+/** PUT product body — send only what changes; `storefront_id` is not editable.
+    A new `image_url` (an upload's S3 key) swaps the photo, claimed on save. */
 export interface ProductUpdate {
   name?: string;
   description?: string;
   price?: number;
   category?: string;
+  image_url?: string;
   link_url?: string;
   display_order?: number;
 }

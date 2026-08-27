@@ -23,6 +23,12 @@ const ASPECT_BY_TYPE: Record<ResourceType, [number, number]> = {
   wish_photo: [1, 1],
   // The event cover renders as a wide banner on the detail hero
   event_photo: [16, 9],
+  // Admin catalog art crops square, like a wish tile: brand/store logos center
+  // in a square wall/card cell, and a product photo rides the same
+  // ImageForwardCard a wish does.
+  brand_logo: [1, 1],
+  storefront_logo: [1, 1],
+  product_photo: [1, 1],
 };
 
 /**

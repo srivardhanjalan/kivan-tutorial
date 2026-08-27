@@ -3,11 +3,11 @@ import formatUnreadCount from '../utils/formatUnreadCount';
 import NOTIFICATION_TYPE_ICON from '../constants/notificationTypeIcons';
 import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Swipeable } from 'react-native-gesture-handler';
 import { useFocusEffect } from '@react-navigation/native';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import HeaderIconButton from '../components/HeaderIconButton';
 import EmptyStateView from '../components/EmptyStateView';
-import ConfirmModal from '../components/ConfirmModal';
 import Avatar, { LIST_ROW_AVATAR_SIZE } from '../components/Avatar';
 import { useToast } from '../components/ToastProvider';
 import useAsyncAction from '../hooks/useAsyncAction';
@@ -21,8 +21,9 @@ import {
 import type { NotificationType, NotificationWithActor } from '../services/api';
 import Colors from '../constants/Colors';
 import Opacity from '../constants/Opacity';
+import Shadows from '../constants/Shadows';
 import { ChromeMaxFontSizeMultiplier } from '../constants/Typography';
-import { Spacing } from '../constants/ScreenStyles';
+import { CommonScreenStyles, Spacing } from '../constants/ScreenStyles';
 import BorderRadius from '../constants/BorderRadius';
 
 /** The page size for the feed's infinite scroll (the backend caps limit at 50). */
@@ -55,39 +56,53 @@ function timeAgo(createdAt: string): string {
   return new Date(createdAt).toLocaleDateString();
 }
 
-/** One tappable notification: the actor's avatar badged with the type icon, the
-    message, and its age. Long-press opens the delete confirm; an unread row
-    reads bolder with a dot. */
+/** One tappable notification card: the actor's avatar badged with the type
+    icon, the message, and its age. Swipe left to reveal a trash action that
+    deletes it; an unread card wears a left accent and a dot. */
 const NotificationRow: React.FC<{
   item: NotificationWithActor;
   onPress: () => void;
-  onLongPress: () => void;
-}> = ({ item, onPress, onLongPress }) => {
+  onDelete: () => void;
+}> = ({ item, onPress, onDelete }) => {
   const name =
     [item.actor.first_name, item.actor.last_name].filter(Boolean).join(' ') || 'Someone';
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      onLongPress={onLongPress}
-      activeOpacity={Opacity.pressed}
-      accessibilityRole="button"
-      accessibilityLabel={item.message}
-      style={styles.row}
+    <Swipeable
+      overshootRight={false}
+      renderRightActions={() => (
+        <TouchableOpacity
+          onPress={onDelete}
+          activeOpacity={Opacity.pressed}
+          accessibilityRole="button"
+          accessibilityLabel="Delete notification"
+          style={styles.deleteAction}
+        >
+          <Ionicons name="trash" size={22} color={Colors.white} />
+        </TouchableOpacity>
+      )}
     >
-      <View>
-        <Avatar imageUrl={item.actor.image_url} name={name} size={LIST_ROW_AVATAR_SIZE} />
-        <View style={[styles.typeBadge, { backgroundColor: TYPE_COLOR[item.notification_type] }]}>
-          <Ionicons name={NOTIFICATION_TYPE_ICON[item.notification_type]} size={13} color={Colors.white} />
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={Opacity.pressed}
+        accessibilityRole="button"
+        accessibilityLabel={item.message}
+        style={[styles.card, !item.read && styles.cardUnread]}
+      >
+        <View>
+          <Avatar imageUrl={item.actor.image_url} name={name} size={LIST_ROW_AVATAR_SIZE} />
+          <View style={[styles.typeBadge, { backgroundColor: TYPE_COLOR[item.notification_type] }]}>
+            <Ionicons name={NOTIFICATION_TYPE_ICON[item.notification_type]} size={13} color={Colors.white} />
+          </View>
         </View>
-      </View>
-      <View style={styles.rowText}>
-        <Text style={[styles.message, !item.read && styles.messageUnread]} numberOfLines={2}>
-          {item.message}
-        </Text>
-        <Text style={styles.time}>{timeAgo(item.created_at)}</Text>
-      </View>
-      {!item.read && <View style={styles.unreadDot} />}
-    </TouchableOpacity>
+        <View style={styles.rowText}>
+          <Text style={[styles.message, !item.read && styles.messageUnread]} numberOfLines={2}>
+            {item.message}
+          </Text>
+          <Text style={styles.time}>{timeAgo(item.created_at)}</Text>
+        </View>
+        {!item.read && <View style={styles.unreadDot} />}
+      </TouchableOpacity>
+    </Swipeable>
   );
 };
 
@@ -97,12 +112,12 @@ const NotificationRow: React.FC<{
  * and opens what it points at: a follow to the actor's profile, a wishlist or
  * love to that wishlist, a new wish to the wishlist it landed in, an event
  * (created or invitation) to that event's detail. The header
- * carries an unread pill and a mark-all-read action; a long-press deletes a row.
+ * carries an unread pill and a mark-all-read action; a swipe deletes a row.
  */
 export default function NotificationsScreen() {
   const toast = useToast();
   const navigation = useAppNavigation();
-  const { loading: acting, run } = useAsyncAction();
+  const { run } = useAsyncAction();
 
   const [notifications, setNotifications] = useState<NotificationWithActor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,7 +126,6 @@ export default function NotificationsScreen() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [nextOffset, setNextOffset] = useState<number | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<NotificationWithActor | null>(null);
   // Guards against overlapping loads (rapid onEndReached firings, a refresh
   // landing over the focus reload).
   const loadingRef = useRef(false);
@@ -208,17 +222,13 @@ export default function NotificationsScreen() {
       toast.show('All notifications marked as read');
     }, 'Could not mark all as read');
 
-  const confirmDelete = () => {
-    const target = pendingDelete;
-    if (!target) return;
+  const deleteRow = (target: NotificationWithActor) =>
     run(async () => {
       await deleteNotification(target.id);
       setNotifications((prev) => prev.filter((n) => n.id !== target.id));
       setTotal((t) => Math.max(0, t - 1));
       if (!target.read) setUnreadCount((c) => Math.max(0, c - 1));
-      setPendingDelete(null);
     }, 'Could not delete the notification');
-  };
 
   return (
     <FloatingHeaderLayout
@@ -254,10 +264,11 @@ export default function NotificationsScreen() {
         <FlatList
           data={notifications}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={CommonScreenStyles.floatingHeaderContent}
           showsVerticalScrollIndicator={false}
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -270,21 +281,11 @@ export default function NotificationsScreen() {
             <NotificationRow
               item={item}
               onPress={() => handlePress(item)}
-              onLongPress={() => setPendingDelete(item)}
+              onDelete={() => deleteRow(item)}
             />
           )}
         />
       )}
-
-      <ConfirmModal
-        visible={pendingDelete !== null}
-        title="Delete notification?"
-        message="This removes it from your feed. This cannot be undone."
-        confirmTitle="Delete"
-        loading={acting}
-        onConfirm={confirmDelete}
-        onCancel={() => setPendingDelete(null)}
-      />
     </FloatingHeaderLayout>
   );
 }
@@ -294,16 +295,32 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: Spacing.floatingHeaderContentPadding,
   },
-  listContent: {
-    paddingTop: Spacing.floatingHeaderContentPadding,
-    paddingBottom: Spacing.scrollContentBottom,
-    paddingHorizontal: Spacing.contentHorizontal,
-  },
-  row: {
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
-    paddingVertical: Spacing.sm,
+    padding: Spacing.md,
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.md,
+    ...Shadows.card,
+  },
+  // The unread accent: a left rail plus the trailing dot, matching the shared
+  // list-card unread treatment.
+  cardUnread: {
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.primary,
+  },
+  // The swipe-revealed trash action, aligned to the card it deletes.
+  deleteAction: {
+    width: 72,
+    marginLeft: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.danger,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  separator: {
+    height: Spacing.md,
   },
   typeBadge: {
     position: 'absolute',

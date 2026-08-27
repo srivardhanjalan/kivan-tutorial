@@ -554,3 +554,38 @@ def put_product(
     }
     aws.Table(PRODUCTS_TABLE).put_item(Item=item)
     return item
+
+
+# ── Photo-lifecycle test helpers ──────────────────────────────────────────────
+# The claim-on-save routes (a wishlist/wish/event image, and step 17's admin
+# catalog logos/photos) stage a `pending/` object in S3, then claim it into the
+# permanent keyspace on save and sweep it on delete. These stand up a moto bucket
+# and check what actually landed, so every claim-path test tells the same story
+# without respelling the boto3 dance.
+
+
+def photos_bucket(monkeypatch, name: str = "kivan-test-photos"):
+    """Point settings at a fresh moto S3 bucket and return (bucket, s3 client)."""
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "photos_bucket_name", name)
+    s3 = boto3.client("s3", region_name="us-east-1")
+    s3.create_bucket(Bucket=name)
+    return name, s3
+
+
+def head_exists(s3, bucket, key) -> bool:
+    """True if the object exists — the after-the-fact check a claim/sweep asserts."""
+    from botocore.exceptions import ClientError
+
+    try:
+        s3.head_object(Bucket=bucket, Key=key)
+        return True
+    except ClientError:
+        return False
+
+
+def bucket_url(bucket: str, key: str) -> str:
+    """The canonical (unsigned) bucket URL for a key — the shape upload.py mints
+    and the client sends back on save."""
+    return f"https://{bucket}.s3.us-east-1.amazonaws.com/{key}"

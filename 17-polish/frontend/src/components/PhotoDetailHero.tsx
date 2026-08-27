@@ -10,8 +10,9 @@ import { Spacing } from '../constants/ScreenStyles';
  * image-glyph placeholder when it has none. The wish detail and the product
  * detail lead with the identical block, so its height, wash, and placeholder
  * live here once instead of drifting between them. (The wishlist and event
- * details lead with a different flavor: a life-event pastel and glyph, which
- * lives once in its sibling {@link LifeEventDetailHero}.)
+ * details lead with a different flavor: the {@link CoverPhoto} band — an
+ * image-or-gradient cover carrying the life event — not this neutral photo
+ * block.)
  */
 const PhotoDetailHero: React.FC<{ imageUrl?: string | null }> = ({ imageUrl }) => (
   <ArtTile

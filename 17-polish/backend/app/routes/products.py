@@ -14,6 +14,11 @@ from app.utils.dynamo import (
     query_all_pages,
     update_item_fields,
 )
+from app.utils.s3_helpers import (
+    claim_pending_photo,
+    delete_photo_by_url,
+    plan_photo_update,
+)
 
 # Products are always browsed inside their storefront, so the one listing route
 # nests under /storefronts. Products are their own domain (own model, own
@@ -64,24 +69,33 @@ def list_storefront_products(
     status_code=status.HTTP_201_CREATED,
 )
 def create_product(
-    storefront_id: str, product: ProductCreate, _admin_id: str = Depends(require_admin)
+    storefront_id: str, product: ProductCreate, admin_id: str = Depends(require_admin)
 ):
     """Add a product to a store. The store must exist (404 otherwise) — a
     product filed under a phantom store would never list and would nudge a
     phantom count. The id is the client's slug, put conditionally (409 on
     collision). price stores as a Decimal (DynamoDB rejects float). On success
-    the store's denormalized product_count moves up by one."""
+    the store's denormalized product_count moves up by one. An optional
+    admin-uploaded photo rides the wishlist-create photo discipline: plan, write,
+    then claim only after the write commits."""
     get_item_or_404(storefronts_table, storefront_id, "Storefront not found")
     item = {
         **product.model_dump(),
         "storefront_id": storefront_id,
         "price": Decimal(str(product.price)),
     }
+    to_claim = None
+    if product.image_url is not None:
+        item["image_url"], to_claim, _ = plan_photo_update(
+            product.image_url, None, admin_id
+        )
     created = put_item_or_409(
         products_table, item, f"A product with id {product.id!r} already exists"
     )
     # Only after the row is safely written (never on a 409) does the tally move.
     adjust_count(storefronts_table, {"id": storefront_id}, "product_count", 1)
+    if to_claim:
+        claim_pending_photo(to_claim)
     return created
 
 
@@ -90,25 +104,39 @@ def update_product(
     storefront_id: str,
     product_id: str,
     update: ProductUpdate,
-    _admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_admin),
 ):
-    """Edit a product under its store. Field-scoped and null-ignored; price
-    stores as a Decimal. storefront_id is not editable, so the tally never moves
-    on an edit."""
+    """Edit a product under its store, and optionally its photo. Field-scoped
+    and null-ignored; price stores as a Decimal. storefront_id is not editable,
+    so the tally never moves on an edit. A new photo rides the same key-based
+    discipline as PUT /wishlists — plan, write, then claim the pending object and
+    delete the replaced one only after the write commits."""
     existing = _product_under_store(product_id, storefront_id)
     update_data = update.model_dump(exclude_unset=True)
     changes = {
         k: v
         for k, v in update_data.items()
-        if v is not None and k != "price"
+        if v is not None and k not in ("price", "image_url")
     }
     if update_data.get("price") is not None:
         changes["price"] = Decimal(str(update_data["price"]))
+    to_claim = to_delete = None
+    if update_data.get("image_url") is not None:
+        stored, to_claim, to_delete = plan_photo_update(
+            update_data["image_url"], existing.get("image_url"), admin_id
+        )
+        if stored is not None:
+            changes["image_url"] = stored
     if not changes:
         return existing
-    return update_item_fields(
+    result = update_item_fields(
         products_table, {"id": product_id}, changes, "Product not found"
     )
+    if to_claim:
+        claim_pending_photo(to_claim)
+    if to_delete:
+        delete_photo_by_url(to_delete)
+    return result
 
 
 @admin_router.delete(
@@ -122,7 +150,10 @@ def delete_product(
     by one — the mirror of create's increment (a best-effort cache, floored at
     0 by adjust_count). Nothing hard-references a product (a captured wish copies
     its photo, price and link by value at add-time), so this is otherwise
-    unguarded — 404 if the product isn't under this store."""
-    _product_under_store(product_id, storefront_id)
+    unguarded — 404 if the product isn't under this store. An admin-uploaded
+    photo is the product's own object, so it is swept after the row is gone (a
+    shared seed photo under catalog/ is left alone)."""
+    product = _product_under_store(product_id, storefront_id)
     delete_item_or_404(products_table, {"id": product_id}, "Product not found")
     adjust_count(storefronts_table, {"id": storefront_id}, "product_count", -1)
+    delete_photo_by_url(product.get("image_url"))

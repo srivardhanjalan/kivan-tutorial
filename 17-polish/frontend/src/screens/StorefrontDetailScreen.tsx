@@ -4,8 +4,7 @@ import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import HeaderIconButton from '../components/HeaderIconButton';
 import SectionHeader from '../components/SectionHeader';
 import EmptyStateView from '../components/EmptyStateView';
-import TileGrid from '../components/TileGrid';
-import ProductCard from '../components/ProductCard';
+import ProductMasonry from '../components/ProductMasonry';
 import CategoryFilterModal from '../components/CategoryFilterModal';
 import useFetch from '../hooks/useFetch';
 import { fetchStorefrontProducts } from '../services/api';
@@ -66,15 +65,10 @@ export default function StorefrontDetailScreen() {
           subtitle="This store has nothing to browse right now. Check back later."
         />
       ) : (
-        <TileGrid>
-          {filteredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onPress={() => navigation.navigate('ProductDetail', { product })}
-            />
-          ))}
-        </TileGrid>
+        <ProductMasonry
+          products={filteredProducts}
+          onPressProduct={(product) => navigation.navigate('ProductDetail', { product })}
+        />
       )}
 
       <CategoryFilterModal
