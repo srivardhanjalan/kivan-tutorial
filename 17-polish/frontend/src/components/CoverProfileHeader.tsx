@@ -7,8 +7,8 @@ import BorderRadius from '../constants/BorderRadius';
 import Typography from '../constants/Typography';
 import { Spacing } from '../constants/ScreenStyles';
 
-/** The cover band height and the avatar diameter that overlaps its foot. */
-const COVER_HEIGHT = 140;
+/** The avatar diameter that overlaps the cover's foot (the band height is the
+    shared Spacing.coverBandHeight token). */
 const AVATAR_SIZE = 72;
 
 interface CoverProfileHeaderProps {
@@ -45,7 +45,7 @@ const CoverProfileHeader: React.FC<CoverProfileHeaderProps> = ({
     <CoverPhoto
       ownerId={ownerId}
       coverPhoto={coverPhoto}
-      height={COVER_HEIGHT}
+      height={Spacing.coverBandHeight}
       borderRadius={bleed ? 0 : BorderRadius.xl}
       style={bleed ? styles.bleed : undefined}
     >

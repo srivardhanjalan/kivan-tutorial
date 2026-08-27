@@ -5,13 +5,11 @@ import { useAuth, useUser } from '@clerk/clerk-expo';
 import FloatingHeaderLayout from '../components/layouts/FloatingHeaderLayout';
 import SectionHeader from '../components/SectionHeader';
 import FormInput from '../components/FormInput';
-import FieldLabel from '../components/FieldLabel';
 import PrimaryButton from '../components/PrimaryButton';
 import ConfirmCancelButtons from '../components/ConfirmCancelButtons';
 import ModalCard from '../components/ModalCard';
 import OnboardingTutorial from '../components/OnboardingTutorial';
 import ImageUploadField from '../components/ImageUploadField';
-import CoverPhoto from '../components/CoverPhoto';
 import CoverPickerField from '../components/CoverPickerField';
 import SettingItemList from '../components/SettingItemList';
 import useFetch from '../hooks/useFetch';
@@ -199,17 +197,9 @@ export default function SettingsScreen() {
 
       <SectionHeader title="Photos" />
       <View style={styles.editBlock}>
-        {/* Cover photo: a live preview (a chosen gradient preset or a custom
-            upload), a preset picker, and the custom upload the tutorial already
-            shipped — presets are layered under it, not a replacement. */}
-        <FieldLabel>Cover photo</FieldLabel>
-        <CoverPhoto
-          ownerId={user?.id ?? ''}
-          coverPhoto={coverPicker.effectiveCover}
-          height={140}
-          style={styles.coverPreview}
-        />
-        <CoverPickerField picker={coverPicker} />
+        {/* The cover field (labeled preview + preset picker + custom upload),
+            then the profile photo the tutorial already shipped. */}
+        <CoverPickerField picker={coverPicker} label="Cover photo" />
         <View style={styles.profilePhoto}>
           <ImageUploadField label="Profile photo" upload={profilePhoto} />
         </View>
@@ -294,9 +284,6 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   value: {
     ...Typography.bodySecondary,
-  },
-  coverPreview: {
-    marginBottom: Spacing.md,
   },
   profilePhoto: {
     marginTop: Spacing.xxl,

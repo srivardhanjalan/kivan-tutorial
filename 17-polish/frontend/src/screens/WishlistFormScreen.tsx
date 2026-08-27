@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
-import { StyleSheet } from 'react-native';
 import { useUser } from '@clerk/clerk-expo';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FormScreenScaffold from '../components/layouts/FormScreenScaffold';
 import FormInput from '../components/FormInput';
-import FieldLabel from '../components/FieldLabel';
 import LifeEventField from '../components/LifeEventField';
 import CoOwnerPickerSection from '../components/CoOwnerPickerSection';
-import CoverPhoto from '../components/CoverPhoto';
 import CoverPickerField from '../components/CoverPickerField';
 import PrivacySelector from '../components/PrivacySelector';
 import { useToast } from '../components/ToastProvider';
@@ -21,7 +18,6 @@ import {
   coverValueToPersist,
   presetFromCoverPhoto,
 } from '../constants/DefaultCoverPhotos';
-import { Spacing } from '../constants/ScreenStyles';
 import type { PrivacyType, User, WishlistCreate } from '../services/api';
 
 /**
@@ -134,24 +130,10 @@ export default function WishlistFormScreen() {
 
       <PrivacySelector value={privacy} onChange={setPrivacy} />
 
-      {/* The cover: the same band the detail screen renders, plus the two ways
-          to set it (a gradient preset or a custom upload) — so the form sends
-          exactly the cover it previews. */}
-      <FieldLabel>Cover</FieldLabel>
-      <CoverPhoto
-        ownerId={user?.id ?? ''}
-        coverPhoto={coverPicker.effectiveCover}
-        height={140}
-        style={styles.coverPreview}
-      />
-      <CoverPickerField picker={coverPicker} />
+      {/* The cover field: a live preview of the same band the detail screen
+          renders, plus the two ways to set it (a gradient preset or a custom
+          upload) — so the form sends exactly the cover it previews. */}
+      <CoverPickerField picker={coverPicker} label="Cover" />
     </FormScreenScaffold>
   );
 }
-
-const styles = StyleSheet.create({
-  coverPreview: {
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.md,
-  },
-});

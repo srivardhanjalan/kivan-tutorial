@@ -58,6 +58,9 @@ export const Spacing = {
   detailHeroHeight: 180,
   detailHeroGlyphSize: 64, // placeholder glyph in a detail hero (emoji + Ionicons)
   tileGlyphSize: 40,       // placeholder glyph in a tile-sized slot (cards, add tile, upload field)
+  /** The cover band height — the profile/home header cover and the form
+      cover previews render at the same height so the preview matches the band */
+  coverBandHeight: 140,
 
   floatingHeaderContentGap: 12,
   /** Top padding for content under the floating header (60 + 12 = 72) */

@@ -1,20 +1,33 @@
 import React from 'react';
-import { ActivityIndicator } from 'react-native';
+import { ActivityIndicator, StyleSheet } from 'react-native';
+import { useUser } from '@clerk/clerk-expo';
+import FieldLabel from './FieldLabel';
+import CoverPhoto from './CoverPhoto';
 import SettingItemList from './SettingItemList';
 import CoverPickerModal from './CoverPickerModal';
 import Colors from '../constants/Colors';
+import { Spacing } from '../constants/ScreenStyles';
 import type { CoverPicker } from '../hooks/useCoverPicker';
 
 /**
- * The shared control surface below a cover preview: the two ways to set a cover
- * — "Choose a cover" (a gradient preset) and "Upload your own" (a custom photo)
- * — plus the preset picker modal, all driven by a {@link useCoverPicker}. The
- * live CoverPhoto preview stays in each screen above this, since its label and
- * placement differ; this is only the picker itself.
+ * A whole cover field: the labeled live preview (a chosen gradient preset or a
+ * custom upload) over the two ways to set it — "Choose a cover" and "Upload your
+ * own" — plus the preset picker modal, all driven by a {@link useCoverPicker}.
+ * The profile cover (Settings) and the wishlist cover (the form) render the
+ * identical field; only the `label` differs. The preview seeds its gradient off
+ * the current user, whose cover this always is.
  */
-export default function CoverPickerField({ picker }: { picker: CoverPicker }) {
+export default function CoverPickerField({ picker, label }: { picker: CoverPicker; label: string }) {
+  const { user } = useUser();
   return (
     <>
+      <FieldLabel>{label}</FieldLabel>
+      <CoverPhoto
+        ownerId={user?.id ?? ''}
+        coverPhoto={picker.effectiveCover}
+        height={Spacing.coverBandHeight}
+        style={styles.preview}
+      />
       <SettingItemList
         items={[
           { id: 'choose-cover', label: 'Choose a cover', onPress: picker.openPicker },
@@ -37,3 +50,9 @@ export default function CoverPickerField({ picker }: { picker: CoverPicker }) {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  preview: {
+    marginBottom: Spacing.md,
+  },
+});
