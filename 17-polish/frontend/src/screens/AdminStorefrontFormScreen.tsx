@@ -56,11 +56,18 @@ export default function AdminStorefrontFormScreen() {
       deleteError="Could not delete this storefront"
       deleteMessage="It is removed from the catalog. This cannot be undone."
       editActions={
-        <PrimaryButton
-          title={`Manage products (${storefront!.product_count} product${storefront!.product_count === 1 ? '' : 's'})`}
-          variant="secondary"
-          onPress={() => navigation.navigate('AdminStorefrontProducts', { storefront: storefront! })}
-        />
+        // Only construct this button when a storefront exists: AdminEntityForm
+        // renders editActions solely in edit mode, but the JSX is evaluated
+        // eagerly here, so an unguarded storefront!.product_count crashes the
+        // CREATE path (no route param) before that gate is reached. Narrowing on
+        // `storefront` also drops the unsafe non-null assertions.
+        storefront ? (
+          <PrimaryButton
+            title={`Manage products (${storefront.product_count} product${storefront.product_count === 1 ? '' : 's'})`}
+            variant="secondary"
+            onPress={() => navigation.navigate('AdminStorefrontProducts', { storefront })}
+          />
+        ) : undefined
       }
     />
   );
