@@ -1,0 +1,46 @@
+# 04 — Admin: the Settings "Admin" row (admin-only) -> the admin catalog dashboard.
+#
+# Visual components asserted: the admin-gated "Admin dashboard" row in Settings
+# (present only because the runner pre-granted this user the admin role — see
+# README + mint_ui_user.py --admin), and the admin catalog surface (the
+# Storefronts/Brands/Life-events/Users catalog rows) on AdminHome.
+#
+# DEVIATION from the "image-forward catalog grid" wording: AdminHome is a
+# glyph-led row menu, not an image grid — the image-forward catalog tiles live
+# on the user-facing Wish Store. This flow asserts the admin catalog menu, which
+# is the admin dashboard's actual catalog surface. (Documented in README.)
+# Selectors are RN accessibilityLabels matched as plain text (no testIDs exist).
+appId: host.exp.Exponent
+tags:
+  - kivan-ui
+---
+- stopApp
+- openLink: exp://localhost:8081
+- extendedWaitUntil:
+    visible: "Settings"            # the Home cover gear
+    timeout: 90000
+# settle the JS thread after cold start so the first tap is not dropped
+- waitForAnimationToEnd
+- tapOn: "Settings"
+# --- SettingsScreen: the admin-only section + row ---
+- extendedWaitUntil:
+    visible: "Settings"            # screen header
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      text: "Admin dashboard"
+    direction: DOWN
+- assertVisible: "Admin"           # the "Admin" section header
+- assertVisible: "Admin dashboard" # the admin-gated row
+- tapOn: "Admin dashboard"
+# --- AdminHome: the catalog dashboard ---
+- extendedWaitUntil:
+    visible: "Admin"               # screen header
+    timeout: 20000
+# The row's accessibilityLabel spells out "and" (the visible "&" title is a
+# collapsed child of the row's single accessibility element).
+- assertVisible: "Storefronts and products"  # curated catalog row
+- assertVisible: "Brands"                    # brand directory row
+- assertVisible: "Life events"               # occasions row
+- assertVisible: "Users"                     # roster row
+- takeScreenshot: artifacts-gitignored/04-admin-dashboard

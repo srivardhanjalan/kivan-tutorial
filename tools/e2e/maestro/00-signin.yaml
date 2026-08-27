@@ -1,0 +1,66 @@
+# 00 — Sign in, then assert the Home cover-band header + All-Wishes rail.
+#
+# Visual components asserted: the cover-band profile header (the signed-in
+# display name rendered over the cover, plus its "Settings" gear overlay) and
+# the All-Wishes rail's lead card ("All Wishes").
+#
+# Auth: the app's SignInScreen accepts a Clerk sign-in TICKET in the password
+# field (harness-only accommodation for the dev instance's MFA — see README).
+# The ticket + email arrive from `--env` (MAESTRO_E2E_EMAIL / MAESTRO_E2E_PASSWORD),
+# minted by tools/e2e/scripts/mint_ui_user.py. The ticket is single-use, so this
+# flow consumes it; the remaining flows ride the persisted session.
+#
+# Expo Go persists the Clerk session across reloads, so a re-run starts already
+# signed in on Home. To genuinely exercise sign-in, this flow signs out first
+# (Home gear -> Settings -> Sign Out) and then signs back in with the ticket.
+#
+# Selectors: this app defines no testIDs, so RN accessibilityLabels are matched
+# as plain text (Maestro `id:` = accessibilityIdentifier, which is unset here).
+# `stopApp` + `openLink` cold-starts the app in Expo Go and lands on Home — a
+# deterministic reset so every flow is order-independent (openLink alone would
+# only foreground an already-running app on whatever screen it was left on).
+appId: host.exp.Exponent
+tags:
+  - kivan-ui
+---
+- stopApp
+- openLink: exp://localhost:8081
+# The steady state is signed-in (Expo Go persists the session), so wait for Home
+# first; `optional` tolerates the rarer already-signed-out start (a prior 00 run).
+- extendedWaitUntil:
+    visible: "All Wishes"           # Home finished loading (already signed in)
+    timeout: 45000
+    optional: true
+# If signed in, sign out so the ticket sign-in below is a real end-to-end auth.
+- runFlow:
+    when:
+      visible: "All Wishes"
+    commands:
+      - tapOn: "Settings"           # the cover-band gear (accessibilityLabel)
+      - extendedWaitUntil:
+          visible: "Settings"       # Settings screen header
+          timeout: 20000
+      - scrollUntilVisible:
+          element:
+            text: "Sign Out"
+          direction: DOWN
+      - tapOn: "Sign Out"
+# --- SignInScreen ---
+- extendedWaitUntil:
+    visible: "Welcome to Kivan"
+    timeout: 30000
+- assertVisible: "Sign in to continue"
+- tapOn: "Email"
+- inputText: ${MAESTRO_E2E_EMAIL}
+- tapOn: "Password"
+- inputText: ${MAESTRO_E2E_PASSWORD}
+# The "Sign In" CTA sits just above the keyboard and is tappable with it up;
+# iOS offers no keyboard-dismiss affordance here, so we don't hideKeyboard.
+- tapOn: "Sign In"
+# --- Home: cover-band header + All-Wishes rail ---
+- extendedWaitUntil:
+    visible: "All Wishes"           # the All-Wishes rail lead card
+    timeout: 60000
+- assertVisible: "Vera Verify"      # cover-band header renders the display name
+- assertVisible: "Settings"         # the cover gear overlay => cover band present
+- takeScreenshot: artifacts-gitignored/00-signin-home

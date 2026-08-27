@@ -1,0 +1,65 @@
+# 01 — Create a wishlist with a life event + a cover preset, then land inside it.
+#
+# Visual components asserted: the create CTA carries the life-event EMOJI
+# ("🎂  Start Adding Wishes"), and after create we land INSIDE the new wishlist
+# (WishlistDetail) with its cover band + life-event name visible.
+#
+# Rides the session left signed-in by 00 (Expo Go persists it across reloads).
+# Selectors are RN accessibilityLabels matched as plain text (no testIDs exist).
+appId: host.exp.Exponent
+tags:
+  - kivan-ui
+---
+- stopApp
+- openLink: exp://localhost:8081
+# The rail's "New" tile has accessibilityLabel "New wishlist"; it opens the form.
+- extendedWaitUntil:
+    visible: "New wishlist"
+    timeout: 90000
+# Let the JS thread finish hydrating after the cold start, or the first tap
+# registers but its navigation is dropped.
+- waitForAnimationToEnd
+# --- WishlistForm --- retry the open until the form's "Life event" label shows,
+# then the name input is reliably mounted.
+- repeat:
+    while:
+      notVisible: "Life event"
+    commands:
+      - tapOn: "New wishlist"
+      - extendedWaitUntil:
+          visible: "Life event"
+          timeout: 8000
+          optional: true
+- tapOn: "Wishlist name"
+- inputText: "E2E Birthday Bash"
+- hideKeyboard
+- assertVisible: "Life event"
+- tapOn: "Birthday"               # life-event pill (name; emoji is a sibling Text)
+- assertVisible: "Cover"
+- tapOn: "Choose a cover"
+- extendedWaitUntil:
+    visible: "Pick a gradient for your cover photo."
+    timeout: 15000
+- tapOn: "Sunset Bliss"           # a real COVER_PRESETS entry (auto-applies + closes)
+# The pinned CTA now leads with the Birthday emoji — the visual assertion:
+- assertVisible: "🎂  Start Adding Wishes"
+- tapOn: "🎂  Start Adding Wishes"
+# --- WishlistDetail: landed inside the new wishlist, cover band visible ---
+- extendedWaitUntil:
+    visible: "E2E Birthday Bash"   # the new wishlist's name in its header
+    timeout: 30000
+- assertVisible: "Birthday"        # life-event name directly beneath the cover band
+- assertVisible: "No wishes yet"   # the new (empty) wishlist's body => landed inside
+- takeScreenshot: artifacts-gitignored/01-wishlist-create
+# Self-clean: delete the just-created wishlist via the detail's trash button so
+# the run leaves no residue and re-runs don't accumulate. (This also keeps the
+# stack clear of preset-cover wishlists, which the My Stuff grid mis-renders —
+# a latent 17-polish defect the harness surfaces; see README.)
+- tapOn: "Delete wishlist"         # header trash icon (accessibilityLabel)
+- extendedWaitUntil:
+    visible: "Delete Wishlist"     # ConfirmModal destructive CTA (distinct casing)
+    timeout: 10000
+- tapOn: "Delete Wishlist"
+- extendedWaitUntil:
+    visible: "All Wishes"          # back on Home, wishlist gone
+    timeout: 30000
