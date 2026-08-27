@@ -19,11 +19,31 @@ logger = logging.getLogger(__name__)
 
 # boto3 resolves credentials from the standard chain: the App Runner instance
 # role in the cloud (see infra/s3.tf's S3 policy), your AWS profile locally.
-# signature_version s3v4: presigned URLs must be SigV4 — the boto3 default can
-# emit deprecated SigV2 URLs that only work in pre-2014 regions like us-east-1.
 # Shared by the upload route too, so every presigned URL is signed one way.
+#
+# Two Config wants, both load-bearing for presigning outside us-east-1:
+#   * signature_version s3v4 — presigned URLs must be SigV4; the boto3 default
+#     can emit deprecated SigV2 URLs that only work in pre-2014 regions.
+#   * an explicit regional endpoint — this is the deliberately-fixed source-app
+#     wart. Left to its default resolver, boto3 signs a presigned URL against
+#     the region-LESS global host `bucket.s3.amazonaws.com` even when the
+#     client's region is us-west-2 (verified: the credential scope is regional
+#     but the host is not). S3 today routes that global host to the bucket's
+#     region and it happens to serve, but the SigV4 signature is bound to the
+#     Host it was signed with: the moment S3 answers a non-us-east-1 bucket with
+#     a 307 to the regional host (its documented behavior), the redirected
+#     request carries a different Host than the one signed and every GET/PUT
+#     403s. Pinning endpoint_url to `s3.{region}.amazonaws.com` with virtual
+#     addressing makes the signed host the regional virtual-hosted host
+#     (`bucket.s3.{region}.amazonaws.com`) — signed host == served host, no
+#     redirect, no signature mismatch, in every region.
 s3_client = boto3.client(
-    "s3", region_name=settings.aws_region, config=Config(signature_version="s3v4")
+    "s3",
+    region_name=settings.aws_region,
+    endpoint_url=f"https://s3.{settings.aws_region}.amazonaws.com",
+    config=Config(
+        signature_version="s3v4", s3={"addressing_style": "virtual"}
+    ),
 )
 
 # Fresh uploads land here; a save claims them out of it, the lifecycle rule

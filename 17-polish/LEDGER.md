@@ -803,3 +803,16 @@ Tests (parity note):
       surfacing. The on-screen role-gate render (the Settings row appearing for
       an admin) is proven by the step's E2E check, not a jest-expo component
       render; polish may bring a component-render harness later.
+
+Backend (source-app warts polish fixes, not screen divergences):
+
+- [ ] Regional S3 presigning. *source:* the S3 client presigns against boto3's
+      default endpoint, which resolves to the region-less global host
+      `bucket.s3.amazonaws.com` even for a us-west-2 bucket — the signed host is
+      global while the SigV4 scope is regional, so a non-us-east-1 bucket's 307
+      to its regional host breaks the host-bound signature (403 on every photo
+      GET/PUT outside us-east-1). *tutorial:* `s3_helpers.s3_client` pins an
+      explicit regional `endpoint_url` + virtual addressing, so presigned URLs
+      carry `bucket.s3.{region}.amazonaws.com` — signed host == served host in
+      every region. Host shape pinned by a backend test (the us-east-1 suite
+      would otherwise never catch a us-west-2-only regression).
