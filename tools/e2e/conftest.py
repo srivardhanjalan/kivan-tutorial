@@ -196,10 +196,10 @@ class _ClerkTokenAuth(httpx.Auth):
 class ClerkUser:
     user_id: str
     email: str
-    first_name: str
-    last_name: str
     client: httpx.Client  # base_url = api_url, auto-authed as this user
-    mint_token: Callable[[], str]  # a fresh session JWT on demand
+    # (first/last name are set on the Clerk account at creation — they surface in
+    #  the "Alan Actor" notification messages tests assert on — but nothing reads
+    #  them back off this object, so they are not carried here.)
 
 
 def _bapi(clerk_secret_key: str) -> httpx.Client:
@@ -297,7 +297,7 @@ def clerk_user(api_url, clerk_secret_key) -> Callable[..., ClerkUser]:
 
         mint = _mint_session(bapi, user_id)
         client = httpx.Client(base_url=api_url, auth=_ClerkTokenAuth(mint), timeout=30.0)
-        user = ClerkUser(user_id, email, first_name, last_name, client, mint)
+        user = ClerkUser(user_id, email, client)
         created.append(user)
 
         # Provision the DynamoDB row now (JIT provisioning fires on the first
