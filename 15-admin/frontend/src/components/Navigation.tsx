@@ -23,12 +23,30 @@ import InAppBrowserScreen from '../screens/InAppBrowserScreen';
 import UserProfileScreen from '../screens/UserProfileScreen';
 import FollowListScreen from '../screens/FollowListScreen';
 import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
+import AdminHomeScreen from '../screens/AdminHomeScreen';
+import AdminUsersScreen from '../screens/AdminUsersScreen';
+import AdminBrandsScreen from '../screens/AdminBrandsScreen';
+import AdminBrandFormScreen from '../screens/AdminBrandFormScreen';
+import AdminLifeEventsScreen from '../screens/AdminLifeEventsScreen';
+import AdminLifeEventFormScreen from '../screens/AdminLifeEventFormScreen';
+import AdminStorefrontsScreen from '../screens/AdminStorefrontsScreen';
+import AdminStorefrontFormScreen from '../screens/AdminStorefrontFormScreen';
+import AdminStorefrontProductsScreen from '../screens/AdminStorefrontProductsScreen';
+import AdminProductFormScreen from '../screens/AdminProductFormScreen';
 import {
   setAuthTokenGetter,
   fetchOnboardingCompleted,
   completeOnboarding,
 } from '../services/api';
-import type { Wishlist, Wish, Storefront, Product, Brand, Event } from '../services/api';
+import type {
+  Wishlist,
+  Wish,
+  Storefront,
+  Product,
+  Brand,
+  Event,
+  LifeEvent,
+} from '../services/api';
 import { parseDeepLink, DEEP_LINK_PREFIX } from '../utils/deepLinks';
 import type { DeepLinkTarget } from '../utils/deepLinks';
 
@@ -60,6 +78,26 @@ export type RootStackParamList = {
   UserProfile: { userId: string };
   /** The followers or following list behind a profile's counts */
   FollowList: { userId: string; mode: 'followers' | 'following' };
+  /** The admin dashboard home, reached only from the role-gated Settings row */
+  AdminHome: undefined;
+  /** The user roster with promote/demote */
+  AdminUsers: undefined;
+  /** The brand directory admin list */
+  AdminBrands: undefined;
+  /** Create (no param) or edit (the brand) one brand */
+  AdminBrandForm: { brand?: Brand };
+  /** The life-events taxonomy admin list */
+  AdminLifeEvents: undefined;
+  /** Create (no param) or edit (the life event) one occasion */
+  AdminLifeEventForm: { lifeEvent?: LifeEvent };
+  /** The storefront catalog admin list */
+  AdminStorefronts: undefined;
+  /** Create (no param) or edit (the storefront) one store */
+  AdminStorefrontForm: { storefront?: Storefront };
+  /** One store's products admin list (the store is passed, not refetched) */
+  AdminStorefrontProducts: { storefront: Storefront };
+  /** Create (store only) or edit (the product) one product under a store */
+  AdminProductForm: { storefront: Storefront; product?: Product };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -215,6 +253,16 @@ export default function Navigation() {
           <Stack.Screen name="InAppBrowser" component={InAppBrowserScreen} />
           <Stack.Screen name="UserProfile" component={UserProfileScreen} />
           <Stack.Screen name="FollowList" component={FollowListScreen} />
+          <Stack.Screen name="AdminHome" component={AdminHomeScreen} />
+          <Stack.Screen name="AdminUsers" component={AdminUsersScreen} />
+          <Stack.Screen name="AdminBrands" component={AdminBrandsScreen} />
+          <Stack.Screen name="AdminBrandForm" component={AdminBrandFormScreen} />
+          <Stack.Screen name="AdminLifeEvents" component={AdminLifeEventsScreen} />
+          <Stack.Screen name="AdminLifeEventForm" component={AdminLifeEventFormScreen} />
+          <Stack.Screen name="AdminStorefronts" component={AdminStorefrontsScreen} />
+          <Stack.Screen name="AdminStorefrontForm" component={AdminStorefrontFormScreen} />
+          <Stack.Screen name="AdminStorefrontProducts" component={AdminStorefrontProductsScreen} />
+          <Stack.Screen name="AdminProductForm" component={AdminProductFormScreen} />
         </Stack.Navigator>
       </NavigationContainer>
       <OnboardingTutorial visible={showOnboarding} onDismiss={handleOnboardingDismiss} />

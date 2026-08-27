@@ -48,15 +48,20 @@ EVENTS_TABLE = f"kivan-{ENVIRONMENT}-events"
 EVENT_HOSTS_TABLE = f"kivan-{ENVIRONMENT}-event-hosts"
 EVENT_INVITEES_TABLE = f"kivan-{ENVIRONMENT}-event-invitees"
 EVENT_WISHLISTS_TABLE = f"kivan-{ENVIRONMENT}-event-wishlists"
+BRANDS_TABLE = f"kivan-{ENVIRONMENT}-brands"
+LIFE_EVENTS_TABLE = f"kivan-{ENVIRONMENT}-life-events"
+STOREFRONTS_TABLE = f"kivan-{ENVIRONMENT}-storefronts"
+PRODUCTS_TABLE = f"kivan-{ENVIRONMENT}-products"
 
 
 def _create_tables(client) -> None:
     """Create exactly the tables the tested routes touch, each a faithful copy
-    of its infra/dynamodb.tf definition. Reference tables (life-events,
-    storefronts, brands, products) and the notifications table are omitted: no
-    code path under test reads them, and a table without a caller is bloat here
-    just as it would be in the app. (The notification fan-out the create routes
-    call is best-effort and swallows the missing-table error.)"""
+    of its infra/dynamodb.tf definition. The catalog reference tables are created
+    as their admin-CRUD tests land (step 15 gave them writers): brands here,
+    plus life-events, storefronts and products as those routes arrive. The
+    notifications table stays omitted — no code path under test reads it, and the
+    notification fan-out the create routes call swallows the missing-table
+    error; a table without a caller is bloat here just as it would be in the app."""
     # Users: hash id; NameSearchIndex (typeahead prefix search) and
     # PopularUsersIndex (Discover rail) both hash on the constant entity_type.
     # NameSearchIndex is SPARSE: name_lowercase is a String key, so DynamoDB
@@ -291,6 +296,54 @@ def _create_tables(client) -> None:
             {"AttributeName": "wishlist_id", "KeyType": "RANGE"},
         ],
     )
+    # Brands (step 15 admin): the real-store directory, reference data hashed on
+    # id with no GSI (GET /brands is a Scan) — the admin write routes read and
+    # write it by id.
+    client.create_table(
+        TableName=BRANDS_TABLE,
+        BillingMode="PAY_PER_REQUEST",
+        AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
+        KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
+    )
+    # Life events (step 15 admin): the occasion taxonomy, reference data hashed
+    # on id with no GSI. The admin delete scans wishlists/events for references,
+    # so those tables (created above) back its 409 contract.
+    client.create_table(
+        TableName=LIFE_EVENTS_TABLE,
+        BillingMode="PAY_PER_REQUEST",
+        AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
+        KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
+    )
+    # Storefronts (step 15 admin): the store catalog, reference data hashed on id
+    # with no GSI.
+    client.create_table(
+        TableName=STOREFRONTS_TABLE,
+        BillingMode="PAY_PER_REQUEST",
+        AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
+        KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
+    )
+    # Products (step 15 admin): one row per catalog product; StorefrontIdIndex
+    # (hash storefront_id) serves the storefront-scoped listing and backs the
+    # storefront delete guard's has-products Query — created here because the
+    # storefront routes are its first test reader, the product routes arrive next.
+    client.create_table(
+        TableName=PRODUCTS_TABLE,
+        BillingMode="PAY_PER_REQUEST",
+        AttributeDefinitions=[
+            {"AttributeName": "id", "AttributeType": "S"},
+            {"AttributeName": "storefront_id", "AttributeType": "S"},
+        ],
+        KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
+        GlobalSecondaryIndexes=[
+            {
+                "IndexName": "StorefrontIdIndex",
+                "KeySchema": [
+                    {"AttributeName": "storefront_id", "KeyType": "HASH"}
+                ],
+                "Projection": {"ProjectionType": "ALL"},
+            },
+        ],
+    )
 
 
 @pytest.fixture
@@ -345,6 +398,7 @@ def put_user(
     last_name: str | None = None,
     follower_count: int = 0,
     is_deleted: bool = False,
+    role: str | None = None,
 ):
     item = {
         "id": user_id,
@@ -360,6 +414,10 @@ def put_user(
     }
     if is_deleted:
         item["is_deleted"] = True
+    # role omitted by default: that IS a faithful pre-step-15 record, which the
+    # read-side default must serialize as "user". Pass role="admin" to seed one.
+    if role is not None:
+        item["role"] = role
     name = f"{first_name or ''} {last_name or ''}".strip().lower()
     if name:
         item["name_lowercase"] = name
@@ -376,6 +434,7 @@ def put_wishlist(
     love_count: int = 0,
     co_owners: list[str] | None = None,
     privacy_type: str = "public",
+    life_event_id: str = "general",
 ):
     """Seed a wishlist AND its owner edges: the creator plus any co_owners. The
     route auto-inserts the creator as the first owner, so a wishlist seeded
@@ -387,7 +446,7 @@ def put_wishlist(
     item = {
         "id": wishlist_id,
         "name": name,
-        "life_event_id": "general",
+        "life_event_id": life_event_id,
         "created_by": created_by,
         "entity_type": "WISHLIST",
         "love_count": love_count,
@@ -405,4 +464,93 @@ def put_wishlist(
                 "added_by": created_by,
             }
         )
+    return item
+
+
+def put_brand(
+    aws,
+    brand_id: str,
+    *,
+    name: str = "A brand",
+    website_url: str = "https://example.com",
+    category: str = "General",
+    country: str = "US",
+    display_order: int = 0,
+):
+    """Seed a brand row the way the seed script leaves it: a complete record the
+    Brand response model can validate. logo_url is omitted (the read-side default
+    is None), the pre-upload shape an admin-created brand also has."""
+    item = {
+        "id": brand_id,
+        "name": name,
+        "website_url": website_url,
+        "category": category,
+        "country": country,
+        "display_order": display_order,
+    }
+    aws.Table(BRANDS_TABLE).put_item(Item=item)
+    return item
+
+
+def put_life_event(
+    aws,
+    event_id: str,
+    *,
+    name: str = "An occasion",
+    icon: str | None = None,
+    display_order: int = 0,
+):
+    """Seed a life-event row the way the seed script leaves it."""
+    item = {"id": event_id, "name": name, "display_order": display_order}
+    if icon is not None:
+        item["icon"] = icon
+    aws.Table(LIFE_EVENTS_TABLE).put_item(Item=item)
+    return item
+
+
+def put_storefront(
+    aws,
+    storefront_id: str,
+    *,
+    name: str = "A store",
+    product_count: int = 0,
+    display_order: int = 0,
+):
+    """Seed a storefront row the way the seed script leaves it: a complete
+    record with the denormalized product_count the store card reads."""
+    item = {
+        "id": storefront_id,
+        "name": name,
+        "product_count": product_count,
+        "display_order": display_order,
+    }
+    aws.Table(STOREFRONTS_TABLE).put_item(Item=item)
+    return item
+
+
+def put_product(
+    aws,
+    product_id: str,
+    *,
+    storefront_id: str,
+    name: str = "A product",
+    price: str = "1999",
+    category: str = "General",
+    link_url: str = "https://example.com/p",
+    display_order: int = 0,
+):
+    """Seed a product row the way the seed script leaves it: price as a Decimal
+    (DynamoDB rejects float), keyed to its storefront via storefront_id."""
+    from decimal import Decimal
+
+    item = {
+        "id": product_id,
+        "storefront_id": storefront_id,
+        "name": name,
+        "price": Decimal(price),
+        "category": category,
+        "link_url": link_url,
+        "display_order": display_order,
+    }
+    aws.Table(PRODUCTS_TABLE).put_item(Item=item)
     return item

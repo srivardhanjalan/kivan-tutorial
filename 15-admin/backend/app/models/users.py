@@ -1,8 +1,17 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, PastDate, field_serializer
 
 from app.utils.s3_helpers import get_signed_url_for_s3
+
+# The global user role (step 15). Two values only; a record provisioned before
+# this step carries no `role` attribute, so DEFAULT_ROLE is the read-side
+# default the model fills in and every gate treats as non-admin. This is why
+# no data backfill is needed: absence reads as "user", airtight because only
+# an explicit role == ADMIN_ROLE ever grants access.
+Role = Literal["user", "admin"]
+DEFAULT_ROLE: Role = "user"
+ADMIN_ROLE: Role = "admin"
 
 
 class User(BaseModel):
@@ -20,6 +29,10 @@ class User(BaseModel):
     birthday: Optional[str] = None  # ISO date (YYYY-MM-DD)
     birthday_prompt_dismissed: bool = False
     onboarding_completed: bool = False
+    # Global role (step 15). Provisioning writes "user"; a record created before
+    # this step has no attribute and reads as the default. Only the grant-admin
+    # operator script and PATCH /admin/users/{id}/role ever write "admin".
+    role: Role = DEFAULT_ROLE
     created_at: str
     updated_at: str
 

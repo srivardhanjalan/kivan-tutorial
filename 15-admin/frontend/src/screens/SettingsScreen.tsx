@@ -16,6 +16,7 @@ import { usePendingImageUpload } from '../hooks/usePendingImageUpload';
 import { useAppNavigation } from '../hooks/useAppNavigation';
 import { deleteAccount, fetchCurrentUser, updateProfile } from '../services/api';
 import type { ProfileUpdate } from '../services/api';
+import { isAdmin } from '../utils/adminAccess';
 import { clerkFullName, clerkPrimaryEmail } from '../utils/clerkName';
 import Colors from '../constants/Colors';
 import Typography from '../constants/Typography';
@@ -214,6 +215,18 @@ export default function SettingsScreen() {
 
       <SectionHeader title="Help" />
       <SettingsRow label="Replay the tutorial" onPress={() => setShowTutorial(true)} />
+
+      {/* The only entry to the admin dashboard, shown to admins alone: a
+          non-admin never sees this row (the backend gates every write too). */}
+      {isAdmin(backendUser) && (
+        <>
+          <SectionHeader title="Admin" />
+          <SettingsRow
+            label="Admin dashboard"
+            onPress={() => navigation.navigate('AdminHome')}
+          />
+        </>
+      )}
 
       <SectionHeader title="Danger zone" />
       <SettingsRow label="Delete account" onPress={() => setShowDeleteModal(true)} />

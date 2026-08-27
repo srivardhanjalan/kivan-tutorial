@@ -1,8 +1,48 @@
 from typing import Optional
 
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel, Field, field_serializer
 
 from app.utils.s3_helpers import get_signed_url_for_s3
+
+
+class BrandCreate(BaseModel):
+    """POST /admin/brands body. `id` is a client-supplied slug, not a minted
+    uuid: brands are reference data the seed writes by hand-picked id (like the
+    life-events taxonomy and the storefronts catalog), so the admin dashboard
+    supplies the same kind of stable, human-meaningful id. The route puts it
+    conditionally, so re-using a seeded id is a 409, never a silent clobber.
+
+    `logo_url` is absent by design: a brand's logo is a catalog object the seed
+    uploads under the shared catalog/ keyspace (see the Brand docstring), and
+    the plain admin dashboard has no logo-upload UI yet, so an admin-created
+    brand starts logoless and an edit leaves any seeded logo untouched (the PUT
+    is field-scoped). A logo-upload pipeline is a later, deliberate concern.
+
+    Length caps mirror the rest of the app: a validated body can never blow past
+    DynamoDB's 400 KB item limit and 500 in the serializer instead of 422-ing
+    here."""
+
+    id: str = Field(max_length=100)
+    name: str = Field(max_length=200)
+    description: Optional[str] = Field(default=None, max_length=2048)
+    website_url: str = Field(max_length=2048)
+    category: str = Field(max_length=100)
+    country: str = Field(max_length=100)
+    display_order: int = 0
+
+
+class BrandUpdate(BaseModel):
+    """PUT /admin/brands/{id} body — send only what changes; an omitted field is
+    left untouched, and a present-but-None value is ignored (nothing clears via
+    null, the same discipline WishlistUpdate carries). `id` is immutable (it is
+    the key) and `logo_url` is seed-owned, so neither is editable here."""
+
+    name: Optional[str] = Field(default=None, max_length=200)
+    description: Optional[str] = Field(default=None, max_length=2048)
+    website_url: Optional[str] = Field(default=None, max_length=2048)
+    category: Optional[str] = Field(default=None, max_length=100)
+    country: Optional[str] = Field(default=None, max_length=100)
+    display_order: Optional[int] = None
 
 
 class Brand(BaseModel):

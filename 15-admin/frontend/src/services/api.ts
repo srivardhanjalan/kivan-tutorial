@@ -7,6 +7,11 @@ import type { CurrencyCode } from '../constants/Currency';
  */
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
+/** The global user role (step 15). Two values only; `/users/me` carries it, and
+    a record provisioned before this step reads as "user" (the backend fills the
+    read-side default), so the admin surface is gated on an explicit "admin". */
+export type Role = 'user' | 'admin';
+
 /** The user record as the backend's JIT provisioning writes it */
 export interface User {
   id: string;
@@ -18,6 +23,8 @@ export interface User {
   birthday: string | null;
   birthday_prompt_dismissed: boolean;
   onboarding_completed: boolean;
+  /** "user" for everyone, "admin" for the operators who see the admin surface */
+  role: Role;
   created_at: string;
   updated_at: string;
 }
@@ -79,6 +86,45 @@ export function setAuthTokenGetter(getter: () => Promise<string | null>): void {
 
 // Every error is a human-readable reason (missing env var, or which path
 // failed with what status) — callers own presentation, this owns diagnosis
+/**
+ * An API failure carrying the backend's own reason. FastAPI answers a 4xx with a
+ * JSON `{ detail }` — a plain string for a raised HTTPException (a 409 slug
+ * collision, a 409 self-demotion, a 409 referenced delete) or a list of field
+ * errors for a 422. `detail` holds that reason as one human line so a screen can
+ * surface WHY it failed, not just that it did; `status` lets a caller branch on
+ * the code. `message` keeps the old `<path> failed: <status>` spelling so logs
+ * and the fetch-failed callers that predate this read unchanged.
+ */
+class ApiError extends Error {
+  readonly status: number;
+  readonly detail?: string;
+  constructor(path: string, status: number, detail?: string) {
+    super(`${path} failed: ${status}`);
+    this.name = 'ApiError';
+    this.status = status;
+    this.detail = detail;
+  }
+}
+
+// The backend's reason out of a failed response body: FastAPI's `detail` is a
+// plain string for a raised HTTPException and a list of field errors for a 422,
+// so a list collapses to its first message. Returns undefined when the body
+// carries no usable reason (a non-JSON proxy page), so the caller falls back to
+// its own copy.
+async function errorDetail(res: Response): Promise<string | undefined> {
+  try {
+    const body = await res.json();
+    const detail = body?.detail;
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail) && detail.length > 0 && typeof detail[0]?.msg === 'string') {
+      return detail[0].msg;
+    }
+  } catch {
+    // A non-JSON body has no reason to surface; fall through to undefined.
+  }
+  return undefined;
+}
+
 async function request(path: string, init?: RequestInit): Promise<Response> {
   if (!BASE_URL) {
     throw new Error('EXPO_PUBLIC_API_URL is not set (frontend/.env.local)');
@@ -92,7 +138,7 @@ async function request(path: string, init?: RequestInit): Promise<Response> {
     },
   });
   if (!res.ok) {
-    throw new Error(`${path} failed: ${res.status}`);
+    throw new ApiError(path, res.status, await errorDetail(res));
   }
   return res;
 }
@@ -379,6 +425,8 @@ export interface Storefront {
   description: string | null;
   logo_url: string | null;
   product_count: number;
+  /** The catalog sort key the backend orders by; the admin form edits it. */
+  display_order: number;
 }
 
 /** One product in a storefront. `price` is in the app's single currency
@@ -398,6 +446,8 @@ export interface Product {
   category: string;
   image_url: string | null;
   link_url: string;
+  /** The in-store sort key the backend orders by; the admin form edits it. */
+  display_order: number;
 }
 
 /** The curated catalog of stores, ordered by the backend's display_order. */
@@ -431,11 +481,12 @@ export interface Brand {
   category: string;
   country: string;
   logo_url: string | null;
+  /** The directory sort key the backend orders by; the admin form edits it. */
+  display_order: number;
 }
 
 /** The real-store directory, ordered by the backend's (display_order, name)
-    and grouped by category on the client. (display_order sorts server-side, so
-    like a storefront the type does not carry it.) */
+    and grouped by category on the client. */
 export async function fetchBrands(): Promise<Brand[]> {
   const res = await request('/brands');
   return res.json();
@@ -851,5 +902,214 @@ export async function updateRSVP(
   await request(`/events/${eventId}/invitees/${encodeURIComponent(inviteeId)}`, {
     method: 'PATCH',
     body: JSON.stringify({ rsvp_status: status }),
+  });
+}
+
+// ── Admin (step 15) ─────────────────────────────────────────────────────────
+//
+// The write side of the catalog and the user roster, gated by require_admin on
+// the backend. The list reads the admin dashboard needs are the ordinary
+// signed-in GETs it already has (fetchStorefronts, fetchBrands, fetchLifeEvents,
+// fetchStorefrontProducts) plus fetchAdminUsers below; these are the write
+// (and role-change) calls that only the admin surface makes. Create/update
+// bodies mirror the backend's *Create/*Update models exactly: `id` is a
+// client-supplied slug on create (a collision is a 409), an update sends only
+// the fields it changes, and the seed-owned logo/image fields are never sent
+// (no uploader in the plain dashboard; a partial edit leaves a seeded logo
+// untouched). A failed call throws an ApiError whose `detail` is the backend's
+// reason, which useAsyncAction surfaces (the 409s and 422s the screens explain).
+
+/** The user roster, newest first, one page at a time (the backend's paging). */
+export async function fetchAdminUsers(limit = 50, offset = 0): Promise<User[]> {
+  const res = await request(`/admin/users?limit=${limit}&offset=${offset}`);
+  return res.json();
+}
+
+/** Promote or demote a user. Demoting yourself is a 409 (the backend guards the
+    instance against losing its last admin); the ApiError carries that reason. */
+export async function setUserRole(userId: string, role: Role): Promise<User> {
+  const res = await request(`/admin/users/${userId}/role`, {
+    method: 'PATCH',
+    body: JSON.stringify({ role }),
+  });
+  return res.json();
+}
+
+/** POST /admin/brands body — `id` is a client slug; logo_url is seed-owned. */
+export interface BrandCreate {
+  id: string;
+  name: string;
+  description?: string;
+  website_url: string;
+  category: string;
+  country: string;
+  display_order?: number;
+}
+
+/** PUT /admin/brands/{id} body — send only what changes; `id` is immutable. */
+export interface BrandUpdate {
+  name?: string;
+  description?: string;
+  website_url?: string;
+  category?: string;
+  country?: string;
+  display_order?: number;
+}
+
+export async function createBrand(body: BrandCreate): Promise<Brand> {
+  const res = await request('/admin/brands', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+export async function updateBrand(id: string, body: BrandUpdate): Promise<Brand> {
+  const res = await request(`/admin/brands/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+export async function deleteBrand(id: string): Promise<void> {
+  await request(`/admin/brands/${id}`, { method: 'DELETE' });
+}
+
+/** POST /admin/life-events body — `id` is a client slug the selector matches. */
+export interface LifeEventCreate {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  display_order?: number;
+}
+
+/** PUT /admin/life-events/{id} body — send only what changes; `id` is fixed. */
+export interface LifeEventUpdate {
+  name?: string;
+  description?: string;
+  icon?: string;
+  display_order?: number;
+}
+
+export async function createLifeEvent(body: LifeEventCreate): Promise<LifeEvent> {
+  const res = await request('/admin/life-events', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+export async function updateLifeEvent(
+  id: string,
+  body: LifeEventUpdate
+): Promise<LifeEvent> {
+  const res = await request(`/admin/life-events/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+/** Delete an occasion. A 409 (still referenced by a wishlist or event) arrives
+    as an ApiError whose detail names the reason. */
+export async function deleteLifeEvent(id: string): Promise<void> {
+  await request(`/admin/life-events/${id}`, { method: 'DELETE' });
+}
+
+/** POST /admin/storefronts body — `id` is a client slug; logo/count seed-owned. */
+export interface StorefrontCreate {
+  id: string;
+  name: string;
+  description?: string;
+  display_order?: number;
+}
+
+/** PUT /admin/storefronts/{id} body — send only what changes. */
+export interface StorefrontUpdate {
+  name?: string;
+  description?: string;
+  display_order?: number;
+}
+
+export async function createStorefront(body: StorefrontCreate): Promise<Storefront> {
+  const res = await request('/admin/storefronts', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+export async function updateStorefront(
+  id: string,
+  body: StorefrontUpdate
+): Promise<Storefront> {
+  const res = await request(`/admin/storefronts/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+/** Delete a store. A 409 (it still has products) arrives as an ApiError whose
+    detail names the reason. */
+export async function deleteStorefront(id: string): Promise<void> {
+  await request(`/admin/storefronts/${id}`, { method: 'DELETE' });
+}
+
+/** POST products body — `storefront_id` comes from the path; image seed-owned. */
+export interface ProductCreate {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  category: string;
+  link_url: string;
+  display_order?: number;
+}
+
+/** PUT product body — send only what changes; `storefront_id` is not editable. */
+export interface ProductUpdate {
+  name?: string;
+  description?: string;
+  price?: number;
+  category?: string;
+  link_url?: string;
+  display_order?: number;
+}
+
+export async function createProduct(
+  storefrontId: string,
+  body: ProductCreate
+): Promise<Product> {
+  const res = await request(`/admin/storefronts/${storefrontId}/products`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+export async function updateProduct(
+  storefrontId: string,
+  productId: string,
+  body: ProductUpdate
+): Promise<Product> {
+  const res = await request(
+    `/admin/storefronts/${storefrontId}/products/${productId}`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }
+  );
+  return res.json();
+}
+
+export async function deleteProduct(
+  storefrontId: string,
+  productId: string
+): Promise<void> {
+  await request(`/admin/storefronts/${storefrontId}/products/${productId}`, {
+    method: 'DELETE',
   });
 }

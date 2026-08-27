@@ -696,3 +696,85 @@ Frontend (visual/workflow convergence, behavior held):
       simply has no non-app handler). Recorded so polish does not invent any of
       them; the finished design ships exactly the three link kinds and three
       Share modals above.
+
+## Admin (step 15)
+
+Step 15 lands the admin feature: a global user `role`, role-enforced write
+APIs, and a role-gated admin dashboard. Unlike every other screen in this
+ledger, the admin dashboard has NO finished-design counterpart to converge on:
+the source app carries NO admin UI at all (its only prior global-admin surfaces
+were security backdoors that were deliberately deleted). So this whole surface
+is a tutorial-added one, built functional-but-plain; the entries below record
+that fact and the visual shortcuts taken, so a later pass makes it look like the
+rest of the product WITHOUT re-deriving what the source never had.
+
+Surface added (no source counterpart):
+
+- [ ] The admin dashboard is a tutorial-added surface. *source:* there is no
+      admin screen, route, tab, or Settings entry. *tutorial:* a role-gated
+      `Admin dashboard` row in Settings (shown only when `/users/me` reports
+      `role === "admin"`) opens an admin stack: a home with one row per domain,
+      a user roster with promote/demote, and list + create/edit/delete for
+      brands, life events, storefronts, and per-store products. Recorded so
+      polish styles this surface rather than treating its absence in the source
+      as a gap to remove.
+
+Frontend (visual/workflow convergence, behavior held):
+
+- [ ] Plain row idiom over image-forward layouts. *source:* n/a (no admin UI).
+      *tutorial:* every admin list is the plain `DirectoryLayout`/`CatalogRow`
+      row idiom with a small logo/glyph each, and every editor is the inline
+      `FormScreenScaffold` form (labeled `FormInput`s, a `PrimaryButton` CTA
+      that scrolls with the form, delete as a danger button at its foot). Polish
+      brings the image-forward card/grid layouts the finished catalog screens
+      use, matching the directories entry above.
+- [ ] Catalog media uploader deferred. *source:* n/a. *tutorial:* logos and
+      product photos stay seed-owned; the admin editors carry NO image uploader
+      and never send (or round-trip) a `logo_url`/`image_url`, so an
+      admin-created brand, store, or product shows the placeholder glyph until a
+      later step ships an uploader. This is the same deferral the step-15 backend
+      recorded (no `brand_logo`/catalog upload type was added): a create/edit is
+      text-field CRUD only. Polish adds the uploader (reusing the step-06 media
+      pipeline) and the image-forward layouts that consume it.
+- [ ] `id` (slug) as a plain typed field on create. *source:* n/a. *tutorial:*
+      a reference-data id is a hand-typed slug field (the seed's stable ids), not
+      generated or picked from a suggestion; a collision with a seeded row is a
+      backend 409 surfaced on the toast. A plainer create than a finished design
+      would likely offer.
+- [ ] Roster promote/demote is a text action behind a confirm; the list pages
+      via a `Load more` button. *source:* n/a. *tutorial:* each roster row's
+      role action is a plain text button opening the shared `ConfirmModal`, and
+      the roster grows by a `Load more` button rather than infinite scroll or a
+      search/filter. Polish may bring richer roster controls (search, scroll
+      pagination) if the finished design calls for them.
+
+Backend/error handling (deliberate, do-not-restore):
+
+- [ ] Admin CRUD is plain text-field CRUD (parity-safe). *source:* the app has
+      no admin at all, so there is no admin-era behavior to diverge from.
+      *tutorial:* create/update mirror the backend `*Create`/`*Update` models;
+      a slug collision is a 409, a referenced life-event delete and a
+      has-products storefront delete are 409s, a bad value is a 422. All four
+      domains share ONE gate concept (`require_admin`), not a per-store
+      ownership overlay (the tutorial rebuilt storefronts/products as seed-only
+      reference data, so there is no per-store role to bypass). Nothing to
+      "restore"; recorded so polish does not mistake the plain CRUD for a gap.
+- [ ] Backend reason surfaced app-wide, honestly. *source:* the api client
+      threw only `<path> failed: <status>` and `useAsyncAction` dropped raw
+      messages to a generic fallback, so a 4xx `detail` never reached the user.
+      *tutorial:* `request()` throws an `ApiError` carrying the status and the
+      backend's `detail` (a 422 field list collapsed to its first message), and
+      `errorMessage` surfaces that detail after a Clerk message and before the
+      caller's fallback. Keep the honest reason; the admin 409s/422s depend on
+      it, and every other screen's errors read truer for it.
+
+Tests (parity note):
+
+- [ ] Admin logic unit-tested; the render stays E2E. *note:* earlier steps
+      shipped no jest setup (screens proven on a simulator). Step 15 adds a
+      minimal renderer-free jest harness (ts-jest, node env) covering the pure
+      logic it introduced: the role-gate predicate (`isAdmin`) and the admin api
+      client's request wiring for all 14 routes plus its backend-reason
+      surfacing. The on-screen role-gate render (the Settings row appearing for
+      an admin) is proven by the step's E2E check, not a jest-expo component
+      render; polish may bring a component-render harness later.

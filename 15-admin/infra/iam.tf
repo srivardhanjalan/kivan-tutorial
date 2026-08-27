@@ -100,7 +100,10 @@ resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
         # updates, utils/dynamo.update_item_fields, and the denormalized
         # love_count), Query on CreatedByIndex (GET /wishlists/me, a user's
         # public wishlists, the account-deletion sweep), and BatchGetItem to
-        # resolve a loved-wishlist id list to records.
+        # resolve a loved-wishlist id list to records. Scan (step 15) backs the
+        # life-event referenced-delete guard, which Scans wishlists by
+        # life_event_id (no GSId on that soft reference) before retiring a
+        # life event.
         Effect = "Allow"
         Action = [
           "dynamodb:GetItem",
@@ -108,7 +111,8 @@ resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
           "dynamodb:PutItem",
           "dynamodb:UpdateItem",
           "dynamodb:DeleteItem",
-          "dynamodb:Query"
+          "dynamodb:Query",
+          "dynamodb:Scan"
         ]
         Resource = [
           aws_dynamodb_table.wishlists.arn,
@@ -187,39 +191,75 @@ resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
         ]
       },
       {
-        # Life events: reference data the app reads with a full-table Scan
-        # (GET /life-events) and nothing more. The running role only Scans;
-        # seeding writes under local developer credentials, not this role, so
-        # GetItem/PutItem are deliberately withheld. Scan is granted on this
-        # table and nowhere else.
-        Effect   = "Allow"
-        Action   = ["dynamodb:Scan"]
+        # Life events (step 15 admin): GET /life-events Scans the taxonomy; the
+        # admin write side (POST/PUT/DELETE /admin/life-events, require_admin)
+        # runs under THIS role, so it also needs GetItem (the no-op-update read),
+        # PutItem (conditional create), UpdateItem (field edit) and DeleteItem
+        # (the referenced-delete). Seeding still writes under local developer
+        # credentials; these grants exist for the running admin routes. The E2E
+        # caught the write actions still withheld by a pre-step-15 comment after
+        # the admin catalog endpoints shipped.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:Scan",
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem"
+        ]
         Resource = aws_dynamodb_table.life_events.arn
       },
       {
-        # Storefronts: the curated catalog read with a full-table Scan
-        # (GET /storefronts) and nothing more, the same reference-data pattern
-        # life-events set. Seeding writes under developer credentials, so the
-        # running role gets Scan alone (no Get/Put).
-        Effect   = "Allow"
-        Action   = ["dynamodb:Scan"]
+        # Storefronts (step 15 admin): GET /storefronts Scans the catalog; the
+        # admin write side (POST/PUT/DELETE /admin/storefronts, require_admin)
+        # runs under THIS role and needs GetItem (get_item_or_404), PutItem
+        # (conditional create), UpdateItem (field edit AND the denormalized
+        # product_count adjust_count driven by the product routes) and DeleteItem
+        # (the empty-store delete). Seeding still writes under developer
+        # credentials; these grants exist for the running admin routes.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:Scan",
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem"
+        ]
         Resource = aws_dynamodb_table.storefronts.arn
       },
       {
-        # Brands: the real-store directory read with a full-table Scan
-        # (GET /brands) and nothing more, the same reference-data pattern
-        # storefronts and life-events set. Seeding writes under developer
-        # credentials, so the running role gets Scan alone (no Get/Put).
-        Effect   = "Allow"
-        Action   = ["dynamodb:Scan"]
+        # Brands (step 15 admin): GET /brands Scans the directory; the admin
+        # write side (POST/PUT/DELETE /admin/brands, require_admin) runs under
+        # THIS role and needs GetItem (the no-op-update read), PutItem
+        # (conditional create), UpdateItem (field edit) and DeleteItem (the
+        # unguarded delete). Seeding still writes under developer credentials;
+        # these grants exist for the running admin routes.
+        Effect = "Allow"
+        Action = [
+          "dynamodb:Scan",
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem"
+        ]
         Resource = aws_dynamodb_table.brands.arn
       },
       {
-        # Products: read-only and storefront-scoped. A Query on
-        # StorefrontIdIndex (GET /storefronts/{id}/products) and nothing else;
-        # seeding is a developer-credential job, so no Put here either.
+        # Products (step 15 admin): GET /storefronts/{id}/products Queries
+        # StorefrontIdIndex; the admin write side (POST/PUT/DELETE
+        # /admin/storefronts/{id}/products, require_admin) runs under THIS role
+        # and needs GetItem (get_item_or_404 / the product-under-store check),
+        # PutItem (conditional create), UpdateItem (field edit) and DeleteItem.
+        # Seeding still writes under developer credentials; these grants exist
+        # for the running admin routes.
         Effect = "Allow"
-        Action = ["dynamodb:Query"]
+        Action = [
+          "dynamodb:Query",
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem"
+        ]
         Resource = [
           aws_dynamodb_table.products.arn,
           "${aws_dynamodb_table.products.arn}/index/*"
@@ -256,7 +296,9 @@ resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
       {
         # Events (step 13): item CRUD (create PutItem, edit UpdateItem, delete
         # DeleteItem, get GetItem), BatchGetItem to hydrate the /events/me id
-        # list, and Query on PublicEventsIndex (the public feed).
+        # list, and Query on PublicEventsIndex (the public feed). Scan (step 15)
+        # backs the life-event referenced-delete guard, which Scans events by
+        # event_type (no GSI on that soft reference) before retiring a life event.
         Effect = "Allow"
         Action = [
           "dynamodb:GetItem",
@@ -264,7 +306,8 @@ resource "aws_iam_role_policy" "apprunner_instance_dynamodb" {
           "dynamodb:PutItem",
           "dynamodb:UpdateItem",
           "dynamodb:DeleteItem",
-          "dynamodb:Query"
+          "dynamodb:Query",
+          "dynamodb:Scan"
         ]
         Resource = [
           aws_dynamodb_table.events.arn,
