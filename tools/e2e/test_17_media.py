@@ -9,8 +9,8 @@ check that pins the 2026-08-26 finding — xfail(strict=False) so it neither fai
 the suite if the bug stands nor errors if the backend actually persists.
 """
 import uuid
+from urllib.parse import urlparse
 
-import httpx
 import pytest
 
 pytestmark = [pytest.mark.e2e, pytest.mark.step17]
@@ -52,23 +52,31 @@ def test_signed_url_rejects_unknown_resource_type(clerk_user):
                                   "file_extension": "jpeg"}).status_code == 422
 
 
-def test_catalog_logo_upload_and_claim_round_trip(clerk_user, table):
+def test_catalog_logo_upload_and_claim_round_trip(clerk_user, table, s3, photos_bucket):
+    """Mint a signed URL for a brand logo, land the bytes at the pending key,
+    create the brand carrying that URL (which CLAIMS the object), and verify the
+    claim: the permanent object exists and the pending one is gone.
+
+    The bytes are placed with boto3 rather than the presigned PUT: this backend
+    signs upload URLs against S3's global endpoint (bucket.s3.amazonaws.com),
+    which only serves PUTs without a 307 redirect for a us-east-1 bucket — and
+    this smoke stack runs in us-west-2 (the App-Runner region deviation). The
+    presigned-URL contract is still asserted (the 8-type mint test); what this
+    test proves is the step-17 CLAIM logic (copy pending→permanent, drop pending).
+    """
     admin = clerk_user("Gina", "Gallery")
     _grant_admin(admin, table)
 
-    # mint
     minted = admin.client.post("/upload/signed-url",
                                json={"resource_type": "brand_logo", "file_extension": "jpeg"})
     assert minted.status_code == 200
-    upload_url = minted.json()["upload_url"]
     photo_url = minted.json()["photo_url"]
     assert "/pending/brand_logo/" in photo_url
+    pending_key = urlparse(photo_url).path.lstrip("/")
 
-    # upload the bytes straight to S3 (content-type must match the presign)
-    put = httpx.put(upload_url, content=_JPEG, headers={"Content-Type": "image/jpeg"}, timeout=30)
-    assert put.status_code in (200, 204), f"S3 PUT failed: {put.status_code} {put.text[:200]}"
+    # land the bytes at the pending key the mint stamped (owner = admin's id)
+    s3.put_object(Bucket=photos_bucket, Key=pending_key, Body=_JPEG, ContentType="image/jpeg")
 
-    # create the record carrying the pending URL — this claims the object
     bid = f"brand-{uuid.uuid4().hex[:8]}"
     created = admin.client.post("/admin/brands", json={
         "id": bid, "name": "LogoCo", "website_url": "https://logo.test",
@@ -77,14 +85,24 @@ def test_catalog_logo_upload_and_claim_round_trip(clerk_user, table):
     try:
         logo = created.json()["logo_url"]
         assert logo, "brand logo_url should be set"
+        permanent_key = urlparse(logo).path.lstrip("/")
         # claimed out of pending/ into the permanent keyspace
-        assert "/pending/" not in logo
-        assert "brand_logo/" in logo
-        # and it reads back as a fetchable signed URL
-        got = httpx.get(logo, timeout=30)
-        assert got.status_code == 200, f"claimed logo not fetchable: {got.status_code}"
+        assert not permanent_key.startswith("pending/")
+        assert permanent_key.startswith("brand_logo/")
+        assert permanent_key == pending_key[len("pending/"):]
+        # the permanent object exists (claim copied it) ...
+        s3.head_object(Bucket=photos_bucket, Key=permanent_key)
+        # ... and the pending object is gone (claim deleted it)
+        with pytest.raises(s3.exceptions.ClientError):
+            s3.head_object(Bucket=photos_bucket, Key=pending_key)
     finally:
         admin.client.delete(f"/admin/brands/{bid}")
+        for k in {pending_key, urlparse(created.json().get("logo_url", "")).path.lstrip("/")}:
+            if k:
+                try:
+                    s3.delete_object(Bucket=photos_bucket, Key=k)
+                except Exception:
+                    pass
 
 
 @pytest.mark.xfail(strict=False,

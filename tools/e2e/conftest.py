@@ -16,15 +16,16 @@ is unset — so a normal `pytest backend/tests` unit run is untouched):
                        the DynamoDB / CloudWatch / budget resources for the raw
                        boto3 evidence reads (required for evidence + step-16)
   E2E_AWS_REGION       AWS region of the stack (default us-east-1)
-  E2E_CLERK_FAPI_URL   Clerk Frontend API base, e.g.
-                       https://your-instance.clerk.accounts.dev — needed to mint
-                       a real session JWT via FAPI sign-in. If unset it is
-                       derived from E2E_CLERK_PUBLISHABLE_KEY (pk_test_…), which
-                       is public. Auth'd tests skip if neither is provided.
   E2E_MAILGUN=1        Opt in to the live-send email leg in test_12 (off by
                        default: those legs skip unless this is set).
+
+Session JWTs are minted through the Clerk Backend API (create user → create
+session → mint session token) rather than a Frontend-API sign-in: the FAPI
+enforces a low per-instance rate limit that a ~100-user suite trips on a single
+clean run, so BAPI (a much higher limit, and no browser client-trust dance) is
+what keeps this harness re-runnable. The token is still a real Clerk RS256
+session JWT the backend verifies via JWKS exactly as a signed-in app's would be.
 """
-import base64
 import os
 import time
 import uuid
@@ -35,11 +36,6 @@ import httpx
 import pytest
 
 CLERK_BAPI = "https://api.clerk.com/v1"
-# The Clerk Frontend API expects a native (mobile-app) caller: a browser UA is
-# rejected, and the `_is_native` context is exactly how this backend's Expo
-# client signs in — so it is also how we bypass browser client-trust here.
-_NATIVE_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) ClerkExpo/1.0"
-_JS_VERSION = "_clerk_js_version=5.0.0"
 _TEST_PASSWORD = "Kivan-E2E-Harness-2026!verify"
 
 
@@ -98,25 +94,6 @@ def clerk_secret_key() -> str:
     return key
 
 
-@pytest.fixture(scope="session")
-def clerk_fapi_url() -> str:
-    """The Clerk Frontend API base URL — explicit, or decoded from the (public)
-    publishable key. Skips the auth'd flow if neither is available."""
-    url = os.environ.get("E2E_CLERK_FAPI_URL")
-    if url:
-        return url.rstrip("/")
-    pub = os.environ.get("E2E_CLERK_PUBLISHABLE_KEY", "")
-    if pub.startswith("pk_"):
-        try:
-            b64 = pub.split("_", 2)[2]
-            host = base64.b64decode(b64 + "===").decode().rstrip("$")
-            if host:
-                return f"https://{host}"
-        except Exception:
-            pass
-    pytest.skip("E2E_CLERK_FAPI_URL (or E2E_CLERK_PUBLISHABLE_KEY) unset")
-
-
 # --------------------------------------------------------------------------- #
 # boto3 evidence fixtures (the caller's AWS profile, NOT the instance role)     #
 # --------------------------------------------------------------------------- #
@@ -138,6 +115,17 @@ def table(dynamodb, environment):
     def _table(logical_name: str):
         return dynamodb.Table(f"kivan-{environment}-{logical_name}")
     return _table
+
+
+@pytest.fixture(scope="session")
+def s3(boto3_session):
+    return boto3_session.client("s3")
+
+
+@pytest.fixture(scope="session")
+def photos_bucket(environment, account_id) -> str:
+    # s3.tf: the photos bucket carries an account-id suffix for global uniqueness.
+    return f"kivan-{environment}-photos-{account_id}"
 
 
 @pytest.fixture(scope="session")
@@ -230,93 +218,72 @@ def _bapi(clerk_secret_key: str) -> httpx.Client:
     )
 
 
-def _fapi_post(fapi_url, path, data, device_token=None):
-    headers = {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": _NATIVE_UA,
-        "clerk-api-version": "2021-02-05",
-    }
-    # Origin and Authorization are mutually exclusive on the FAPI; the native
-    # path uses the device token, never Origin.
-    if device_token:
-        headers["Authorization"] = f"Bearer {device_token}"
-    return httpx.post(f"{fapi_url}{path}", data=data, headers=headers, timeout=30.0)
+_RETRY_STATUSES = {429, 500, 502, 503}
 
 
-def _mint_session(fapi_url, email, password, bapi, user_id):
-    """FAPI native sign-in → a callable that returns a fresh session JWT.
+def _retry(send, tries=7, base=2.0):
+    """Call send() (→ httpx.Response) and retry on Clerk throttling. A dev Clerk
+    instance rate-limits bursts hard (a full suite mints ~100 users), so back off
+    on 429/5xx, honouring Retry-After when present."""
+    resp = None
+    for attempt in range(tries):
+        resp = send()
+        if resp.status_code not in _RETRY_STATUSES:
+            return resp
+        if attempt == tries - 1:
+            break
+        retry_after = resp.headers.get("Retry-After")
+        try:
+            wait = min(float(retry_after), 30.0) if retry_after else base * (2 ** attempt)
+        except ValueError:
+            wait = base * (2 ** attempt)
+        time.sleep(min(wait, 30.0))
+    return resp
 
-    Primary path is the password sign-in the task's playbook prescribes; if the
-    instance doesn't complete a password factor we fall back to a BAPI
-    sign-in-token (ticket) exchange, which needs no password on the FAPI leg.
-    Both converge on the /sessions/{sid}/tokens mint, which we return so the
-    auth layer can re-call it as the JWT ages.
+
+def _mint_session(bapi, user_id):
+    """BAPI create-session → a callable that returns a fresh session JWT.
+
+    One `POST /sessions {user_id}` opens an active session for the user; the
+    returned callable mints a fresh short-lived token off it on demand, so the
+    auth layer can re-mint as the JWT ages without re-opening the session.
     """
-    # bootstrap a native client to obtain the device (client-trust) token
-    r = _fapi_post(fapi_url, f"/v1/client?_is_native=1&{_JS_VERSION}", {})
-    device = r.headers.get("Authorization")
-
-    r = _fapi_post(
-        fapi_url,
-        f"/v1/client/sign_ins?_is_native=1&{_JS_VERSION}",
-        {"identifier": email, "strategy": "password", "password": password},
-        device_token=device,
-    )
-    device = r.headers.get("Authorization") or device
-    resp = (r.json() or {}).get("response") or {}
-    session_id = resp.get("created_session_id")
-
-    if not session_id:
-        # Fallback: a backend-minted sign-in ticket, exchanged on the FAPI.
-        tok = bapi.post("/sign_in_tokens", json={"user_id": user_id})
-        tok.raise_for_status()
-        ticket = tok.json()["token"]
-        r = _fapi_post(
-            fapi_url,
-            f"/v1/client/sign_ins?_is_native=1&{_JS_VERSION}",
-            {"strategy": "ticket", "ticket": ticket},
-        )
-        device = r.headers.get("Authorization") or device
-        resp = (r.json() or {}).get("response") or {}
-        session_id = resp.get("created_session_id")
-    if not session_id:
-        raise RuntimeError(f"Clerk sign-in did not create a session: {r.text[:300]}")
-
-    dev = device
+    s = _retry(lambda: bapi.post("/sessions", json={"user_id": user_id}))
+    s.raise_for_status()
+    session_id = s.json()["id"]
 
     def mint() -> str:
-        tr = _fapi_post(
-            fapi_url,
-            f"/v1/client/sessions/{session_id}/tokens?_is_native=1&{_JS_VERSION}",
-            {},
-            device_token=dev,
-        )
+        tr = _retry(lambda: bapi.post(f"/sessions/{session_id}/tokens", json={}))
         tr.raise_for_status()
-        return tr.json()["jwt"]
+        jwt = tr.json().get("jwt")
+        if not jwt:
+            raise RuntimeError(f"Clerk token mint returned no jwt: {tr.text[:200]}")
+        return jwt
 
     return mint
 
 
 @pytest.fixture
-def clerk_user(api_url, clerk_secret_key, clerk_fapi_url) -> Callable[..., ClerkUser]:
+def clerk_user(api_url, clerk_secret_key) -> Callable[..., ClerkUser]:
     """Factory: `make = clerk_user; alice = make("Alice", "Actor")`.
 
     Each call creates a fresh +clerk_test user via the Backend API (with a
-    password, then verify_password as a sanity gate), signs it in on the
-    Frontend API for a real RS256 session JWT, and returns a ClerkUser whose
-    `.client` is an httpx.Client bound to the deployed API and authed as that
-    user. Every minted user is DELETED at teardown; fresh uuid suffix per call
-    so no two tests collide.
+    password, then verify_password as a sanity gate that the credential is live),
+    opens a BAPI session for a real RS256 session JWT, and returns a ClerkUser
+    whose `.client` is an httpx.Client bound to the deployed API and authed as
+    that user. Every minted user is DELETED at teardown; fresh uuid suffix per
+    call so no two tests collide.
     """
     bapi = _bapi(clerk_secret_key)
     created: list[ClerkUser] = []
+    created_ids: list[str] = []  # every BAPI-created id, even if sign-in later fails
 
     def make(first_name: str = "E2E", last_name: str = "User", email: Optional[str] = None) -> ClerkUser:
         suffix = uuid.uuid4().hex[:12]
         email = email or f"kivan-e2e-{suffix}+clerk_test@example.com"
         pw = _TEST_PASSWORD
 
-        r = bapi.post(
+        r = _retry(lambda: bapi.post(
             "/users",
             json={
                 "email_address": [email],
@@ -326,19 +293,28 @@ def clerk_user(api_url, clerk_secret_key, clerk_fapi_url) -> Callable[..., Clerk
                 "first_name": first_name,
                 "last_name": last_name,
             },
-        )
+        ))
         r.raise_for_status()
         user_id = r.json()["id"]
+        created_ids.append(user_id)  # mark for deletion before anything can fail
 
         # verify_password: sanity that the credential we'll sign in with is live
-        vr = bapi.post(f"/users/{user_id}/verify_password", json={"password": pw})
+        vr = _retry(lambda: bapi.post(f"/users/{user_id}/verify_password", json={"password": pw}))
         if vr.status_code == 200 and not vr.json().get("verified", False):
             raise RuntimeError(f"Clerk verify_password failed for {user_id}")
 
-        mint = _mint_session(clerk_fapi_url, email, pw, bapi, user_id)
+        mint = _mint_session(bapi, user_id)
         client = httpx.Client(base_url=api_url, auth=_ClerkTokenAuth(mint), timeout=30.0)
         user = ClerkUser(user_id, email, first_name, last_name, client, mint)
         created.append(user)
+
+        # Provision the DynamoDB row now (JIT provisioning fires on the first
+        # authed call) so this user can be a follow / invite / RSVP target the
+        # moment the factory returns — otherwise those routes 404 the target.
+        for _ in range(3):
+            if client.get("/users/me").status_code == 200:
+                break
+            time.sleep(1)
         return user
 
     yield make
@@ -348,8 +324,9 @@ def clerk_user(api_url, clerk_secret_key, clerk_fapi_url) -> Callable[..., Clerk
             u.client.close()
         except Exception:
             pass
+    for uid in created_ids:
         try:
-            bapi.delete(f"/users/{u.user_id}")
+            bapi.delete(f"/users/{uid}")
         except Exception:
             pass
     bapi.close()

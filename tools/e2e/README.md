@@ -17,12 +17,18 @@ DynamoDB / CloudWatch directly (with your AWS profile) for evidence.
 | `E2E_API_URL` | yes | Deployed App Runner base URL, e.g. `https://xxxx.us-west-2.awsapprunner.com`. **Unset ⇒ every e2e test skips cleanly** (a normal `backend/tests` unit run is untouched). |
 | `CLERK_SECRET_KEY` | yes¹ | `sk_test_…` for the Clerk instance the stack authenticates against. Taken from your shell — never a file in the repo. |
 | `E2E_ENVIRONMENT` | yes¹ | The stack's `ENVIRONMENT` prefix (e.g. `s17h`). Names the DynamoDB / CloudWatch / budget resources for the raw evidence reads. |
-| `E2E_CLERK_FAPI_URL` | yes¹ | Clerk Frontend API base, e.g. `https://your-instance.clerk.accounts.dev`. Needed to mint a session JWT via FAPI sign-in. If unset, it is derived from `E2E_CLERK_PUBLISHABLE_KEY` (a public `pk_test_…`). |
 | `E2E_AWS_REGION` | no | Region of the stack (default `us-east-1`). |
 | `E2E_MAILGUN` | no | Set `1` only against a Mailgun-configured stack to run the live-send email leg (off ⇒ that one leg skips; the Mailgun-not-configured log-contract legs run instead). |
 
 ¹ Auth'd suites (11–15, 17) skip if any of these is missing; the boto3-only
 step-16 suite needs only `E2E_ENVIRONMENT` + AWS creds.
+
+Session JWTs are minted through the Clerk **Backend** API (create user → open a
+session → mint a session token), not a Frontend-API sign-in: the FAPI's low
+per-instance rate limit trips on a single ~100-user run, so BAPI is what keeps
+the harness re-runnable. The token is still a real Clerk RS256 session JWT the
+backend verifies via JWKS exactly as a signed-in app's would be — so no
+publishable key / Frontend-API URL is needed.
 
 Your AWS credentials (profile / env) must be able to read DynamoDB, CloudWatch,
 budgets, SNS, IAM and to call `cloudwatch:SetAlarmState` (step 16 fires the
@@ -42,7 +48,7 @@ export E2E_API_URL=https://xxxx.us-west-2.awsapprunner.com
 export E2E_ENVIRONMENT=s17h
 export E2E_AWS_REGION=us-west-2
 export CLERK_SECRET_KEY=sk_test_...            # from your shell / vault, not committed
-export E2E_CLERK_PUBLISHABLE_KEY=pk_test_...   # or E2E_CLERK_FAPI_URL=https://...clerk.accounts.dev
+
 pytest tools/e2e -m e2e
 
 # one step at a time:
@@ -63,11 +69,13 @@ git worktree add ~/.kivan-wt-e2e origin/step-17-polish     # durable worktree, k
 cd ~/.kivan-wt-e2e/17-polish
 cp ~/workspace/secrets-vault/kivan/infra/terraform.tfvars infra/terraform.tfvars   # gitignored
 # set environment = "s17h", aws_region = "us-west-2" in that tfvars (never commit it)
-(cd backend && ./lambda-or lambda/build.sh)                # build the lambda zip first
-cd infra && terraform init && terraform plan -out tfplan
+./lambda/build.sh                                          # build the lambda zip first
+cd infra && terraform init
+terraform apply -target=aws_ecr_repository.backend         # create ECR first
+./scripts/deploy.sh                                        # colima-rosetta amd64 build + push :latest
+terraform plan -out tfplan
 terraform show tfplan | grep -nE 'production|kivan-production' && echo "ABORT" || true   # expect no matches
-terraform apply tfplan
-# build+push the API image (colima-rosetta amd64) and let App Runner reach RUNNING
+terraform apply tfplan                                     # App Runner pulls the image → RUNNING
 ```
 
 Then export the vars above (`E2E_API_URL` = the App Runner URL, `E2E_ENVIRONMENT`
