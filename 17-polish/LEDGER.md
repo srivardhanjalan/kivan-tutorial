@@ -66,11 +66,16 @@ scope, not this one.
 
 ## Discover
 
-- [ ] Discover / Following / Followers tabs in the header. *source:* three
+- [x] Discover / Following / Followers tabs in the header. *source:* three
       floating-header tabs switch between the popular feed, the people you
-      follow (with a loved-wishlists section), and your followers. *tutorial:*
-      a single Discover view; following and followers are reached instead as
-      drill-down lists from a profile's stat counts.
+      follow (with a loved-wishlists section), and your followers.
+      *tutorial (pre-polish):* a single Discover view; following and followers
+      were reached instead as drill-down lists from a profile's stat counts.
+      *Converged (step 17 phase 2):* `DiscoverScreen` renders the three
+      `SelectablePill` header tabs (`tab: 'discover' | 'following' | 'followers'`)
+      over the people/wishlist graph — Discover is the popular feed, Following
+      the people you follow with your loved wishlists, Followers who follow you —
+      matching the finished design.
 - [ ] A horizontal people rail. *source:* `People` is a horizontal rail of
       circular avatars (`UserRailItem`). *tutorial:* `People to follow` is a
       vertical list of `UserRow` rows.
