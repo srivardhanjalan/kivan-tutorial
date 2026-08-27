@@ -20,7 +20,7 @@ import { usePendingImageUpload } from '../hooks/usePendingImageUpload';
 import { useAppNavigation } from '../hooks/useAppNavigation';
 import { deleteAccount, fetchCurrentUser, updateProfile } from '../services/api';
 import type { ProfileUpdate } from '../services/api';
-import { coverPhotoValue } from '../constants/DefaultCoverPhotos';
+import { coverPhotoValue, coverValueToPersist } from '../constants/DefaultCoverPhotos';
 import type { CoverPreset } from '../constants/DefaultCoverPhotos';
 import { isAdmin } from '../utils/adminAccess';
 import { clerkFullName, clerkPrimaryEmail } from '../utils/clerkName';
@@ -145,10 +145,9 @@ export default function SettingsScreen() {
         update.image_url = profilePhoto.changedUrl;
       }
       // A picked preset wins; else persist a new custom upload if there was one
-      if (chosenPreset) {
-        update.cover_photo = chosenPreset;
-      } else if (coverPhoto.changedUrl) {
-        update.cover_photo = coverPhoto.changedUrl;
+      const cover = coverValueToPersist(chosenPreset, coverPhoto.changedUrl);
+      if (cover) {
+        update.cover_photo = cover;
       }
       if (Object.keys(update).length === 0) return;
       await updateProfile(update);

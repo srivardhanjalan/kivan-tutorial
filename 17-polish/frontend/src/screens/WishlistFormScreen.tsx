@@ -1,23 +1,42 @@
 import React, { useState } from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useUser } from '@clerk/clerk-expo';
 import { useAppNavigation, useAppRoute } from '../hooks/useAppNavigation';
 import FormScreenScaffold from '../components/layouts/FormScreenScaffold';
 import FormInput from '../components/FormInput';
+import FieldLabel from '../components/FieldLabel';
 import LifeEventField from '../components/LifeEventField';
 import CoOwnerPickerSection from '../components/CoOwnerPickerSection';
-import ImageUploadField from '../components/ImageUploadField';
+import CoverPhoto from '../components/CoverPhoto';
+import CoverPickerModal from '../components/CoverPickerModal';
+import SettingItemList from '../components/SettingItemList';
 import PrivacySelector from '../components/PrivacySelector';
 import { useToast } from '../components/ToastProvider';
 import useAsyncAction from '../hooks/useAsyncAction';
 import { usePendingImageUpload } from '../hooks/usePendingImageUpload';
 import useLifeEvents from '../hooks/useLifeEvents';
 import { createWishlist, updateWishlist } from '../services/api';
+import {
+  coverPhotoValue,
+  coverValueToPersist,
+  presetFromCoverPhoto,
+} from '../constants/DefaultCoverPhotos';
+import type { CoverPreset } from '../constants/DefaultCoverPhotos';
+import Colors from '../constants/Colors';
+import { Spacing } from '../constants/ScreenStyles';
 import type { PrivacyType, User, WishlistCreate } from '../services/api';
 
 /**
  * One form for both creating and editing a wishlist — the passed wishlist (if
- * any) seeds the fields and flips the title and CTA. Name plus an optional
- * life event and cover image; the save routes to POST or PUT accordingly.
+ * any) seeds the fields and flips the title and CTA. Name plus an optional life
+ * event and cover; the save routes to POST or PUT accordingly.
+ *
+ * The cover is the wishlist's `image_url`, and it renders as a CoverPhoto band
+ * on the detail screen — so the form sets it the same two ways that band
+ * resolves: a chosen gradient preset (`preset:<id>`) or a custom upload. The
+ * form sends exactly what it renders, preset or upload, so the cover the owner
+ * sees while editing is the cover that persists (the create path used to render
+ * a band but send nothing).
  */
 export default function WishlistFormScreen() {
   const navigation = useAppNavigation();
@@ -40,11 +59,33 @@ export default function WishlistFormScreen() {
   // A new wishlist defaults public (matching the backend); editing seeds from
   // the current value.
   const [privacy, setPrivacy] = useState<PrivacyType>(wishlist?.privacy_type ?? 'public');
-  const photo = usePendingImageUpload(
+
+  // The cover, set two mutually exclusive ways (last one wins, exactly as
+  // Settings sets a profile cover): a chosen gradient preset, or a custom
+  // upload. Seed the preset from the saved cover when it names one; seed the
+  // upload slot only with a saved *image* (a `preset:` string isn't one).
+  const seededPreset = presetFromCoverPhoto(wishlist?.image_url);
+  const cover = usePendingImageUpload(
     'wishlist_photo',
     'Could not upload your wishlist image',
-    wishlist?.image_url ?? null
+    seededPreset ? null : wishlist?.image_url ?? null
   );
+  const [chosenPreset, setChosenPreset] = useState<string | null>(
+    seededPreset ? coverPhotoValue(seededPreset) : null
+  );
+  const [showCoverPicker, setShowCoverPicker] = useState(false);
+  // What the preview band shows: a just-picked preset, else the upload slot
+  // (seeded from the saved image, updated on a new upload).
+  const effectiveCover = chosenPreset ?? cover.imagePreview;
+
+  const pickPreset = (preset: CoverPreset) => {
+    setChosenPreset(coverPhotoValue(preset));
+    setShowCoverPicker(false);
+  };
+  const uploadCover = () => {
+    setChosenPreset(null);
+    cover.handleUpload();
+  };
 
   const save = () => {
     if (!name.trim()) {
@@ -52,11 +93,13 @@ export default function WishlistFormScreen() {
       return;
     }
     run(async () => {
+      // A picked preset wins; else a new upload; else leave the cover untouched.
+      const coverValue = coverValueToPersist(chosenPreset, cover.changedUrl);
       const payload: WishlistCreate = {
         name: name.trim(),
         privacy_type: privacy,
         ...(lifeEventId ? { life_event_id: lifeEventId } : {}),
-        ...photo.bodyPatch('image_url'),
+        ...(coverValue ? { image_url: coverValue } : {}),
       };
       if (wishlist) {
         await updateWishlist(wishlist.id, payload);
@@ -105,7 +148,43 @@ export default function WishlistFormScreen() {
 
       <PrivacySelector value={privacy} onChange={setPrivacy} />
 
-      <ImageUploadField label="Wishlist image" upload={photo} />
+      {/* The cover: the same band the detail screen renders, plus the two ways
+          to set it (a gradient preset or a custom upload) — so the form sends
+          exactly the cover it previews. */}
+      <FieldLabel>Cover</FieldLabel>
+      <CoverPhoto
+        ownerId={user?.id ?? ''}
+        coverPhoto={effectiveCover}
+        height={140}
+        style={styles.coverPreview}
+      />
+      <SettingItemList
+        items={[
+          { id: 'choose-cover', label: 'Choose a cover', onPress: () => setShowCoverPicker(true) },
+          {
+            id: 'upload-cover',
+            label: 'Upload your own',
+            onPress: uploadCover,
+            rightContent: cover.isUploading ? (
+              <ActivityIndicator color={Colors.primary} />
+            ) : undefined,
+          },
+        ]}
+      />
+
+      <CoverPickerModal
+        visible={showCoverPicker}
+        currentCover={effectiveCover}
+        onSelect={pickPreset}
+        onClose={() => setShowCoverPicker(false)}
+      />
     </FormScreenScaffold>
   );
 }
+
+const styles = StyleSheet.create({
+  coverPreview: {
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+});

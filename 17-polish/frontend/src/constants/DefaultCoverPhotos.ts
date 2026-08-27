@@ -44,6 +44,23 @@ export function coverPhotoValue(preset: CoverPreset): string {
   return `${PRESET_PREFIX}${preset.id}`;
 }
 
+/**
+ * The cover value to persist from the two ways an editor sets one: a chosen
+ * gradient preset (`preset:<id>`) or a fresh custom upload's URL. A picked
+ * preset wins; else a new upload; else undefined — meaning "leave the stored
+ * cover untouched" (nothing was picked and nothing was uploaded, so an edit's
+ * save must not rewrite the field). The two inputs are mutually exclusive by
+ * construction (picking a preset clears the pending upload and uploading clears
+ * the preset), but pinning the precedence here keeps that a property of one
+ * tested function, not an assumption re-spelled in every cover-bearing form.
+ */
+export function coverValueToPersist(
+  chosenPreset: string | null,
+  uploadedUrl: string | null
+): string | undefined {
+  return chosenPreset ?? uploadedUrl ?? undefined;
+}
+
 /** The preset a saved `cover_photo` names, if it names one (else undefined). */
 export function presetFromCoverPhoto(coverPhoto: string | null | undefined): CoverPreset | undefined {
   if (!coverPhoto?.startsWith(PRESET_PREFIX)) return undefined;
