@@ -1,0 +1,56 @@
+# 03 — Notifications: unread badge -> feed rows -> notification settings.
+#
+# Visual components asserted: the unread badge (rendered as "2" — asserted via
+# the NotificationsScreen header pill, because the tab-bar bell badge is a child
+# collapsed under the tab button's "Notifications" accessibilityLabel and so is
+# not individually addressable), the feed card rows (matched by their server
+# message text — each row renders a per-type Ionicon with no addressable text,
+# so the row stands in for the row+icon composite), and the grouped setting
+# cards on the Notification Settings screen.
+#
+# Relies on the Vera fixture's seeded feed: a follow + a wishlist_loved (2 unread).
+# Selectors are RN accessibilityLabels matched as plain text (no testIDs exist).
+appId: host.exp.Exponent
+tags:
+  - kivan-ui
+---
+- stopApp
+- openLink: exp://localhost:8081
+- extendedWaitUntil:
+    visible: "Notifications"       # the tab-bar bell (accessibilityLabel)
+    timeout: 90000
+# settle the JS thread after cold start so the first tap is not dropped
+- waitForAnimationToEnd
+- tapOn: "Notifications"
+# --- NotificationsScreen: header + unread badge + card rows ---
+- extendedWaitUntil:
+    visible: "Notifications"       # screen header
+    timeout: 20000
+- assertVisible: "2"               # the header unread badge (same count as the bell)
+- assertVisible: "Falk Follower started following you"          # follow row (person-add icon)
+- assertVisible: "Falk Follower loved your wishlist: Kitchen Upgrade"  # loved row (heart icon)
+- takeScreenshot: artifacts-gitignored/03-notifications-feed
+# --- Notification settings (Home gear -> Settings -> Notification settings) ---
+- tapOn: "Home"
+- extendedWaitUntil:
+    visible: "Settings"            # back on Home, the cover gear
+    timeout: 20000
+- tapOn: "Settings"
+- extendedWaitUntil:
+    visible: "Settings"            # Settings screen header
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      text: "Notification settings"
+    direction: DOWN
+    timeout: 15000
+- tapOn: "Notification settings"
+- extendedWaitUntil:
+    visible: "Notification Settings"   # screen header
+    timeout: 20000
+# Grouped setting cards:
+- assertVisible: "New followers"
+- assertVisible: "Wish added"
+- assertVisible: "Wishlist loved"
+- assertVisible: "Email"               # the Email group header
+- takeScreenshot: artifacts-gitignored/03-notifications-settings

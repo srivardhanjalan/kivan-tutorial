@@ -1,0 +1,5 @@
+# Harness-only deps (kept out of the backend runtime image). Install into a
+# throwaway venv to run the suite:  pip install -r tools/e2e/requirements.txt
+pytest==9.1.1
+httpx==0.28.1
+boto3==1.35.94
