@@ -1,0 +1,4 @@
+# Runtime dependencies vendored into the deploy zip by ../build.sh. boto3 ships
+# with the Lambda Python runtime and is NOT listed here; only pure-python extras
+# the runtime lacks are. Step 12's email leg calls Mailgun over HTTP, hence:
+requests>=2.31.0
